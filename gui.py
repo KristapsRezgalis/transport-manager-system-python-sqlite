@@ -2,12 +2,18 @@ import FreeSimpleGUI as sg
 import keyboard
 
 from datetime import datetime
-from db import create_table
+from db import create_table, read_all
+
+sg.theme("DarkAmber")
 
 COLUMNS = ["Nr.", "Sender", "Delivery", "Loading",
             "Unloading", "Pallets", "Weight", "Forwarder", "Cost","Customs","REF"]
 
-sg.theme("DarkAmber")
+def df_to_table(df):
+    """Changes DataFrame to list for FreeSimpleGUI table."""
+    if df.empty:
+        return []
+    return df.values.tolist()
 
 # --- Main menu ---
 
@@ -52,6 +58,18 @@ def main_menu():
         size=(1000, 500),
         finalize=True
     )
+    
+    def refresh_table(df):
+        app_window["-TABLE-"].update(values=df_to_table(df))
+    
+    # --- initial data + sorting state ---
+    current_df = read_all()
+    sort_column = None
+    sort_ascending = True
+    
+    refresh_table(current_df)
+    
+    selected_row = None #atlasita_rinda = None
     
     while True:
         action, values = app_window.read()
