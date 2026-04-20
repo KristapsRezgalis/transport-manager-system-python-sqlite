@@ -12,16 +12,17 @@ def create_table():
     conn.execute("""
 CREATE TABLE IF NOT EXISTS transport (
     nr INTEGER PRIMARY KEY AUTOINCREMENT,
-    sender TEXT NOT NULL,
-    delivery TEXT NOT NULL,
-    loading TEXT NOT NULL,
-    unloading TEXT NOT NULL,
-    pallets INTEGER NOT NULL,
-    weight REAL NOT NULL,
-    forwarder TEXT NOT NULL,
-    cost INTEGER NOT NULL,
-    customs TEXT NOT NULL,
-    ref TEXT NOT NULL,
+    sap_po INTEGER,
+    sender TEXT,
+    delivery TEXT,
+    loading TEXT,
+    unloading TEXT,
+    pallets INTEGER,
+    weight REAL,
+    forwarder TEXT,
+    cost INTEGER,
+    customs TEXT,
+    ref TEXT,
     info TEXT
 )
 """)
@@ -35,5 +36,55 @@ def read_all():
     conn.close()
     return df
 
-def add_db(nr, sender, delivery, loading,unloading, pallets, weight, forwarder, cost,customs,ref):
- """Adds new record into database"""
+def add_db(sap_po, sender, delivery, loading, unloading, pallets, weight, forwarder, cost, customs, ref):
+    """Adds new record into database"""
+    new_row = pd.DataFrame([{
+        "sap_po":	sap_po,
+        "sender":	sender,
+        "delivery":	delivery,
+        "loading":	loading,
+        "unloading":unloading,
+        "pallets":	pallets,
+        "weight":	weight,
+        "forwarder":forwarder,
+        "cost":		cost,
+        "customs":	customs,
+        "ref":		ref,
+    }])
+    conn = sqlite3.connect(DB_FILE)
+    new_row.to_sql(TABLE_NAME, conn, if_exists="append", index=False)
+    new_record = pd.read_sql("SELECT MAX(nr) as nr FROM transport", conn)["nr"].iloc[0]
+    conn.close()
+
+    return new_record
+    
+def edit_db(nr, updated_values):
+    """Updates record in a database"""
+    conn = sqlite3.connect(DB_FILE)
+    cur = conn.cursor()
+    
+    set_variables = ", ".join(f"{x} = ?" for x in updated_values)
+    values = list(updated_values.values())
+    values.append(nr)
+    
+    cur.execute(f"UPDATE transport SET {set_variables} WHERE nr = ?", values)
+    
+    conn.commit()
+    conn.close()
+    
+def search_db(search_value):
+    conn = sqlite3.connect(DB_FILE)
+    df = pd.read_sql(""" SELECT * FROM transport
+    WHERE sap_po LIKE ? OR sender LIKE ? OR delivery LIKE ? OR loading LIKE ? OR unloading LIKE ? OR pallets LIKE ? OR weight LIKE ? OR forwarder LIKE ? OR cost LIKE ?
+    ORDER BY nr
+    """, conn, params=(f"%{search_value}%", f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%"))
+    
+    conn.close()
+    return df
+    
+def delete_db(nr):
+    """Deletes selected record/Nr"""
+    conn = sqlite3.connect(DB_FILE)
+    conn.execute("DELETE FROM transport WHERE nr = ?", (nr,))
+    conn.commit()
+    conn.close()
