@@ -2,7 +2,7 @@ import FreeSimpleGUI as sg
 import keyboard
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db
 
 sg.theme("DarkAmber")
 
@@ -252,7 +252,7 @@ def main_menu():
         elif action == "-BTN-FILTER-":
             filter = filter_modal()
             if filter is not None:
-                current_df = filtret_db(filtri)
+                current_df = filter_db(filter)
                 refresh_table(current_df)
                 atlasita_rinda = None
                 statuss(f"🔎 Found: {len(current_df)} records")

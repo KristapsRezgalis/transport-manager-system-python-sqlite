@@ -88,3 +88,45 @@ def delete_db(nr):
     conn.execute("DELETE FROM transport WHERE nr = ?", (nr,))
     conn.commit()
     conn.close()
+    
+def filter_db(filters):
+    #nosacijumi = []
+    #parametri = []
+    conditions = []
+    parameters = []
+
+    # Text fields (LIKE)
+    for field in ("sender", "delivery", "forwarder", "customs", "ref"):
+        value = filters.get(field, "").strip()
+        if value:
+            conditions.append(f"{field} LIKE ?")
+            parameters.append(f"%{value}%")
+
+    # Diapazona lauki (no / līdz)
+    range = {
+        "sap_po": ("sap_po_from", "sap_po_to"),
+        "loading": ("loading_from", "loading_to"),
+        "unloading": ("unloading_from", "unloading_to"),
+        "pallets": ("pallets_min", "pallets_max"),
+        "weight": ("weight_min", "weight_max"),
+        "cost": ("cost_min", "cost_max"),
+    }
+    for column, (key_from, key_to) in range.items():
+        from_value = filters.get(key_from, "").strip()
+        to_value = filters.get(key_to, "").strip()
+        if from_value:
+            conditions.append(f"{column} >= ?")
+            parameters.append(float(from_value))
+        if to_value:
+            conditions.append(f"{column} <= ?")
+            parameters.append(float(to_value))
+
+    sql = "SELECT * FROM transport"
+    if conditions:
+        sql += " WHERE " + " AND ".join(conditions)
+    sql += " ORDER BY nr"
+
+    conn = sqlite3.connect(DB_FILE)
+    df = pd.read_sql(sql, conn, params=parameters)
+    conn.close()
+    return df
