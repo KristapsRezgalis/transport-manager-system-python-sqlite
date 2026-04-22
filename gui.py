@@ -67,64 +67,44 @@ def filter_modal():
             app_window.close()
             return filtered_values
 
-'''
-def filtra_logs():
-    izkartojums = [
-        [sg.Text("Vārds:", size=14), sg.Input(key="-F-VARDS-", size=20)],
-        [sg.Text("Uzvārds:", size=14), sg.Input(key="-F-UZVARDS-", size=20)],
-        [sg.HorizontalSeparator()],
-        [sg.Text("Dz. gads no:", size=14), sg.Input(key="-F-DZG-NO-", size=8),
-         sg.Text("līdz:"), sg.Input(key="-F-DZG-LIDZ-", size=8)],
-        [sg.Text("Augums no:", size=14), sg.Input(key="-F-AUG-NO-", size=8),
-         sg.Text("līdz:"), sg.Input(key="-F-AUG-LIDZ-", size=8)],
-        [sg.Text("Svars no:", size=14), sg.Input(key="-F-SV-NO-", size=8),
-         sg.Text("līdz:"), sg.Input(key="-F-SV-LIDZ-", size=8)],
-        [sg.Text("Pulss no:", size=14), sg.Input(key="-F-PULSS-NO-", size=8),
-         sg.Text("līdz:"), sg.Input(key="-F-PULSS-LIDZ-", size=8)],
-        [sg.Button("Filtrēt", key="-F-OK-"), sg.Button("Atcelt")],
-    ]
-    logs = sg.Window("Filtrs", izkartojums, modal=True)
-    while True:
-        notikums, vertibas = logs.read()
-        if notikums in (sg.WIN_CLOSED, "Atcelt"):
-            logs.close()
-            return None
-        if notikums == "-F-OK-":
-            filtri = {
-                "vards":       vertibas["-F-VARDS-"],
-                "uzvards":     vertibas["-F-UZVARDS-"],
-                "dz_gads_no":  vertibas["-F-DZG-NO-"],
-                "dz_gads_lidz": vertibas["-F-DZG-LIDZ-"],
-                "augums_no":   vertibas["-F-AUG-NO-"],
-                "augums_lidz": vertibas["-F-AUG-LIDZ-"],
-                "svars_no":    vertibas["-F-SV-NO-"],
-                "svars_lidz":  vertibas["-F-SV-LIDZ-"],
-                "pulss_no":    vertibas["-F-PULSS-NO-"],
-                "pulss_lidz":  vertibas["-F-PULSS-LIDZ-"],
-            }
-            logs.close()
-            return filtri
-'''
-
 # Entry modal window for creating new records and editing existin ones
 def entry_modal(title, existing=None):
     
     e = existing or {}
     # sap_po, sender, delivery, loading,unloading, pallets, weight, forwarder, cost, customs, ref
-    layout = [
-        [sg.Text("SAP PO Nr:",           size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=25)],
-        [sg.Text("Sender:",           size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=25)],
-        [sg.Text("Delivery:",           size=16), sg.Input(e.get("delivery", ""),          key="-DELIVERY-",   size=25)],
-        [sg.Text("Loading date:",           size=16), sg.Input(e.get("loading", ""),          key="-LOADING-",   size=25)],
-        [sg.Text("Unloading date:",           size=16), sg.Input(e.get("unloading", ""),          key="-UNLOADING-",   size=25)],
-        [sg.Text("Pallet count:",           size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=25)],
-        [sg.Text("Gross weight:",           size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=25)],
-        [sg.Text("Forwarder:",           size=16), sg.Input(e.get("forwarder", ""),          key="-FORWARDER-",   size=25)],
-        [sg.Text("Cost:",           size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=25)],
-        [sg.Text("Customs:",           size=16), sg.Input(e.get("customs", ""),          key="-CUSTOMS-",   size=25)],
-        [sg.Text("Temperature control:",        size=16), sg.Input(e.get("ref", ""),          key="-REF-",   size=25)],
-        [sg.Button("Save", key="-SAVE-"), sg.Button("Cancel")]
-    ]
+    
+    if existing:
+        layout = [
+            [sg.Text("SAP PO Nr:",           size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=25)],
+            [sg.Text("Sender:",           size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=25)],
+            [sg.Text("Delivery:",           size=16), sg.Input(e.get("delivery", ""),          key="-DELIVERY-",   size=25)],
+            [sg.Text("Loading date:",           size=16), sg.Input(e.get("loading", ""),          key="-LOADING-",   size=25)],
+            [sg.Text("Unloading date:",           size=16), sg.Input(e.get("unloading", ""),          key="-UNLOADING-",   size=25)],
+            [sg.Text("Pallet count:",           size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=25)],
+            [sg.Text("Gross weight:",           size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=25)],
+            [sg.Text("Forwarder:",           size=16), sg.Input(e.get("forwarder", ""),          key="-FORWARDER-",   size=25)],
+            [sg.Text("Cost:",           size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=25)],
+            [sg.Text("Customs:",           size=16), sg.Input(e.get("customs", ""),          key="-CUSTOMS-",   size=25)],
+            [sg.Text("Temperature control:",        size=16), sg.Input(e.get("ref", ""),          key="-REF-",   size=25)],
+            [sg.Button("Create transport order in PDF", key="-CREATE-PDF-")],
+            [sg.Button("Save", key="-SAVE-"), sg.Button("Cancel")]
+        ]
+    else:
+        layout = [
+            [sg.Text("SAP PO Nr:",           size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=25)],
+            [sg.Text("Sender:",           size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=25)],
+            [sg.Text("Delivery:",           size=16), sg.Input(e.get("delivery", ""),          key="-DELIVERY-",   size=25)],
+            [sg.Text("Loading date:",           size=16), sg.Input(e.get("loading", ""),          key="-LOADING-",   size=25)],
+            [sg.Text("Unloading date:",           size=16), sg.Input(e.get("unloading", ""),          key="-UNLOADING-",   size=25)],
+            [sg.Text("Pallet count:",           size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=25)],
+            [sg.Text("Gross weight:",           size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=25)],
+            [sg.Text("Forwarder:",           size=16), sg.Input(e.get("forwarder", ""),          key="-FORWARDER-",   size=25)],
+            [sg.Text("Cost:",           size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=25)],
+            [sg.Text("Customs:",           size=16), sg.Input(e.get("customs", ""),          key="-CUSTOMS-",   size=25)],
+            [sg.Text("Temperature control:",        size=16), sg.Input(e.get("ref", ""),          key="-REF-",   size=25)],
+            [sg.Button("Save", key="-SAVE-"), sg.Button("Cancel")]
+        ]
+        
     app_window = sg.Window(title, layout, modal=True)
 
     while True:

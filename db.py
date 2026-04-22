@@ -90,8 +90,6 @@ def delete_db(nr):
     conn.close()
     
 def filter_db(filters):
-    #nosacijumi = []
-    #parametri = []
     conditions = []
     parameters = []
 
@@ -102,7 +100,7 @@ def filter_db(filters):
             conditions.append(f"{field} LIKE ?")
             parameters.append(f"%{value}%")
 
-    # Diapazona lauki (no / līdz)
+    # Range fields (from / to)
     range = {
         "sap_po": ("sap_po_from", "sap_po_to"),
         "loading": ("loading_from", "loading_to"),
