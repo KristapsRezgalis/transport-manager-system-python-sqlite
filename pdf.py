@@ -31,7 +31,14 @@ gemoss_letterhead = [
     'GEMOSS SIA',
     'Reg. Nr: 40103099092',
     'VAT Nr: LV40103099092',
-    'Address: Mûkusalas street 73.Riga, LV-1004',
+    'Address: Mûkusalas street 73, Riga, LV-1004',
+]
+
+forwarder_letterhead = [
+    'FORWARDER SIA',
+    'Reg. Nr: 4000000000',
+    'VAT Nr: LV4000000000',
+    'Address: Some street 111, Riga, LV-1000',
 ]
 
 pdf = canvas.Canvas(fileName)
@@ -49,10 +56,19 @@ for line in gemoss_letterhead:
     tx_field_1.textLine(line)
 pdf.drawText(tx_field_1)
 
+tx_field_2 = pdf.beginText(400, 770)
+tx_field_2.setFont("Times-Roman", 10)
+for line in forwarder_letterhead:
+    tx_field_2.textLine(line)
+pdf.drawText(tx_field_2)
+
+pdf.line(30, 720, 550, 720) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
 pdf.setFont("Times-Roman", 14)
-pdf.drawString(30, 700, 'LOADING DETAILS ------------------')
+pdf.drawCentredString(100, 700, 'SHIPMENT INFORMATION')
+pdf.line(30, 690, 550, 690) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+
 pdf.drawString(30, 680, f'Sender: {sender}')
-pdf.drawString(30, 660, f'Reveiver: {delivery}')
+pdf.drawString(30, 660, f'Receiver: {delivery}')
 '''
 pdf.drawCentredString(290, 720, loading_address)
 pdf.drawCentredString(290, 720, unloading_address)
@@ -65,7 +81,6 @@ pdf.drawCentredString(290, 720, cost)
 pdf.drawCentredString(290, 720, customs)
 pdf.drawCentredString(290, 720, ref)
 '''
-pdf.line(30, 640, 550, 640) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
 tr_rules = pdf.beginText(40, 100) # Starts a text object at the given position.
 tr_rules.setFont("Times-Roman", 10)
 tr_rules.setFillColor(colors.red)
