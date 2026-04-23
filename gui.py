@@ -3,6 +3,7 @@ import keyboard
 
 from datetime import datetime
 from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db
+from pdf import create_order_pdf
 
 sg.theme("DarkAmber")
 
@@ -116,6 +117,11 @@ def entry_modal(title, existing=None):
         if action == "-SAVE-":
             app_window.close()
             return values
+        
+        # action triggered when "Create transport order in PDF" button is pressed in record Edit modal - it creates a PDF file/transport order
+        if action == "-CREATE-PDF-":
+            create_order_pdf(existing)
+            print('Create transport order in PDF button pressed!')
 
 # --- Main menu ---
 def main_menu():
@@ -311,7 +317,6 @@ def main_menu():
                     refresh_table(current_df)
                     statuss(f"✅ Nr.{nr} updated!")
                     app_window["-SEARCH-"].update("")
-                
 
 
 if __name__ == "__main__":
