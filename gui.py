@@ -1,8 +1,7 @@
 import FreeSimpleGUI as sg
-import keyboard
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login
 from pdf import create_order_pdf
 
 sg.theme("DarkAmber")
@@ -14,6 +13,16 @@ def df_to_table(df):
     """Changes DataFrame to list for FreeSimpleGUI table."""
     if df.empty:
         return []
+
+    df = df.copy()
+
+    # Format columns to 2 decimal places
+    if "weight" in df.columns:
+        df["weight"] = df["weight"].astype(float).map("{:.2f}".format)
+
+    if "cost" in df.columns:
+        df["cost"] = df["cost"].astype(float).map("{:.2f}".format)
+
     return df.values.tolist()
 
 def filter_modal():
@@ -87,8 +96,8 @@ def entry_modal(title, existing=None):
             [sg.Text("Cost:",           size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=25)],
             [sg.Text("Customs:",           size=16), sg.Input(e.get("customs", ""),          key="-CUSTOMS-",   size=25)],
             [sg.Text("Temperature control:",        size=16), sg.Input(e.get("ref", ""),          key="-REF-",   size=25)],
-            [sg.Button("Create transport order in PDF", key="-CREATE-PDF-")],
-            [sg.Button("Save", key="-SAVE-"), sg.Button("Cancel")]
+            [sg.Push(),sg.Button("Create transport order in PDF", key="-CREATE-PDF-"), sg.Push()],
+            [sg.Push(),sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()]
         ]
     else:
         layout = [
@@ -123,8 +132,42 @@ def entry_modal(title, existing=None):
             create_order_pdf(existing)
             print('Create transport order in PDF button pressed!')
 
+def login_modal():
+    sg.theme_list()
+
+    received_values = {}
+
+    layout = [
+        [sg.Push(),sg.Image(filename="gemoss_logo.png", subsample=2), sg.Push()],
+        [sg.Push(),sg.Text('GEMOSS TMS LOGIN', font=("Helvetica", 14, "bold"), pad=(10,10)), sg.Push()],
+        [sg.Text("Login:", size=16), sg.Input(received_values.get("login", ""), key="-LOGIN-VALUE-", size=25)],
+        [sg.Text("Password:", size=16), sg.Input(received_values.get("passw", ""), key="-PASSW-VALUE-", size=25, password_char="*")],
+        [sg.Push(),sg.Button("Login", key="-LOGIN-", size=15), sg.Button("Cancel", size=15), sg.Push()]
+    ]
+
+    app_window = sg.Window('GEMOSS TMS LOGIN', layout, modal=True)
+
+    while True:
+        action, values = app_window.read()
+        
+        if action in (sg.WIN_CLOSED, "Cancel"):
+            app_window.close()
+            return None
+        if action == "-LOGIN-":
+            login_validation = check_login(values["-LOGIN-VALUE-"], values["-PASSW-VALUE-"])
+            if login_validation:
+                print(f'Received login:  {login_validation.get("login")}')
+                print(f'Received password:  {login_validation.get("password")}')
+                app_window.close()
+                main_menu(login_validation, "DarkAmber")
+                return login_validation
+            else:
+                sg.popup("Incorrect login or password!")
+            print('LOGIN button pressed')
+
+
 # --- Main menu ---
-def main_menu():
+def main_menu(login_validation, theme_name):
     create_table()
     
     table_columns = [
@@ -134,16 +177,17 @@ def main_menu():
             key="-TABLE-",
             auto_size_columns=True,
             justification="left",
-            num_rows=20,
+            num_rows=25,
             enable_events=True,
             enable_click_events=True, # for sorting
             select_mode=sg.TABLE_SELECT_MODE_BROWSE,
             expand_x=True,
             )]], expand_x=True)
     ]
-    
+
     layout = [
-        [sg.Text("Transport Management System", font=("Helvetica", 14, "bold"), pad=(10,10))],
+        [sg.Text("Transport Management System", font=("Helvetica", 14, "bold"), pad=(10,10)), 
+        sg.Push(),sg.Text(f'{login_validation.get("name")} {login_validation.get("surname")}', font=("Helvetica", 10, "bold"), pad=(10,10))],
         [
         sg.Button("Create",  key="-BTN-CREATE-"),
         sg.Button("Open/Edit", key="-BTN-EDIT-"),
@@ -155,9 +199,11 @@ def main_menu():
         sg.Input(key="-SEARCH-", size=20),
         sg.Button("Search", key="-BTN-SEARCH-"),
         sg.Button("Exit", key="-BTN-EXIT-"),
+        sg.Push(),sg.Combo(['Black', 'BlueMono', 'BluePurple', 'BrightColors', 'BrownBlue', 'Dark', 'Dark2', 'DarkAmber', 'DarkBlack', 'DarkBlack1', 'DarkBlue', 'DarkBlue1', 'DarkBlue10', 'DarkBlue11', 'DarkBlue12', 'DarkBlue13', 'DarkBlue14', 'DarkBlue15', 'DarkBlue16', 'DarkBlue17', 'DarkBlue2', 'DarkBlue3', 'DarkBlue4', 'DarkBlue5', 'DarkBlue6', 'DarkBlue7', 'DarkBlue8', 'DarkBlue9', 'DarkBrown', 'DarkBrown1', 'DarkBrown2', 'DarkBrown3', 'DarkBrown4', 'DarkBrown5', 'DarkBrown6', 'DarkGreen', 'DarkGreen1', 'DarkGreen2', 'DarkGreen3', 'DarkGreen4', 'DarkGreen5', 'DarkGreen6', 'DarkGrey', 'DarkGrey1', 'DarkGrey2', 'DarkGrey3', 'DarkGrey4', 'DarkGrey5', 'DarkGrey6', 'DarkGrey7', 'DarkPurple', 'DarkPurple1', 'DarkPurple2', 'DarkPurple3', 'DarkPurple4', 'DarkPurple5', 'DarkPurple6', 'DarkRed', 'DarkRed1', 'DarkRed2', 'DarkTanBlue', 'DarkTeal', 'DarkTeal1', 'DarkTeal10', 'DarkTeal11', 'DarkTeal12', 'DarkTeal2', 'DarkTeal3', 'DarkTeal4', 'DarkTeal5', 'DarkTeal6', 'DarkTeal7', 'DarkTeal8', 'DarkTeal9', 'Default', 'Default1', 'DefaultNoMoreNagging', 'Green', 'GreenMono', 'GreenTan', 'HotDogStand', 'Kayak', 'LightBlue', 'LightBlue1', 'LightBlue2', 'LightBlue3', 'LightBlue4', 'LightBlue5', 'LightBlue6', 'LightBlue7', 'LightBrown', 'LightBrown1', 'LightBrown10', 'LightBrown11', 'LightBrown12', 'LightBrown13', 'LightBrown2', 'LightBrown3', 'LightBrown4', 'LightBrown5', 'LightBrown6', 'LightBrown7', 'LightBrown8', 'LightBrown9', 'LightGray1', 'LightGreen', 'LightGreen1', 'LightGreen10', 'LightGreen2', 'LightGreen3', 'LightGreen4', 'LightGreen5', 'LightGreen6', 'LightGreen7', 'LightGreen8', 'LightGreen9', 'LightGrey', 'LightGrey1', 'LightGrey2', 'LightGrey3', 'LightGrey4', 'LightGrey5', 'LightGrey6', 'LightPurple', 'LightTeal', 'LightYellow', 'Material1', 'Material2', 'NeutralBlue', 'Purple', 'Reddit', 'Reds', 'SandyBeach', 'SystemDefault', 'SystemDefault1', 'SystemDefaultForReal', 'Tan', 'TanBlue', 'TealMono', 'Topanga'], default_value=theme_name, key='-DEFAULT-COLOR-', enable_events=True, readonly=True)
         ],
         [sg.Text("", key="-STATUS-", size=60, text_color="green")],
         table_columns,
+        [sg.Text(f'Total records: ', key="-TOTAL-ACTIVE-RECORDS-")]
     ]
     
     app_window = sg.Window(
@@ -170,9 +216,13 @@ def main_menu():
     
     def refresh_table(df):
         app_window["-TABLE-"].update(values=df_to_table(df))
+        app_window["-TOTAL-ACTIVE-RECORDS-"].update(f'Total records: {len(current_df)}')
+        print(f'Length: {len(current_df)}')
         
     def statuss(text, sel_color="green"):
         app_window["-STATUS-"].update(text, text_color=sel_color)
+
+    
     
     # --- initial data + sorting state ---
     current_df = read_all()
@@ -190,6 +240,13 @@ def main_menu():
             app_window.close()
             break
         
+        if action == '-DEFAULT-COLOR-':
+            print(f"User selected: {values['-DEFAULT-COLOR-']}")
+            sg.theme(f"{values['-DEFAULT-COLOR-']}")
+            app_window.close()
+            main_menu(login_validation, f"{values['-DEFAULT-COLOR-']}")
+
+
         # ── Table clicks (selecting + sorting)
         if isinstance(action, tuple) and action[0] == "-TABLE-":
             row, col = action[2]
@@ -307,7 +364,7 @@ def main_menu():
                         "pallets":          int(new_values["-PALLETS-"]),
                         "weight":          float(new_values["-WEIGHT-"]),
                         "forwarder":          new_values["-FORWARDER-"],
-                        "cost":          int(new_values["-COST-"]),
+                        "cost":          float(new_values["-COST-"]),
                         "customs":          new_values["-CUSTOMS-"],
                         "ref":          new_values["-REF-"],
                     }
@@ -320,4 +377,5 @@ def main_menu():
 
 
 if __name__ == "__main__":
-    main_menu()
+    #main_menu()
+    login_modal()

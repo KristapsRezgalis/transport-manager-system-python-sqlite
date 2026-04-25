@@ -5,6 +5,18 @@ from datetime import datetime
 DB_FILE = "transport.db"
 TABLE_NAME = "transport"
 
+# checks if entered login and password matches user table records in DB
+def check_login(login_value, passw_value):
+    conn = sqlite3.connect(DB_FILE)
+    df = pd.read_sql(""" SELECT * FROM user
+    WHERE login = ? AND password = ?
+    """, conn, params=(login_value, passw_value))
+    
+    conn.close()
+    
+    if not df.empty:
+        return df.iloc[0].to_dict()  # return user data
+    return None
 
 def create_table():
     """Create a table if it does not exist"""

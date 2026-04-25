@@ -3,10 +3,7 @@ from reportlab.lib import colors
 
 record_number = 100
 
-fileName = f'Gemoss_Order_Nr_{record_number}.pdf'
 documentTitle = 'GEMOSS'
-
-tr_order_text_nummber = f'Transport order Nr: {record_number}'
 
 sender = 'Delinuts BV'
 delivery = 'Gemoss SIA'
@@ -162,5 +159,5 @@ def create_order_pdf (data):
     pdf.drawString(380, 50, '+371 22221111')
     pdf.drawString(380, 35, 'janis.berzins@forwarder.lv')
 
-    pdf.save('Orders/')
+    pdf.save()
     print('PDF file created!')
