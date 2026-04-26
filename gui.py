@@ -78,7 +78,7 @@ def filter_modal():
             return filtered_values
 
 # Entry modal window for creating new records and editing existin ones
-def entry_modal(title, existing=None):
+def entry_modal(title, existing=None, nr=None):
     
     e = existing or {}
     # sap_po, sender, delivery, loading,unloading, pallets, weight, forwarder, cost, customs, ref
@@ -129,7 +129,7 @@ def entry_modal(title, existing=None):
         
         # action triggered when "Create transport order in PDF" button is pressed in record Edit modal - it creates a PDF file/transport order
         if action == "-CREATE-PDF-":
-            create_order_pdf(existing)
+            create_order_pdf(existing, nr)
             print('Create transport order in PDF button pressed!')
 
 def login_modal():
@@ -175,7 +175,7 @@ def main_menu(login_validation, theme_name):
             values=[],
             headings=COLUMNS,
             key="-TABLE-",
-            auto_size_columns=True,
+            col_widths=[5, 100, 20, 20, 10, 10, 5, 10, 20, 10, 5, 5],
             justification="left",
             num_rows=25,
             enable_events=True,
@@ -184,6 +184,13 @@ def main_menu(login_validation, theme_name):
             expand_x=True,
             )]], expand_x=True)
     ]
+
+    total_records = [[sg.Text(key="-TOTAL-ACTIVE-RECORDS-")]]
+    total_cost = [[sg.Text(key="-TOTAL-COST-")]]
+    total_pallets = [[sg.Text(key="-TOTAL-PALLETS-")]]
+    cost_per_cargo = [[sg.Text(key="-AVERAGE-CARGO-COST-")]]
+    cost_per_pallet = [[sg.Text(key="-AVERAGE-PALLET-COST-")]]
+    pallets_per_cargo = [[sg.Text(key="-PALLETS-PER-CARGO-")]]
 
     layout = [
         [sg.Text("Transport Management System", font=("Helvetica", 14, "bold"), pad=(10,10)), 
@@ -203,7 +210,14 @@ def main_menu(login_validation, theme_name):
         ],
         [sg.Text("", key="-STATUS-", size=60, text_color="green")],
         table_columns,
-        [sg.Text(f'Total records: ', key="-TOTAL-ACTIVE-RECORDS-")]
+        [sg.Frame(title="Total cargos", layout=total_records, 
+        border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Total cost", layout=total_cost, 
+        border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Total pallets", layout=total_pallets, 
+        border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Cost per cargo", layout=cost_per_cargo, 
+        border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Cost per pallet", layout=cost_per_pallet, 
+        border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Pallets per cargo", layout=pallets_per_cargo, 
+        border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50))],
+        #[sg.Text(key="-TOTAL-ACTIVE-RECORDS-"), sg.Text(key="-AVERAGE-CARGO-COST-"), sg.Text(key="-AVERAGE-PALLET-COST-"), sg.Text(key="-AVERAGE-PALLET-AMOUNT-")]
     ]
     
     app_window = sg.Window(
@@ -216,8 +230,26 @@ def main_menu(login_validation, theme_name):
     
     def refresh_table(df):
         app_window["-TABLE-"].update(values=df_to_table(df))
-        app_window["-TOTAL-ACTIVE-RECORDS-"].update(f'Total records: {len(current_df)}')
+        app_window["-TOTAL-ACTIVE-RECORDS-"].update(f'{len(current_df)}')
+        
         print(f'Length: {len(current_df)}')
+
+        if len(current_df) > 0:
+            total_cost = 0 
+            total_pallets = 0
+            for sum in current_df['cost']:
+                total_cost = total_cost + sum
+            for pallets in current_df['pallets']:
+                total_pallets = total_pallets + pallets
+            app_window["-TOTAL-COST-"].update(f'{int(total_cost):_}'.replace('_', ' ') + ' EUR')
+            app_window["-TOTAL-PALLETS-"].update(f'{int(total_pallets)}')
+            app_window["-AVERAGE-CARGO-COST-"].update(f'{ int(total_cost / len(current_df['cost'])):_}'.replace('_', ' ')+ ' EUR')
+            app_window["-AVERAGE-PALLET-COST-"].update(f'{ int(round(total_cost / total_pallets)) } EUR')
+            app_window["-PALLETS-PER-CARGO-"].update(f'{ int(round(total_pallets / len(current_df['cost']))) } pallets')
+        else:
+            app_window["-AVERAGE-CARGO-COST-"].update('0 EUR')
+            app_window["-AVERAGE-PALLET-COST-"].update('0 EUR')
+            app_window["-PALLETS-PER-CARGO-"].update('0 pallets')
         
     def statuss(text, sel_color="green"):
         app_window["-STATUS-"].update(text, text_color=sel_color)
@@ -240,6 +272,7 @@ def main_menu(login_validation, theme_name):
             app_window.close()
             break
         
+        # - default theme colr changing
         if action == '-DEFAULT-COLOR-':
             print(f"User selected: {values['-DEFAULT-COLOR-']}")
             sg.theme(f"{values['-DEFAULT-COLOR-']}")
@@ -353,7 +386,7 @@ def main_menu(login_validation, theme_name):
                     "customs":          str(row["customs"]),
                     "ref":          str(row["ref"]),
                 }
-                new_values = entry_modal(f"Editing record Nr.{nr}", existing)
+                new_values = entry_modal(f"Editing record Nr.{nr}", existing, nr)
                 if new_values:
                     updated_values = {
                         "sap_po":          new_values["-SAP_PO-"],

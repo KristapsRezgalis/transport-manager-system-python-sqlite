@@ -46,7 +46,7 @@ forwarder_letterhead = [
 ]
 
 # data variable content -> sap_po, sender, delivery, loading,unloading, pallets, weight, forwarder, cost, customs, ref
-def create_order_pdf (data):
+def create_order_pdf (data, nr):
     print(data.get('sap_po'))
     pdf = canvas.Canvas(f"Gemoss order Nr {data.get('sap_po')}.pdf")
     pdf.setTitle(documentTitle)
@@ -54,7 +54,7 @@ def create_order_pdf (data):
     pdf.drawImage("gemoss_logo.png", x=30, y=800, width=126, height=32) # c.drawImage("image.png", x=100, y=500, width=200, height=150)
 
     pdf.setFont("Times-Bold", 20) # Sets the font style and size.
-    pdf.drawCentredString(450, 810, f"Transport order Nr: {data.get('sap_po')}") # Draws text centered at the specified (x, y) position.
+    pdf.drawCentredString(450, 810, f"Transport order Nr: {nr}") # Draws text centered at the specified (x, y) position.
     pdf.line(30, 790, 565, 790) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
 
     tx_field_1 = pdf.beginText(30, 770)
