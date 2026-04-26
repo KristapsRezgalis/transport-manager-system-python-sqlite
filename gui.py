@@ -175,13 +175,15 @@ def main_menu(login_validation, theme_name):
             values=[],
             headings=COLUMNS,
             key="-TABLE-",
-            col_widths=[5, 100, 20, 20, 10, 10, 5, 10, 20, 10, 5, 5],
+            auto_size_columns=False,
+            col_widths=[4, 10, 20, 20, 10, 10, 5, 8, 20, 10, 6, 5],
             justification="left",
             num_rows=25,
             enable_events=True,
             enable_click_events=True, # for sorting
             select_mode=sg.TABLE_SELECT_MODE_BROWSE,
             expand_x=True,
+            expand_y=True,
             )]], expand_x=True)
     ]
 
