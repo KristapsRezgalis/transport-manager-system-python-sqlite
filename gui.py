@@ -6,7 +6,7 @@ from pdf import create_order_pdf
 
 sg.theme("DarkAmber")
 
-COLUMNS = ["Nr.", "SAP PO", "Sender", "Delivery", "Loading",
+ORDER_COLUMNS = ["Nr.", "SAP PO", "Sender", "Delivery", "Loading",
             "Unloading", "Pallets", "Weight", "Forwarder", "Cost","Customs","REF"]
 
 def df_to_table(df):
@@ -85,33 +85,33 @@ def entry_modal(title, existing=None, nr=None):
     
     if existing:
         layout = [
-            [sg.Text("SAP PO Nr:",           size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=25)],
-            [sg.Text("Sender:",           size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=25)],
-            [sg.Text("Delivery:",           size=16), sg.Input(e.get("delivery", ""),          key="-DELIVERY-",   size=25)],
-            [sg.Text("Loading date:",           size=16), sg.Input(e.get("loading", ""),          key="-LOADING-",   size=25)],
-            [sg.Text("Unloading date:",           size=16), sg.Input(e.get("unloading", ""),          key="-UNLOADING-",   size=25)],
-            [sg.Text("Pallet count:",           size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=25)],
-            [sg.Text("Gross weight:",           size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=25)],
-            [sg.Text("Forwarder:",           size=16), sg.Input(e.get("forwarder", ""),          key="-FORWARDER-",   size=25)],
-            [sg.Text("Cost:",           size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=25)],
-            [sg.Text("Customs:",           size=16), sg.Input(e.get("customs", ""),          key="-CUSTOMS-",   size=25)],
-            [sg.Text("Temperature control:",        size=16), sg.Input(e.get("ref", ""),          key="-REF-",   size=25)],
+            [sg.Text("SAP PO Nr:",           size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
+            [sg.Text("Sender:",           size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=35)],
+            [sg.Text("Delivery:",           size=16), sg.Input(e.get("delivery", ""),          key="-DELIVERY-",   size=35)],
+            [sg.Text("Loading date:",           size=16), sg.Input(e.get("loading", ""),          key="-LOADING-",   size=35)],
+            [sg.Text("Unloading date:",           size=16), sg.Input(e.get("unloading", ""),          key="-UNLOADING-",   size=35)],
+            [sg.Text("Pallet count:",           size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
+            [sg.Text("Gross weight:",           size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
+            [sg.Text("Forwarder:",           size=16), sg.Input(e.get("forwarder", ""),          key="-FORWARDER-",   size=35)],
+            [sg.Text("Cost:",           size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
+            [sg.Text("Customs:",           size=16), sg.Input(e.get("customs", ""),          key="-CUSTOMS-",   size=35)],
+            [sg.Text("Temperature control:",        size=16), sg.Input(e.get("ref", ""),          key="-REF-",   size=35)],
             [sg.Push(),sg.Button("Create transport order in PDF", key="-CREATE-PDF-"), sg.Push()],
             [sg.Push(),sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()]
         ]
     else:
         layout = [
-            [sg.Text("SAP PO Nr:",           size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=25)],
-            [sg.Text("Sender:",           size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=25)],
-            [sg.Text("Delivery:",           size=16), sg.Input(e.get("delivery", ""),          key="-DELIVERY-",   size=25)],
-            [sg.Text("Loading date:",           size=16), sg.Input(e.get("loading", ""),          key="-LOADING-",   size=25)],
-            [sg.Text("Unloading date:",           size=16), sg.Input(e.get("unloading", ""),          key="-UNLOADING-",   size=25)],
-            [sg.Text("Pallet count:",           size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=25)],
-            [sg.Text("Gross weight:",           size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=25)],
-            [sg.Text("Forwarder:",           size=16), sg.Input(e.get("forwarder", ""),          key="-FORWARDER-",   size=25)],
-            [sg.Text("Cost:",           size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=25)],
-            [sg.Text("Customs:",           size=16), sg.Input(e.get("customs", ""),          key="-CUSTOMS-",   size=25)],
-            [sg.Text("Temperature control:",        size=16), sg.Input(e.get("ref", ""),          key="-REF-",   size=25)],
+            [sg.Text("SAP PO Nr:",           size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
+            [sg.Text("Sender:",           size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=35)],
+            [sg.Text("Delivery:",           size=16), sg.Input(e.get("delivery", ""),          key="-DELIVERY-",   size=35)],
+            [sg.Text("Loading date:",           size=16), sg.Input(e.get("loading", ""),          key="-LOADING-",   size=35)],
+            [sg.Text("Unloading date:",           size=16), sg.Input(e.get("unloading", ""),          key="-UNLOADING-",   size=35)],
+            [sg.Text("Pallet count:",           size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
+            [sg.Text("Gross weight:",           size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
+            [sg.Text("Forwarder:",           size=16), sg.Input(e.get("forwarder", ""),          key="-FORWARDER-",   size=35)],
+            [sg.Text("Cost:",           size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
+            [sg.Text("Customs:",           size=16), sg.Input(e.get("customs", ""),          key="-CUSTOMS-",   size=35)],
+            [sg.Text("Temperature control:",        size=16), sg.Input(e.get("ref", ""),          key="-REF-",   size=35)],
             [sg.Button("Save", key="-SAVE-"), sg.Button("Cancel")]
         ]
         
@@ -202,12 +202,12 @@ def main_menu(login_validation, theme_name):
     table_columns = [
         sg.Column([[sg.Table(
             values=[],
-            headings=COLUMNS,
+            headings=ORDER_COLUMNS,
             key="-TABLE-",
             auto_size_columns=False,
             col_widths=[4, 10, 20, 20, 10, 10, 5, 8, 20, 10, 6, 5],
             justification="left",
-            num_rows=25,
+            num_rows=30,
             enable_events=True,
             enable_click_events=True, # for sorting
             select_mode=sg.TABLE_SELECT_MODE_BROWSE,
@@ -222,21 +222,28 @@ def main_menu(login_validation, theme_name):
     cost_per_cargo = [[sg.Text(key="-AVERAGE-CARGO-COST-")]]
     cost_per_pallet = [[sg.Text(key="-AVERAGE-PALLET-COST-")]]
     pallets_per_cargo = [[sg.Text(key="-PALLETS-PER-CARGO-")]]
-
-    layout = [
-        [sg.Text("Transport Management System", font=("Helvetica", 14, "bold"), pad=(10,10)), 
-        sg.Push(),sg.Text(f'{login_validation.get("name")} {login_validation.get("surname")}', font=("Helvetica", 10, "bold"), pad=(10,10))],
+    
+    sidebar_layout = [
+        [sg.Button('Transport orders', size=(15, 3))],
+        [sg.Button('Companies', size=(15, 3))],
+        [sg.Button('Addresses', size=(15, 3))],
+        [sg.Button('Forwarders', size=(15, 3))],
+        [sg.Button('Users', size=(15, 3))],
+        #[sg.VPush()] # Nobīda pogas uz augšu
+    ]
+    
+    main_content_layout = [
         [
-        sg.Button("Create",  key="-BTN-CREATE-"),
-        sg.Button("Open/Edit", key="-BTN-EDIT-"),
-        sg.Button("Delete", key="-BTN-DELETE-"),
-        sg.Button("Show All", key="-BTN-ALLDATA-"),
+        sg.Button("Create",  key="-BTN-CREATE-", size=10),
+        sg.Button("Open/Edit", key="-BTN-EDIT-", size=10),
+        sg.Button("Delete", key="-BTN-DELETE-", size=10),
+        sg.Button("Show All", key="-BTN-ALLDATA-", size=10),
         sg.VerticalSeparator(),
-        sg.Button("Filter", key="-BTN-FILTER-"),
+        sg.Button("Filter", key="-BTN-FILTER-", size=10),
         sg.Text("Search:", pad=(5, 5)),
         sg.Input(key="-SEARCH-", size=20),
-        sg.Button("Search", key="-BTN-SEARCH-"),
-        sg.Button("Exit", key="-BTN-EXIT-"),
+        sg.Button("Search", key="-BTN-SEARCH-", size=10),
+        sg.Button("Exit", key="-BTN-EXIT-", size=10),
         sg.Push(),sg.Combo(['Black', 'BlueMono', 'BluePurple', 'BrightColors', 'BrownBlue', 'Dark', 'Dark2', 'DarkAmber', 'DarkBlack', 'DarkBlack1', 'DarkBlue', 'DarkBlue1', 'DarkBlue10', 'DarkBlue11', 'DarkBlue12', 'DarkBlue13', 'DarkBlue14', 'DarkBlue15', 'DarkBlue16', 'DarkBlue17', 'DarkBlue2', 'DarkBlue3', 'DarkBlue4', 'DarkBlue5', 'DarkBlue6', 'DarkBlue7', 'DarkBlue8', 'DarkBlue9', 'DarkBrown', 'DarkBrown1', 'DarkBrown2', 'DarkBrown3', 'DarkBrown4', 'DarkBrown5', 'DarkBrown6', 'DarkGreen', 'DarkGreen1', 'DarkGreen2', 'DarkGreen3', 'DarkGreen4', 'DarkGreen5', 'DarkGreen6', 'DarkGrey', 'DarkGrey1', 'DarkGrey2', 'DarkGrey3', 'DarkGrey4', 'DarkGrey5', 'DarkGrey6', 'DarkGrey7', 'DarkPurple', 'DarkPurple1', 'DarkPurple2', 'DarkPurple3', 'DarkPurple4', 'DarkPurple5', 'DarkPurple6', 'DarkRed', 'DarkRed1', 'DarkRed2', 'DarkTanBlue', 'DarkTeal', 'DarkTeal1', 'DarkTeal10', 'DarkTeal11', 'DarkTeal12', 'DarkTeal2', 'DarkTeal3', 'DarkTeal4', 'DarkTeal5', 'DarkTeal6', 'DarkTeal7', 'DarkTeal8', 'DarkTeal9', 'Default', 'Default1', 'DefaultNoMoreNagging', 'Green', 'GreenMono', 'GreenTan', 'HotDogStand', 'Kayak', 'LightBlue', 'LightBlue1', 'LightBlue2', 'LightBlue3', 'LightBlue4', 'LightBlue5', 'LightBlue6', 'LightBlue7', 'LightBrown', 'LightBrown1', 'LightBrown10', 'LightBrown11', 'LightBrown12', 'LightBrown13', 'LightBrown2', 'LightBrown3', 'LightBrown4', 'LightBrown5', 'LightBrown6', 'LightBrown7', 'LightBrown8', 'LightBrown9', 'LightGray1', 'LightGreen', 'LightGreen1', 'LightGreen10', 'LightGreen2', 'LightGreen3', 'LightGreen4', 'LightGreen5', 'LightGreen6', 'LightGreen7', 'LightGreen8', 'LightGreen9', 'LightGrey', 'LightGrey1', 'LightGrey2', 'LightGrey3', 'LightGrey4', 'LightGrey5', 'LightGrey6', 'LightPurple', 'LightTeal', 'LightYellow', 'Material1', 'Material2', 'NeutralBlue', 'Purple', 'Reddit', 'Reds', 'SandyBeach', 'SystemDefault', 'SystemDefault1', 'SystemDefaultForReal', 'Tan', 'TanBlue', 'TealMono', 'Topanga'], default_value=theme_name, key='-DEFAULT-COLOR-', enable_events=True, readonly=True)
         ],
         [sg.Text("", key="-STATUS-", size=60, text_color="green")],
@@ -249,6 +256,17 @@ def main_menu(login_validation, theme_name):
         border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Pallets per cargo", layout=pallets_per_cargo, 
         border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50))],
         #[sg.Text(key="-TOTAL-ACTIVE-RECORDS-"), sg.Text(key="-AVERAGE-CARGO-COST-"), sg.Text(key="-AVERAGE-PALLET-COST-"), sg.Text(key="-AVERAGE-PALLET-AMOUNT-")]
+        
+    ]
+    
+    layout = [
+        [sg.Text("Transport Management System", font=("Helvetica", 14, "bold"), pad=(10,10)), 
+        sg.Push(),sg.Text(f'{login_validation.get("name")} {login_validation.get("surname")}', font=("Helvetica", 10, "bold"), pad=(10,10))],
+        [
+            sg.Column(sidebar_layout, expand_y=True),
+            sg.VerticalSeparator(), # Vizuāla līnija starp sānjoslu un saturu
+            sg.Column(main_content_layout, expand_x=True, expand_y=True) 
+        ]
     ]
     
     app_window = sg.Window(
@@ -258,6 +276,8 @@ def main_menu(login_validation, theme_name):
         size=(1200, 600),
         finalize=True
     )
+    
+    app_window.maximize() 
     
     def refresh_table(df):
         app_window["-TABLE-"].update(values=df_to_table(df))
