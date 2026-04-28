@@ -133,6 +133,26 @@ def entry_modal(title, existing=None, nr=None):
             print('Create transport order in PDF button pressed!')
 
 def login_modal():
+    
+    #Creates an error popup window. Accepts Enter as keypress to close the window
+    def error_popup(message):
+        layout = [
+            [sg.Text(message, pad=(20, 20))],
+            [sg.Push(), sg.Button("OK", key="-OK-", size=10, bind_return_key=True), sg.Push()]
+        ]
+        # Noņemam return_keyboard_events=True, lai neķertu "Enter" no iepriekšējā loga
+        error_window = sg.Window("Kļūda", layout, modal=True, finalize=True, element_justification='c')
+        
+        # Svarīgi: Iestatām fokusu uz pogu, lai Enter strādātu uzreiz
+        error_window["-OK-"].set_focus()
+        
+        while True:
+            event, values = error_window.read()
+            if event in (sg.WIN_CLOSED, "-OK-"):
+                break
+        error_window.close()
+    
+    
     sg.theme_list()
 
     received_values = {}
@@ -140,21 +160,30 @@ def login_modal():
     layout = [
         [sg.Push(),sg.Image(filename="gemoss_logo.png", subsample=2), sg.Push()],
         [sg.Push(),sg.Text('GEMOSS TMS LOGIN', font=("Helvetica", 14, "bold"), pad=(10,10)), sg.Push()],
-        [sg.Text("Login:", size=16), sg.Input(received_values.get("login", ""), key="-LOGIN-VALUE-", size=25)],
-        [sg.Text("Password:", size=16), sg.Input(received_values.get("passw", ""), key="-PASSW-VALUE-", size=25, password_char="*")],
-        [sg.Push(),sg.Button("Login", key="-LOGIN-", size=15), sg.Button("Cancel", size=15), sg.Push()]
+        [sg.Text("Login:", size=16), sg.Input(received_values.get("login", ""), key="-LOGIN-VALUE-", enable_events=True, size=25)],
+        [sg.Text("Password:", size=16), sg.Input(received_values.get("passw", ""), key="-PASSW-VALUE-", enable_events=True, size=25, password_char="*")],
+        [sg.Push(),sg.Button("Login", key="-LOGIN-", bind_return_key=True, size=15), sg.Button("Cancel", size=15), sg.Push()]
     ]
-
-    app_window = sg.Window('GEMOSS TMS LOGIN', layout, modal=True)
+    
+    app_window = sg.Window('GEMOSS TMS LOGIN', layout, modal=True, finalize=True)
+    
+    app_window['-LOGIN-VALUE-'].bind("<FocusIn>", "_FOCUS")
+    app_window['-PASSW-VALUE-'].bind("<FocusIn>", "_FOCUS")
+    has_input_focus = None
 
     while True:
         action, values = app_window.read()
+        
+        if "_FOCUS" in action:
+            has_input_focus = action.replace("_FOCUS", "")
+            continue
         
         if action in (sg.WIN_CLOSED, "Cancel"):
             app_window.close()
             return None
         if action == "-LOGIN-":
             login_validation = check_login(values["-LOGIN-VALUE-"], values["-PASSW-VALUE-"])
+            
             if login_validation:
                 print(f'Received login:  {login_validation.get("login")}')
                 print(f'Received password:  {login_validation.get("password")}')
@@ -162,7 +191,7 @@ def login_modal():
                 main_menu(login_validation, "DarkAmber")
                 return login_validation
             else:
-                sg.popup("Incorrect login or password!")
+                error_popup("Incorrect login or password!")
             print('LOGIN button pressed')
 
 
@@ -239,15 +268,14 @@ def main_menu(login_validation, theme_name):
         if len(current_df) > 0:
             total_cost = 0 
             total_pallets = 0
-            for sum in current_df['cost']:
-                total_cost = total_cost + sum
-            for pallets in current_df['pallets']:
-                total_pallets = total_pallets + pallets
+            total_cost = current_df['cost'].sum()
+            total_pallets = current_df['pallets'].sum()
+            
             app_window["-TOTAL-COST-"].update(f'{int(total_cost):_}'.replace('_', ' ') + ' EUR')
             app_window["-TOTAL-PALLETS-"].update(f'{int(total_pallets)}')
-            app_window["-AVERAGE-CARGO-COST-"].update(f'{ int(total_cost / len(current_df['cost'])):_}'.replace('_', ' ')+ ' EUR')
+            app_window["-AVERAGE-CARGO-COST-"].update(f"{ int(total_cost / len(current_df['cost'])):_}".replace('_', ' ')+ ' EUR')
             app_window["-AVERAGE-PALLET-COST-"].update(f'{ int(round(total_cost / total_pallets)) } EUR')
-            app_window["-PALLETS-PER-CARGO-"].update(f'{ int(round(total_pallets / len(current_df['cost']))) } pallets')
+            app_window["-PALLETS-PER-CARGO-"].update(f"{ int(round(total_pallets / len(current_df['cost']))) } pallets")
         else:
             app_window["-AVERAGE-CARGO-COST-"].update('0 EUR')
             app_window["-AVERAGE-PALLET-COST-"].update('0 EUR')
