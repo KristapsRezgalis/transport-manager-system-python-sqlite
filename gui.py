@@ -225,6 +225,7 @@ def main_menu(login_validation, theme_name):
     
     sidebar_layout = [
         [sg.Button('Transport orders', size=(15, 3))],
+        [sg.Button('Statistics', size=(15, 3))],
         [sg.Button('Companies', size=(15, 3))],
         [sg.Button('Addresses', size=(15, 3))],
         [sg.Button('Forwarders', size=(15, 3))],
