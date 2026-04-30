@@ -197,6 +197,8 @@ def login_modal():
 
 # --- Main menu ---
 def main_menu(login_validation, theme_name):
+    sidebar_select = 1 # 1-transport orders | 2-statistics | 3-companies | 4-addresses | 5-forwarders | 6-users
+    
     create_table()
     
     table_columns = [
@@ -224,12 +226,12 @@ def main_menu(login_validation, theme_name):
     pallets_per_cargo = [[sg.Text(key="-PALLETS-PER-CARGO-")]]
     
     sidebar_layout = [
-        [sg.Button('Transport orders', size=(15, 3))],
-        [sg.Button('Statistics', size=(15, 3))],
-        [sg.Button('Companies', size=(15, 3))],
-        [sg.Button('Addresses', size=(15, 3))],
-        [sg.Button('Forwarders', size=(15, 3))],
-        [sg.Button('Users', size=(15, 3))],
+        [sg.Button('Transport orders', key='-TRANSPORT-ORDERS-', size=(15, 3))],
+        [sg.Button('Statistics', key='-STATISTICS-', size=(15, 3))],
+        [sg.Button('Companies', key='-COMPANIES-', size=(15, 3))],
+        [sg.Button('Addresses', key='-ADDRESSES-', size=(15, 3))],
+        [sg.Button('Forwarders', key='-MENU-FORWARDERS-', size=(15, 3))],
+        [sg.Button('Users', key='-USERS-', size=(15, 3))],
         #[sg.VPush()] # Nobīda pogas uz augšu
     ]
     
@@ -277,6 +279,32 @@ def main_menu(login_validation, theme_name):
         size=(1200, 600),
         finalize=True
     )
+        
+    if action == '-TRANSPORT-ORDERS-':
+        sidebar_select = 1
+        app_window = sg.Window(
+            "Transport Management System",
+            layout,
+            resizable=True,
+            size=(1200, 600),
+            finalize=True
+        )
+        print('Transport Orders menu selected')
+    elif action == '-STATISTICS-':
+        print('Statisitcs menu selected')
+        sidebar_select = 2
+    elif action == '-COMPANIES-':
+        print('Company menu selected')
+        sidebar_select = 3
+    elif action == '-ADDRESSES-':
+        print('Address menu selected')
+        sidebar_select = 4
+    elif action == '-MENU-FORWARDERS-':
+        print('Forwarders menu selected')
+        sidebar_select = 5
+    elif action == '-USERS-':
+        print('Users menu selected')
+        sidebar_select = 6
     
     app_window.maximize() 
     
