@@ -197,9 +197,19 @@ def login_modal():
 
 # --- Main menu ---
 def main_menu(login_validation, theme_name):
-    sidebar_select = 1 # 1-transport orders | 2-statistics | 3-companies | 4-addresses | 5-forwarders | 6-users
-    
     create_table()
+    
+    def show_view(view_key):
+        views = [
+            '-VIEW-TRANSPORT-',
+            '-VIEW-STATISTICS-',
+            '-VIEW-COMPANIES-',
+            '-VIEW-ADDRESSES-',
+            '-VIEW-FORWARDERS-',
+            '-VIEW-USERS-'
+        ]
+        for v in views:
+            app_window[v].update(visible=(v == view_key))
     
     table_columns = [
         sg.Column([[sg.Table(
@@ -235,7 +245,7 @@ def main_menu(login_validation, theme_name):
         #[sg.VPush()] # Nobīda pogas uz augšu
     ]
     
-    main_content_layout = [
+    transport_layout = [
         [
         sg.Button("Create",  key="-BTN-CREATE-", size=10),
         sg.Button("Open/Edit", key="-BTN-EDIT-", size=10),
@@ -259,7 +269,49 @@ def main_menu(login_validation, theme_name):
         border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Pallets per cargo", layout=pallets_per_cargo, 
         border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50))],
         #[sg.Text(key="-TOTAL-ACTIVE-RECORDS-"), sg.Text(key="-AVERAGE-CARGO-COST-"), sg.Text(key="-AVERAGE-PALLET-COST-"), sg.Text(key="-AVERAGE-PALLET-AMOUNT-")]
-        
+    ]
+    
+    statistics_layout = [
+            [
+                sg.Button("Create Diagram",  key="-BTN-CREATE-DIAGRAM-", size=15),
+                sg.Button("Exit", key="-BTN-EXIT-STATISTICS-", size=10),
+                table_columns,
+            ]
+        ]
+    
+    companies_layout = [
+            [
+                sg.Button("Create New Company",  key="-BTN-CREATE-COMPANY-", size=10),
+            ]
+        ]
+    
+    addresses_layout = [
+            [
+                sg.Button("Create New Address",  key="-BTN-CREATE-ADDRESS-", size=10),
+            ]
+        ]
+    
+    forwarders_layout = [
+            [
+                sg.Button("Create New Forwarder",  key="-BTN-CREATE-FORWARDER-", size=10),
+            ]
+        ]
+    
+    users_layout = [
+            [
+                sg.Button("Create New User",  key="-BTN-CREATE-USER-", size=10),
+            ]
+        ]
+    
+    content_area = [
+        [
+         sg.Column(transport_layout, key='-VIEW-TRANSPORT-', visible=True, expand_x=True, expand_y=True),
+         sg.Column(statistics_layout, key='-VIEW-STATISTICS-', visible=False, expand_x=True, expand_y=True),
+         sg.Column(companies_layout, key='-VIEW-COMPANIES-', visible=False, expand_x=True, expand_y=True),
+         sg.Column(addresses_layout, key='-VIEW-ADDRESSES-', visible=False, expand_x=True, expand_y=True),
+         sg.Column(forwarders_layout, key='-VIEW-FORWARDERS-', visible=False, expand_x=True, expand_y=True),
+         sg.Column(users_layout, key='-VIEW-USERS-', visible=False, expand_x=True, expand_y=True),
+        ]
     ]
     
     layout = [
@@ -268,7 +320,7 @@ def main_menu(login_validation, theme_name):
         [
             sg.Column(sidebar_layout, expand_y=True),
             sg.VerticalSeparator(), # Vizuāla līnija starp sānjoslu un saturu
-            sg.Column(main_content_layout, expand_x=True, expand_y=True) 
+            sg.Column(content_area, expand_x=True, expand_y=True) 
         ]
     ]
     
@@ -280,32 +332,6 @@ def main_menu(login_validation, theme_name):
         finalize=True
     )
         
-    if action == '-TRANSPORT-ORDERS-':
-        sidebar_select = 1
-        app_window = sg.Window(
-            "Transport Management System",
-            layout,
-            resizable=True,
-            size=(1200, 600),
-            finalize=True
-        )
-        print('Transport Orders menu selected')
-    elif action == '-STATISTICS-':
-        print('Statisitcs menu selected')
-        sidebar_select = 2
-    elif action == '-COMPANIES-':
-        print('Company menu selected')
-        sidebar_select = 3
-    elif action == '-ADDRESSES-':
-        print('Address menu selected')
-        sidebar_select = 4
-    elif action == '-MENU-FORWARDERS-':
-        print('Forwarders menu selected')
-        sidebar_select = 5
-    elif action == '-USERS-':
-        print('Users menu selected')
-        sidebar_select = 6
-    
     app_window.maximize() 
     
     def refresh_table(df):
@@ -347,9 +373,28 @@ def main_menu(login_validation, theme_name):
     while True:
         action, values = app_window.read()
         
-        if action in (sg.WIN_CLOSED, "-BTN-EXIT-"):
+        if action in (sg.WIN_CLOSED, "-BTN-EXIT-", "-BTN-EXIT-STATISTICS-"):
             app_window.close()
             break
+        
+        if action == '-TRANSPORT-ORDERS-':
+            show_view('-VIEW-TRANSPORT-')
+            print('Transport Orders menu selected')
+        elif action == '-STATISTICS-':
+            print('Statisitcs menu selected')
+            show_view('-VIEW-STATISTICS-')
+        elif action == '-COMPANIES-':
+            print('Company menu selected')
+            show_view('-VIEW-COMPANIES-')
+        elif action == '-ADDRESSES-':
+            print('Address menu selected')
+            show_view('-VIEW-ADDRESSES-')
+        elif action == '-MENU-FORWARDERS-':
+            print('Forwarders menu selected')
+            show_view('-VIEW-FORWARDERS-')
+        elif action == '-USERS-':
+            print('Users menu selected')
+            show_view('-VIEW-USERS-')
         
         # - default theme colr changing
         if action == '-DEFAULT-COLOR-':
