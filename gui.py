@@ -275,7 +275,7 @@ def main_menu(login_validation, theme_name):
             [
                 sg.Button("Create Diagram",  key="-BTN-CREATE-DIAGRAM-", size=15),
                 sg.Button("Exit", key="-BTN-EXIT-STATISTICS-", size=10),
-                table_columns,
+                #table_columns,
             ]
         ]
     
@@ -315,8 +315,10 @@ def main_menu(login_validation, theme_name):
     ]
     
     layout = [
-        [sg.Text("Transport Management System", font=("Helvetica", 14, "bold"), pad=(10,10)), 
-        sg.Push(),sg.Text(f'{login_validation.get("name")} {login_validation.get("surname")}', font=("Helvetica", 10, "bold"), pad=(10,10))],
+        [
+            sg.Text("Transport Management System", font=("Helvetica", 14, "bold"), pad=(10,10)), 
+            sg.Push(),sg.Text(f'{login_validation.get("name")} {login_validation.get("surname")}', font=("Helvetica", 10, "bold"), pad=(10,10))
+        ],
         [
             sg.Column(sidebar_layout, expand_y=True),
             sg.VerticalSeparator(), # Vizuāla līnija starp sānjoslu un saturu
@@ -336,21 +338,26 @@ def main_menu(login_validation, theme_name):
     
     def refresh_table(df):
         app_window["-TABLE-"].update(values=df_to_table(df))
-        app_window["-TOTAL-ACTIVE-RECORDS-"].update(f'{len(current_df)}')
+        app_window["-TOTAL-ACTIVE-RECORDS-"].update(f'{len(df)}')
         
-        print(f'Length: {len(current_df)}')
+        print(f'Length: {len(df)}')
 
-        if len(current_df) > 0:
+        if len(df) > 0:
             total_cost = 0 
             total_pallets = 0
-            total_cost = current_df['cost'].sum()
-            total_pallets = current_df['pallets'].sum()
+            total_cost = df['cost'].sum()
+            total_pallets = df['pallets'].sum()
             
             app_window["-TOTAL-COST-"].update(f'{int(total_cost):_}'.replace('_', ' ') + ' EUR')
             app_window["-TOTAL-PALLETS-"].update(f'{int(total_pallets)}')
-            app_window["-AVERAGE-CARGO-COST-"].update(f"{ int(total_cost / len(current_df['cost'])):_}".replace('_', ' ')+ ' EUR')
-            app_window["-AVERAGE-PALLET-COST-"].update(f'{ int(round(total_cost / total_pallets)) } EUR')
-            app_window["-PALLETS-PER-CARGO-"].update(f"{ int(round(total_pallets / len(current_df['cost']))) } pallets")
+            app_window["-AVERAGE-CARGO-COST-"].update(f"{ int(total_cost / len(df['cost'])):_}".replace('_', ' ')+ ' EUR')
+            
+            if total_pallets > 0:
+                app_window["-AVERAGE-PALLET-COST-"].update(f'{ int(round(total_cost / total_pallets)) } EUR')
+            else:
+                app_window["-AVERAGE-PALLET-COST-"].update('0 EUR')
+            
+            app_window["-PALLETS-PER-CARGO-"].update(f"{ int(round(total_pallets / len(df['cost']))) } pallets")
         else:
             app_window["-AVERAGE-CARGO-COST-"].update('0 EUR')
             app_window["-AVERAGE-PALLET-COST-"].update('0 EUR')
@@ -368,7 +375,7 @@ def main_menu(login_validation, theme_name):
     
     refresh_table(current_df)
     
-    selected_row = None #atlasita_rinda = None
+    selected_row = None
     
     while True:
         action, values = app_window.read()
@@ -454,7 +461,7 @@ def main_menu(login_validation, theme_name):
             if filter is not None:
                 current_df = filter_db(filter)
                 refresh_table(current_df)
-                atlasita_rinda = None
+                selected_row = None
                 statuss(f"🔎 Found: {len(current_df)} records")
         
         # ── Action triggered when CREATE button is pressed - opens Entry modal for creating new record
