@@ -299,7 +299,10 @@ def main_menu(login_validation, theme_name):
     
     users_layout = [
             [
-                sg.Button("Create New User",  key="-BTN-CREATE-USER-", size=10),
+                sg.Button("Create New User",  key="-BTN-CREATE-USER-", size=15),
+                sg.Button("Edit User", key="-BTN-EDIT-USER-", size=15),
+                sg.Button("Delete User", key="-BTN-DELETE-USER-", size=15),
+                sg.Button("Exit", key="-BTN-EXIT-USER-", size=15),
             ]
         ]
     
