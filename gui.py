@@ -1,13 +1,16 @@
 import FreeSimpleGUI as sg
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user
 from pdf import create_order_pdf
 
 sg.theme("DarkAmber")
 
 ORDER_COLUMNS = ["Nr.", "SAP PO", "Sender", "Delivery", "Loading",
             "Unloading", "Pallets", "Weight", "Forwarder", "Cost","Customs","REF"]
+
+USER_COLUMNS = ["Nr", "Name", "Surname", "Role", "E-mail","Phone","Login","Password",]
+user_roles = ['admin', 'user', 'spectator']
 
 def df_to_table(df):
     """Changes DataFrame to list for FreeSimpleGUI table."""
@@ -77,11 +80,48 @@ def filter_modal():
             app_window.close()
             return filtered_values
 
+def user_entry_modal(title, existing=None):
+    e = existing or {}
+    if existing:
+        layout =[
+            [sg.Text("Name:", size=16), sg.Input(e.get("name", ""), key="-USER-NAME-", size=35)],
+            [sg.Text("Surname:", size=16), sg.Input(e.get("surname", ""), key="-USER-SURNAME-", size=35)],
+            #[sg.Text("Role:", size=16), sg.Input(e.get("role", ""), key="-USER-ROLE-", size=35)],
+            [sg.Text("Role:", size=16), sg.Combo(user_roles, key="-USER-ROLE-", default_value=e.get("role", ""), readonly=True, size=35)],
+            [sg.Text("E-mail:", size=16), sg.Input(e.get("email", ""), key="-USER-EMAIL-", size=35)],
+            [sg.Text("Phone:", size=16), sg.Input(e.get("phone", ""), key="-USER-PHONE-", size=35)],
+            [sg.Text("Login:", size=16), sg.Input(e.get("login", ""), key="-USER-LOGIN-", size=35)],
+            [sg.Text("Password:", size=16), sg.Input(e.get("password", ""), key="-USER-PASSWORD-", size=35)],
+            [sg.Button("Save", key="-USER-SAVE-"), sg.Button("Cancel")]
+        ]
+    else:
+        layout =[
+            [sg.Text("Name:", size=16), sg.Input(e.get("name", ""), key="-USER-NAME-", size=35)],
+            [sg.Text("Surname:", size=16), sg.Input(e.get("surname", ""), key="-USER-SURNAME-", size=35)],
+            #[sg.Text("Role:", size=16), sg.Input(e.get("role", ""), key="-USER-ROLE-", size=35)],
+            [sg.Text("Role:", size=16), sg.Combo(user_roles, key="-USER-ROLE-", default_value=user_roles[0], readonly=True, size=35)],
+            [sg.Text("E-mail:", size=16), sg.Input(e.get("email", ""), key="-USER-EMAIL-", size=35)],
+            [sg.Text("Phone:", size=16), sg.Input(e.get("phone", ""), key="-USER-PHONE-", size=35)],
+            [sg.Text("Login:", size=16), sg.Input(e.get("login", ""), key="-USER-LOGIN-", size=35)],
+            [sg.Text("Password:", size=16), sg.Input(e.get("password", ""), key="-USER-PASSWORD-", size=35)],
+            [sg.Button("Save", key="-USER-SAVE-"), sg.Button("Cancel")]
+        ]
+        
+    app_window = sg.Window(title, layout, modal=True)
+
+    while True:
+        action, values = app_window.read()
+        
+        if action in (sg.WIN_CLOSED, "Cancel"):
+            app_window.close()
+            return None
+        if action == "-USER-SAVE-":
+            app_window.close()
+            return values
+
 # Entry modal window for creating new records and editing existin ones
 def entry_modal(title, existing=None, nr=None):
-    
     e = existing or {}
-    # sap_po, sender, delivery, loading,unloading, pallets, weight, forwarder, cost, customs, ref
     
     if existing:
         layout = [
@@ -217,7 +257,24 @@ def main_menu(login_validation, theme_name):
             headings=ORDER_COLUMNS,
             key="-TABLE-",
             auto_size_columns=False,
-            col_widths=[4, 10, 20, 20, 10, 10, 5, 8, 20, 10, 6, 5],
+            col_widths=[4, 8, 20, 20, 10, 10, 5, 8, 20, 10, 6, 5],
+            justification="left",
+            num_rows=30,
+            enable_events=True,
+            enable_click_events=True, # for sorting
+            select_mode=sg.TABLE_SELECT_MODE_BROWSE,
+            expand_x=True,
+            expand_y=True,
+            )]], expand_x=True)
+    ]
+    
+    user_columns = [
+        sg.Column([[sg.Table(
+            values=[],
+            headings=USER_COLUMNS,
+            key="-USER-TABLE-",
+            auto_size_columns=False,
+            col_widths=[14, 16, 16, 16, 16, 16, 16, 16],
             justification="left",
             num_rows=30,
             enable_events=True,
@@ -303,7 +360,9 @@ def main_menu(login_validation, theme_name):
                 sg.Button("Edit User", key="-BTN-EDIT-USER-", size=15),
                 sg.Button("Delete User", key="-BTN-DELETE-USER-", size=15),
                 sg.Button("Exit", key="-BTN-EXIT-USER-", size=15),
-            ]
+            ],
+            [sg.Text("")],
+            user_columns
         ]
     
     content_area = [
@@ -339,32 +398,34 @@ def main_menu(login_validation, theme_name):
         
     app_window.maximize() 
     
-    def refresh_table(df):
-        app_window["-TABLE-"].update(values=df_to_table(df))
-        app_window["-TOTAL-ACTIVE-RECORDS-"].update(f'{len(df)}')
+    def refresh_table(df, table_key):
+        app_window[table_key].update(values=df_to_table(df))
         
-        print(f'Length: {len(df)}')
+        if table_key == "-TABLE-":
+            app_window["-TOTAL-ACTIVE-RECORDS-"].update(f'{len(df)}')
+            
+            print(f'Length: {len(df)}')
 
-        if len(df) > 0:
-            total_cost = 0 
-            total_pallets = 0
-            total_cost = df['cost'].sum()
-            total_pallets = df['pallets'].sum()
-            
-            app_window["-TOTAL-COST-"].update(f'{int(total_cost):_}'.replace('_', ' ') + ' EUR')
-            app_window["-TOTAL-PALLETS-"].update(f'{int(total_pallets)}')
-            app_window["-AVERAGE-CARGO-COST-"].update(f"{ int(total_cost / len(df['cost'])):_}".replace('_', ' ')+ ' EUR')
-            
-            if total_pallets > 0:
-                app_window["-AVERAGE-PALLET-COST-"].update(f'{ int(round(total_cost / total_pallets)) } EUR')
+            if len(df) > 0:
+                total_cost = 0 
+                total_pallets = 0
+                total_cost = df['cost'].sum()
+                total_pallets = df['pallets'].sum()
+                
+                app_window["-TOTAL-COST-"].update(f'{int(total_cost):_}'.replace('_', ' ') + ' EUR')
+                app_window["-TOTAL-PALLETS-"].update(f'{int(total_pallets)}')
+                app_window["-AVERAGE-CARGO-COST-"].update(f"{ int(total_cost / len(df['cost'])):_}".replace('_', ' ')+ ' EUR')
+                
+                if total_pallets > 0:
+                    app_window["-AVERAGE-PALLET-COST-"].update(f'{ int(round(total_cost / total_pallets)) } EUR')
+                else:
+                    app_window["-AVERAGE-PALLET-COST-"].update('0 EUR')
+                
+                app_window["-PALLETS-PER-CARGO-"].update(f"{ int(round(total_pallets / len(df['cost']))) } pallets")
             else:
+                app_window["-AVERAGE-CARGO-COST-"].update('0 EUR')
                 app_window["-AVERAGE-PALLET-COST-"].update('0 EUR')
-            
-            app_window["-PALLETS-PER-CARGO-"].update(f"{ int(round(total_pallets / len(df['cost']))) } pallets")
-        else:
-            app_window["-AVERAGE-CARGO-COST-"].update('0 EUR')
-            app_window["-AVERAGE-PALLET-COST-"].update('0 EUR')
-            app_window["-PALLETS-PER-CARGO-"].update('0 pallets')
+                app_window["-PALLETS-PER-CARGO-"].update('0 pallets')
         
     def statuss(text, sel_color="green"):
         app_window["-STATUS-"].update(text, text_color=sel_color)
@@ -372,23 +433,25 @@ def main_menu(login_validation, theme_name):
     
     
     # --- initial data + sorting state ---
-    current_df = read_all()
+    current_df = read_all('transport')
     sort_column = None
     sort_ascending = True
     
-    refresh_table(current_df)
+    refresh_table(current_df, "-TABLE-")
     
     selected_row = None
     
     while True:
         action, values = app_window.read()
         
-        if action in (sg.WIN_CLOSED, "-BTN-EXIT-", "-BTN-EXIT-STATISTICS-"):
+        if action in (sg.WIN_CLOSED, "-BTN-EXIT-", "-BTN-EXIT-STATISTICS-", "-BTN-EXIT-USER-"):
             app_window.close()
             break
         
         if action == '-TRANSPORT-ORDERS-':
             show_view('-VIEW-TRANSPORT-')
+            current_df = read_all('transport')
+            refresh_table(current_df, "-TABLE-")
             print('Transport Orders menu selected')
         elif action == '-STATISTICS-':
             print('Statisitcs menu selected')
@@ -405,6 +468,8 @@ def main_menu(login_validation, theme_name):
         elif action == '-USERS-':
             print('Users menu selected')
             show_view('-VIEW-USERS-')
+            current_df = read_all('user')
+            refresh_table(current_df, "-USER-TABLE-")
         
         # - default theme colr changing
         if action == '-DEFAULT-COLOR-':
@@ -414,7 +479,7 @@ def main_menu(login_validation, theme_name):
             main_menu(login_validation, f"{values['-DEFAULT-COLOR-']}")
 
 
-        # ── Table clicks (selecting + sorting)
+        # ── Tranport Order Table clicks + selecting + sorting)
         if isinstance(action, tuple) and action[0] == "-TABLE-":
             row, col = action[2]
 
@@ -434,7 +499,33 @@ def main_menu(login_validation, theme_name):
                     ignore_index=True
                 )
 
-                refresh_table(current_df)
+                refresh_table(current_df, "-TABLE-")
+                statuss(f"Sorted by '{column_name}' ({'ASC' if sort_ascending else 'DESC'})")
+
+            # Row click → SELECT
+            else:
+                selected_row = row
+        # ── User Table clicks + selecting + sorting)
+        elif isinstance(action, tuple) and action[0] == "-USER-TABLE-":
+            row, col = action[2]
+
+            # Header click → SORT
+            if row == -1:
+                column_name = current_df.columns[col]
+
+                if sort_column == column_name:
+                    sort_ascending = not sort_ascending
+                else:
+                    sort_column = column_name
+                    sort_ascending = True
+
+                current_df = current_df.sort_values(
+                    by=column_name,
+                    ascending=sort_ascending,
+                    ignore_index=True
+                )
+
+                refresh_table(current_df, "-USER-TABLE-")
                 statuss(f"Sorted by '{column_name}' ({'ASC' if sort_ascending else 'DESC'})")
 
             # Row click → SELECT
@@ -443,8 +534,8 @@ def main_menu(login_validation, theme_name):
         
         # ── Action triggered when Show All button is pressed - shows all data in database
         elif action == "-BTN-ALLDATA-":
-            current_df = read_all()
-            refresh_table(current_df)
+            current_df = read_all('transport')
+            refresh_table(current_df, "-TABLE-")
             app_window["-SEARCH-"].update("")
             statuss("Showing all records!")
             
@@ -455,7 +546,7 @@ def main_menu(login_validation, theme_name):
                 statuss("Ievadi meklēšanas tekstu!", "red")
             else:
                 current_df = search_db(search_value)
-                refresh_table(current_df)
+                refresh_table(current_df, "-TABLE-")
                 statuss(f"Found: {len(current_df)} records")
         
         # ── Action triggered when Filtrs button is pressed - opens a Filter modal window with filtring options
@@ -463,7 +554,7 @@ def main_menu(login_validation, theme_name):
             filter = filter_modal()
             if filter is not None:
                 current_df = filter_db(filter)
-                refresh_table(current_df)
+                refresh_table(current_df, "-TABLE-")
                 selected_row = None
                 statuss(f"🔎 Found: {len(current_df)} records")
         
@@ -476,9 +567,22 @@ def main_menu(login_validation, theme_name):
                     new_values["-UNLOADING-"], new_values["-PALLETS-"], new_values["-WEIGHT-"], new_values["-FORWARDER-"],
                     new_values["-COST-"], new_values["-CUSTOMS-"], new_values["-REF-"]
                 )
-                current_df = read_all()
-                refresh_table(current_df)
+                current_df = read_all('transport')
+                refresh_table(current_df, "-TABLE-")
                 statuss(f"✅ Record Nr.{new_record} added!")
+        
+        # ── Action triggered when CREATE USER button is pressed - opens Entry modal for creating new record
+        elif action == "-BTN-CREATE-USER-":
+            new_values = user_entry_modal("NEW USER")
+            if new_values:
+                new_record = add_user(
+                    new_values["-USER-NAME-"], new_values["-USER-SURNAME-"], new_values["-USER-ROLE-"], new_values["-USER-EMAIL-"],
+                    new_values["-USER-PHONE-"], new_values["-USER-LOGIN-"], new_values["-USER-PASSWORD-"]
+                )
+                current_df = read_all('user')
+                refresh_table(current_df, "-USER-TABLE-")
+                statuss(f"✅ User Nr.{new_record} added!")
+                
         # ── Action triggered when Delete button is pressed - deletes the selected record
         elif action == "-BTN-DELETE-":
             if selected_row is None:
@@ -493,9 +597,28 @@ def main_menu(login_validation, theme_name):
                     title="Confirm deleting a record"
                 )
                 if confirm == "Yes":
-                    delete_db(nr)
-                    current_df = read_all()
-                    refresh_table(current_df)
+                    delete_db(nr, 'transport')
+                    current_df = read_all('transport')
+                    refresh_table(current_df, "-TABLE-")
+                    selected_row = None
+                    statuss(f"🗑️ Nr.{nr} deleted!")
+        # ── Action triggered when Delete User button is pressed - deletes the selected record
+        elif action == "-BTN-DELETE-USER-":
+            if selected_row is None:
+                statuss("Select a record in the table!", "red")
+            else:
+                row = current_df.iloc[selected_row]
+                nr = int(row["nr"])
+                
+                confirm = sg.popup_yes_no(
+                    f"Delete rectord Nr.{nr}?\n"
+                    f"{row['name']} {row['surname']}",
+                    title="Confirm deleting a record"
+                )
+                if confirm == "Yes":
+                    delete_db(nr, 'user')
+                    current_df = read_all('user')
+                    refresh_table(current_df, "-USER-TABLE-")
                     selected_row = None
                     statuss(f"🗑️ Nr.{nr} deleted!")
                 
@@ -535,13 +658,47 @@ def main_menu(login_validation, theme_name):
                         "customs":          new_values["-CUSTOMS-"],
                         "ref":          new_values["-REF-"],
                     }
-                    edit_db(nr, updated_values)
+                    edit_db(nr, updated_values, 'transport')
                     
-                    current_df = read_all()
-                    refresh_table(current_df)
+                    current_df = read_all('transport')
+                    refresh_table(current_df, "-TABLE-")
                     statuss(f"✅ Nr.{nr} updated!")
                     app_window["-SEARCH-"].update("")
-
+        # ── Action triggered when Edit User button is pressed - opens Entry modal for editing an existing record
+        elif action == "-BTN-EDIT-USER-":
+            if selected_row is None:
+                statuss("Select a record in the table!", "red")
+            else:
+                row = current_df.iloc[selected_row]
+                nr = int(row["nr"])
+                
+                existing = {
+                    "name": str(row["name"]),
+                    "surname": str(row["surname"]),
+                    "role": str(row["role"]),
+                    "email": str(row["email"]),
+                    "phone": str(row["phone"]),
+                    "login": str(row["login"]),
+                    "password": str(row["password"]),
+                }
+                new_values = user_entry_modal(f"Editing record Nr.{nr}", existing)
+                if new_values:
+                    updated_values = {
+                        "name": new_values["-USER-NAME-"],
+                        "surname": new_values["-USER-SURNAME-"],
+                        "role": new_values["-USER-ROLE-"],
+                        "email": new_values["-USER-EMAIL-"],
+                        "phone": new_values["-USER-PHONE-"],
+                        "login": new_values["-USER-LOGIN-"],
+                        "password": new_values["-USER-PASSWORD-"],
+                    }
+                    edit_db(nr, updated_values, 'user')
+                    
+                    current_df = read_all('user')
+                    refresh_table(current_df, "-USER-TABLE-")
+                    statuss(f"✅ Nr.{nr} updated!")
+                    #app_window["-SEARCH-"].update("")
+                    
 
 if __name__ == "__main__":
     #main_menu()

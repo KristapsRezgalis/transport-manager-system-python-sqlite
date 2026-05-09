@@ -41,15 +41,15 @@ CREATE TABLE IF NOT EXISTS transport (
     conn.commit()
     conn.close()
     
-def read_all():
+def read_all(table_name):
     """ Reads all data from database """
     conn = sqlite3.connect(DB_FILE)
-    df = pd.read_sql("SELECT * FROM transport ORDER BY nr", conn)
+    df = pd.read_sql(f"SELECT * FROM {table_name} ORDER BY nr", conn)
     conn.close()
     return df
 
 def add_db(sap_po, sender, delivery, loading, unloading, pallets, weight, forwarder, cost, customs, ref):
-    """Adds new record into database"""
+    """Adds new transport order record into database"""
     new_row = pd.DataFrame([{
         "sap_po":	sap_po,
         "sender":	sender,
@@ -69,8 +69,27 @@ def add_db(sap_po, sender, delivery, loading, unloading, pallets, weight, forwar
     conn.close()
 
     return new_record
+
+def add_user(name, surname, role, email, phone, login, password):
+    """Adds new user record into database"""
+    new_row=pd.DataFrame([{
+        'name': name,
+        'surname': surname,
+        'role': role,
+        'email': email,
+        'phone': phone,
+        'login': login,
+        'password': password
+    }])
+    conn = sqlite3.connect(DB_FILE)
+    new_row.to_sql("user", conn, if_exists="append", index=False)
+    new_record = pd.read_sql("SELECT MAX(nr) as nr FROM user", conn)["nr"].iloc[0]
+    conn.close()
+
+    return new_record
     
-def edit_db(nr, updated_values):
+    
+def edit_db(nr, updated_values, table_name):
     """Updates record in a database"""
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
@@ -79,7 +98,7 @@ def edit_db(nr, updated_values):
     values = list(updated_values.values())
     values.append(nr)
     
-    cur.execute(f"UPDATE transport SET {set_variables} WHERE nr = ?", values)
+    cur.execute(f"UPDATE {table_name} SET {set_variables} WHERE nr = ?", values)
     
     conn.commit()
     conn.close()
@@ -94,10 +113,10 @@ def search_db(search_value):
     conn.close()
     return df
     
-def delete_db(nr):
+def delete_db(nr, table_name):
     """Deletes selected record/Nr"""
     conn = sqlite3.connect(DB_FILE)
-    conn.execute("DELETE FROM transport WHERE nr = ?", (nr,))
+    conn.execute(f"DELETE FROM {table_name} WHERE nr = ?", (nr,))
     conn.commit()
     conn.close()
     
