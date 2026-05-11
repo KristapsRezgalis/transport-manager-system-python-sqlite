@@ -13,6 +13,13 @@ USER_COLUMNS = ["Nr", "Name", "Surname", "Role", "E-mail","Phone","Login","Passw
 user_roles = ['admin', 'user', 'spectator']
 temperature_customs_options = ['Yes', '']
 
+TABLE_KEYS = [
+    "-TABLE-",
+    "-USER-TABLE-",
+    "-STATISTICS-TABLE-",
+    "-COMPANY-TABLE-"
+]
+
 def df_to_table(df):
     """Changes DataFrame to list for FreeSimpleGUI table."""
     if df.empty:
@@ -264,22 +271,21 @@ def main_menu(login_validation, theme_name):
         for v in views:
             app_window[v].update(visible=(v == view_key))
     
-    table_columns = [
-        sg.Column([[sg.Table(
-            values=[],
-            headings=ORDER_COLUMNS,
-            key="-TABLE-",
-            auto_size_columns=False,
-            col_widths=[4, 8, 20, 20, 10, 10, 5, 8, 20, 10, 6, 5],
-            justification="left",
-            num_rows=30,
-            enable_events=True,
-            enable_click_events=True, # for sorting
-            select_mode=sg.TABLE_SELECT_MODE_BROWSE,
-            expand_x=True,
-            expand_y=True,
-            )]], expand_x=True)
-    ]
+    def create_orders_table(table_key):
+        return sg.Column([[sg.Table(
+                values=[],
+                headings=ORDER_COLUMNS,
+                key=table_key,
+                auto_size_columns=False,
+                col_widths=[4, 8, 20, 20, 10, 10, 5, 8, 20, 10, 6, 5],
+                justification="left",
+                num_rows=30,
+                enable_events=True,
+                enable_click_events=True, # for sorting
+                select_mode=sg.TABLE_SELECT_MODE_BROWSE,
+                expand_x=True,
+                expand_y=True,
+                )]], expand_x=True)
     
     user_columns = [
         sg.Column([[sg.Table(
@@ -330,7 +336,8 @@ def main_menu(login_validation, theme_name):
         sg.Push(),sg.Combo(['Black', 'BlueMono', 'BluePurple', 'BrightColors', 'BrownBlue', 'Dark', 'Dark2', 'DarkAmber', 'DarkBlack', 'DarkBlack1', 'DarkBlue', 'DarkBlue1', 'DarkBlue10', 'DarkBlue11', 'DarkBlue12', 'DarkBlue13', 'DarkBlue14', 'DarkBlue15', 'DarkBlue16', 'DarkBlue17', 'DarkBlue2', 'DarkBlue3', 'DarkBlue4', 'DarkBlue5', 'DarkBlue6', 'DarkBlue7', 'DarkBlue8', 'DarkBlue9', 'DarkBrown', 'DarkBrown1', 'DarkBrown2', 'DarkBrown3', 'DarkBrown4', 'DarkBrown5', 'DarkBrown6', 'DarkGreen', 'DarkGreen1', 'DarkGreen2', 'DarkGreen3', 'DarkGreen4', 'DarkGreen5', 'DarkGreen6', 'DarkGrey', 'DarkGrey1', 'DarkGrey2', 'DarkGrey3', 'DarkGrey4', 'DarkGrey5', 'DarkGrey6', 'DarkGrey7', 'DarkPurple', 'DarkPurple1', 'DarkPurple2', 'DarkPurple3', 'DarkPurple4', 'DarkPurple5', 'DarkPurple6', 'DarkRed', 'DarkRed1', 'DarkRed2', 'DarkTanBlue', 'DarkTeal', 'DarkTeal1', 'DarkTeal10', 'DarkTeal11', 'DarkTeal12', 'DarkTeal2', 'DarkTeal3', 'DarkTeal4', 'DarkTeal5', 'DarkTeal6', 'DarkTeal7', 'DarkTeal8', 'DarkTeal9', 'Default', 'Default1', 'DefaultNoMoreNagging', 'Green', 'GreenMono', 'GreenTan', 'HotDogStand', 'Kayak', 'LightBlue', 'LightBlue1', 'LightBlue2', 'LightBlue3', 'LightBlue4', 'LightBlue5', 'LightBlue6', 'LightBlue7', 'LightBrown', 'LightBrown1', 'LightBrown10', 'LightBrown11', 'LightBrown12', 'LightBrown13', 'LightBrown2', 'LightBrown3', 'LightBrown4', 'LightBrown5', 'LightBrown6', 'LightBrown7', 'LightBrown8', 'LightBrown9', 'LightGray1', 'LightGreen', 'LightGreen1', 'LightGreen10', 'LightGreen2', 'LightGreen3', 'LightGreen4', 'LightGreen5', 'LightGreen6', 'LightGreen7', 'LightGreen8', 'LightGreen9', 'LightGrey', 'LightGrey1', 'LightGrey2', 'LightGrey3', 'LightGrey4', 'LightGrey5', 'LightGrey6', 'LightPurple', 'LightTeal', 'LightYellow', 'Material1', 'Material2', 'NeutralBlue', 'Purple', 'Reddit', 'Reds', 'SandyBeach', 'SystemDefault', 'SystemDefault1', 'SystemDefaultForReal', 'Tan', 'TanBlue', 'TealMono', 'Topanga'], default_value=theme_name, key='-DEFAULT-COLOR-', enable_events=True, readonly=True)
         ],
         [sg.Text("", key="-STATUS-", size=60, text_color="green")],
-        table_columns,
+        #table_columns,
+        [create_orders_table("-TABLE-")],
         [sg.Frame(title="Total cargos", layout=total_records, 
         border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Total cost", layout=total_cost, 
         border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Total pallets", layout=total_pallets, 
@@ -344,9 +351,14 @@ def main_menu(login_validation, theme_name):
     statistics_layout = [
             [
                 sg.Button("Create Diagram",  key="-BTN-CREATE-DIAGRAM-", size=15),
+                sg.VerticalSeparator(),
+                sg.Button("Filter", key="-BTN-FILTER-", size=10),
+                sg.Text("Search:", pad=(5, 5)),
+                sg.Input(key="-SEARCH-", size=20),
+                sg.Button("Search", key="-BTN-SEARCH-", size=10),
                 sg.Button("Exit", key="-BTN-EXIT-STATISTICS-", size=10),
-                #table_columns,
-            ]
+            ],
+            [create_orders_table("-STATISTICS-TABLE-")],
         ]
     
     companies_layout = [
@@ -449,10 +461,15 @@ def main_menu(login_validation, theme_name):
     current_df = read_all('transport')
     sort_column = None
     sort_ascending = True
+    selected_row = None
+    
+    def reset_sort_select():
+        nonlocal sort_column, sort_ascending, selected_row
+        sort_column = None
+        sort_ascending = True
+        selected_row = None
     
     refresh_table(current_df, "-TABLE-")
-    
-    selected_row = None
     
     while True:
         action, values = app_window.read()
@@ -463,28 +480,36 @@ def main_menu(login_validation, theme_name):
         
         if action == '-TRANSPORT-ORDERS-':
             show_view('-VIEW-TRANSPORT-')
+            reset_sort_select()
             current_df = read_all('transport')
             refresh_table(current_df, "-TABLE-")
             print('Transport Orders menu selected')
         elif action == '-STATISTICS-':
             print('Statisitcs menu selected')
+            reset_sort_select()
             show_view('-VIEW-STATISTICS-')
+            current_df = read_all('transport')
+            refresh_table(current_df, "-STATISTICS-TABLE-")
         elif action == '-COMPANIES-':
             print('Company menu selected')
             show_view('-VIEW-COMPANIES-')
+            reset_sort_select()
         elif action == '-ADDRESSES-':
             print('Address menu selected')
             show_view('-VIEW-ADDRESSES-')
+            reset_sort_select()
         elif action == '-MENU-FORWARDERS-':
             print('Forwarders menu selected')
             show_view('-VIEW-FORWARDERS-')
+            reset_sort_select()
         elif action == '-USERS-':
             print('Users menu selected')
             show_view('-VIEW-USERS-')
+            reset_sort_select()
             current_df = read_all('user')
             refresh_table(current_df, "-USER-TABLE-")
         
-        # - default theme colr changing
+        # - default theme color changing
         if action == '-DEFAULT-COLOR-':
             print(f"User selected: {values['-DEFAULT-COLOR-']}")
             sg.theme(f"{values['-DEFAULT-COLOR-']}")
@@ -493,7 +518,9 @@ def main_menu(login_validation, theme_name):
 
 
         # ── Tranport Order Table clicks + selecting + sorting)
-        if isinstance(action, tuple) and action[0] == "-TABLE-":
+        if isinstance(action, tuple) and "TABLE" in action[0]:
+            
+            table_key = action[0]
             row, col = action[2]
 
             # Header click → SORT
@@ -512,39 +539,12 @@ def main_menu(login_validation, theme_name):
                     ignore_index=True
                 )
 
-                refresh_table(current_df, "-TABLE-")
+                refresh_table(current_df, table_key)
                 statuss(f"Sorted by '{column_name}' ({'ASC' if sort_ascending else 'DESC'})")
 
             # Row click → SELECT
             else:
                 selected_row = row
-        # ── User Table clicks + selecting + sorting)
-        elif isinstance(action, tuple) and action[0] == "-USER-TABLE-":
-            row, col = action[2]
-
-            # Header click → SORT
-            if row == -1:
-                column_name = current_df.columns[col]
-
-                if sort_column == column_name:
-                    sort_ascending = not sort_ascending
-                else:
-                    sort_column = column_name
-                    sort_ascending = True
-
-                current_df = current_df.sort_values(
-                    by=column_name,
-                    ascending=sort_ascending,
-                    ignore_index=True
-                )
-
-                refresh_table(current_df, "-USER-TABLE-")
-                statuss(f"Sorted by '{column_name}' ({'ASC' if sort_ascending else 'DESC'})")
-
-            # Row click → SELECT
-            else:
-                selected_row = row
-        
         # ── Action triggered when Show All button is pressed - shows all data in database
         elif action == "-BTN-ALLDATA-":
             current_df = read_all('transport')
