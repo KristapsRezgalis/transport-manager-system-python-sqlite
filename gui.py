@@ -3,6 +3,7 @@ import FreeSimpleGUI as sg
 from datetime import datetime
 from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user
 from pdf import create_order_pdf
+from stats import generate_diagram
 
 sg.theme("DarkAmber")
 
@@ -12,6 +13,8 @@ ORDER_COLUMNS = ["Nr.", "SAP PO", "Sender", "Delivery", "Loading",
 USER_COLUMNS = ["Nr", "Name", "Surname", "Role", "E-mail","Phone","Login","Password",]
 user_roles = ['admin', 'user', 'spectator']
 temperature_customs_options = ['Yes', '']
+statistics_types = ['Cost per pallet', 'Cost per cargo', 'Total cost', 'Total cargos']
+statistic_period = ['Per day', 'Per month', 'Per year']
 
 TABLE_KEYS = [
     "-TABLE-",
@@ -350,12 +353,14 @@ def main_menu(login_validation, theme_name):
     
     statistics_layout = [
             [
-                sg.Button("Create Diagram",  key="-BTN-CREATE-DIAGRAM-", size=15),
+                sg.Button("Create", key="-BTN-CREATE-DIAGRAM-", size=5),
+                sg.Text("Stat type:", size=7), sg.Combo(statistics_types, key="-STATISTICS-TYPE-", default_value=statistics_types[0], readonly=True, size=20),
+                sg.Text("Period:", size=5), sg.Combo(statistic_period, key="-PERIOD-TYPE-", default_value=statistic_period[1], readonly=True, size=10),
                 sg.VerticalSeparator(),
-                sg.Button("Filter", key="-BTN-FILTER-", size=10),
+                sg.Push(),sg.Button("Filter", key="-BTN-FILTER-STATISTICS-", size=10),
                 sg.Text("Search:", pad=(5, 5)),
-                sg.Input(key="-SEARCH-", size=20),
-                sg.Button("Search", key="-BTN-SEARCH-", size=10),
+                sg.Input(key="-SEARCH-STATISTICS-", size=20),
+                sg.Button("Search", key="-BTN-SEARCH-STATISTICS-", size=10),
                 sg.Button("Exit", key="-BTN-EXIT-STATISTICS-", size=10),
             ],
             [create_orders_table("-STATISTICS-TABLE-")],
@@ -570,6 +575,14 @@ def main_menu(login_validation, theme_name):
                 refresh_table(current_df, "-TABLE-")
                 selected_row = None
                 statuss(f"🔎 Found: {len(current_df)} records")
+                
+        elif action == "-BTN-FILTER-STATISTICS-":
+            filter = filter_modal()
+            if filter is not None:
+                current_df = filter_db(filter)
+                refresh_table(current_df, "-STATISTICS-TABLE-")
+                selected_row = None
+                statuss(f"🔎 Found: {len(current_df)} records")
         
         # ── Action triggered when CREATE button is pressed - opens Entry modal for creating new record
         elif action == "-BTN-CREATE-":
@@ -711,7 +724,9 @@ def main_menu(login_validation, theme_name):
                     refresh_table(current_df, "-USER-TABLE-")
                     statuss(f"✅ Nr.{nr} updated!")
                     #app_window["-SEARCH-"].update("")
-                    
+        elif action == "-BTN-CREATE-DIAGRAM-":
+            print('-BTN-CREATE-DIAGRAM- was pressed!!!')
+            generate_diagram(values['-STATISTICS-TYPE-'], values['-PERIOD-TYPE-'])
 
 if __name__ == "__main__":
     #main_menu()
