@@ -726,7 +726,7 @@ def main_menu(login_validation, theme_name):
                     #app_window["-SEARCH-"].update("")
         elif action == "-BTN-CREATE-DIAGRAM-":
             print('-BTN-CREATE-DIAGRAM- was pressed!!!')
-            generate_diagram(values['-STATISTICS-TYPE-'], values['-PERIOD-TYPE-'])
+            generate_diagram(current_df, values['-STATISTICS-TYPE-'], values['-PERIOD-TYPE-'])
 
 if __name__ == "__main__":
     #main_menu()
