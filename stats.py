@@ -26,25 +26,34 @@ def generate_diagram(df, stat_type, period):
     # -------------------------
     # CALCULATIONS
     # -------------------------
-
+    # 'Cost per pallet', 'Cost per cargo', 'Total cost', 'Total cargos', 'Total pallets', 'Total weight', 'Pallets per cargo', 'Weight per pallet', 'Weight per cargo', 'Cargos per country', 'Cargos per forwarder', 'Cost per forwarder'
     if stat_type == "Total cost":
-
         result = df.groupby("period")["cost"].sum()
 
     elif stat_type == "Total cargos":
-
         result = df.groupby("period").size()
 
     elif stat_type == "Cost per cargo":
-
         result = df.groupby("period")["cost"].mean()
 
     elif stat_type == "Cost per pallet":
-
         grouped = df.groupby("period")
-
         result = grouped["cost"].sum() / grouped["pallets"].sum()
-
+        
+    elif stat_type == "Total pallets":
+        result = df.groupby("period")["pallets"].sum()
+        
+    elif stat_type == "Total weight":
+        result = df.groupby("period")["weight"].sum()
+        
+    elif stat_type == "Weight per pallet":
+        grouped = df.groupby("period")
+        result = grouped["weight"].sum() / grouped["pallets"].sum()
+        
+    elif stat_type == "Weight per cargo":
+        grouped = df.groupby("period")
+        result = grouped["weight"].sum() / grouped["pallets"].size()
+        
     else:
         print("Unknown stat type")
         return

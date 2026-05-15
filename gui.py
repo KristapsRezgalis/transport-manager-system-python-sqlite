@@ -13,7 +13,7 @@ ORDER_COLUMNS = ["Nr.", "SAP PO", "Sender", "Delivery", "Loading",
 USER_COLUMNS = ["Nr", "Name", "Surname", "Role", "E-mail","Phone","Login","Password",]
 user_roles = ['admin', 'user', 'spectator']
 temperature_customs_options = ['Yes', '']
-statistics_types = ['Cost per pallet', 'Cost per cargo', 'Total cost', 'Total cargos']
+statistics_types = ['Cost per pallet', 'Cost per cargo', 'Total cost', 'Total cargos', 'Total pallets', 'Total weight', 'Pallets per cargo', 'Weight per pallet', 'Weight per cargo', 'Cargos per country', 'Cargos per forwarder', 'Cost per forwarder']
 statistic_period = ['Per day', 'Per month', 'Per year']
 
 TABLE_KEYS = [
