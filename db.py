@@ -121,6 +121,78 @@ def delete_db(nr, table_name):
     conn.close()
     
 def filter_db(filters):
+
+    conditions = []
+    parameters = []
+
+    # Text fields
+    for field in ("sender","delivery","forwarder","customs","ref"):
+
+        value = filters.get(field,"").strip()
+
+        if value:
+            conditions.append(f"{field} LIKE ?")
+            parameters.append(f"%{value}%")
+
+    # Date ranges
+
+    date_ranges = {
+        "loading": ("loading_from","loading_to"),
+        "unloading": ("unloading_from","unloading_to"),
+    }
+
+    for column,(key_from,key_to) in date_ranges.items():
+
+        from_value = filters.get(key_from,"").strip()
+        to_value = filters.get(key_to,"").strip()
+
+        if from_value:
+            conditions.append(f"{column} >= ?")
+            parameters.append(from_value)
+
+        if to_value:
+            conditions.append(f"{column} <= ?")
+            parameters.append(to_value)
+
+    # Numeric ranges
+
+    numeric_ranges = {
+        "sap_po": ("sap_po_from","sap_po_to"),
+        "pallets": ("pallets_min","pallets_max"),
+        "weight": ("weight_min","weight_max"),
+        "cost": ("cost_min","cost_max"),
+    }
+
+    for column,(key_from,key_to) in numeric_ranges.items():
+
+        from_value = filters.get(key_from,"").strip()
+        to_value = filters.get(key_to,"").strip()
+
+        if from_value:
+            conditions.append(f"{column} >= ?")
+            parameters.append(float(from_value))
+
+        if to_value:
+            conditions.append(f"{column} <= ?")
+            parameters.append(float(to_value))
+
+    sql = "SELECT * FROM transport"
+
+    if conditions:
+        sql += " WHERE " + " AND ".join(conditions)
+
+    sql += " ORDER BY nr"
+
+    conn = sqlite3.connect(DB_FILE)
+
+    df = pd.read_sql(sql, conn, params=parameters)
+
+    conn.close()
+
+    return df
+    
+"""   
+def filter_db(filters):
     conditions = []
     parameters = []
 
@@ -159,3 +231,4 @@ def filter_db(filters):
     df = pd.read_sql(sql, conn, params=parameters)
     conn.close()
     return df
+"""

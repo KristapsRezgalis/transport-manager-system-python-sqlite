@@ -41,23 +41,23 @@ def df_to_table(df):
 
 def filter_modal():
     layout = [
-        [sg.Text("SAP PO Nr from:",           size=16), sg.Input(key="-F-SAP-PO-FROM-",   size=25),
-         sg.Text("SAP PO Nr to:",           size=16), sg.Input(key="-F-SAP-PO-TO-",   size=25)],
-        [sg.Text("Sender:",           size=16), sg.Input(key="-F-SENDER-",   size=72)],
-        [sg.Text("Delivery:",           size=16), sg.Input(key="-F-DELIVERY-",   size=72)],
-        [sg.Text("Loading date from:",           size=16), sg.Input(key="-F-LOADING-FROM-",   size=25),
-         sg.Text("Loading date to:",           size=16), sg.Input(key="-F-LOADING-TO-",   size=25)],
-        [sg.Text("Unloading date from:",           size=16), sg.Input(key="-F-UNLOADING-FROM-",   size=25),
-         sg.Text("Unloading date to:",           size=16), sg.Input(key="-F-UNLOADING-TO-",   size=25)],
-        [sg.Text("Pallet count min:",           size=16), sg.Input(key="-F-PALLETS-MIN-",   size=25),
-         sg.Text("Pallet count max:",           size=16), sg.Input(key="-F-PALLETS-MAX-",   size=25)],
-        [sg.Text("Gross weight min:",           size=16), sg.Input(key="-F-WEIGHT-MIN-",   size=25),
-         sg.Text("Gross weight max:",           size=16), sg.Input(key="-F-WEIGHT-MAX-",   size=25)],
-        [sg.Text("Forwarder:",           size=16), sg.Input(key="-F-FORWARDER-",   size=72)],
-        [sg.Text("Cost min:",           size=16), sg.Input(key="-F-COST-MIN-",   size=25),
-         sg.Text("Cost max:",           size=16), sg.Input(key="-F-COST-MAX-",   size=25)],
-        [sg.Text("Customs:",           size=16), sg.Input(key="-F-CUSTOMS-",   size=25)],
-        [sg.Text("Temperature control:",        size=16), sg.Input(key="-F-REF-",   size=25)],
+        [sg.Text("SAP PO Nr from:", size=16), sg.Input(key="-F-SAP-PO-FROM-",   size=25),
+         sg.Text("SAP PO Nr to:", size=16), sg.Input(key="-F-SAP-PO-TO-",   size=25)],
+        [sg.Text("Sender:", size=16), sg.Input(key="-F-SENDER-",   size=72)],
+        [sg.Text("Delivery:", size=16), sg.Input(key="-F-DELIVERY-",   size=72)],
+        [sg.Text("Loading date from:", size=16), sg.Input(key="-F-LOADING-FROM-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-F-LOADING-FROM-",format="%Y-%m-%d"),
+         sg.Text("Loading date to:", size=16), sg.Input(key="-F-LOADING-TO-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-F-LOADING-TO-",format="%Y-%m-%d")],
+        [sg.Text("Unloading date from:", size=16), sg.Input(key="-F-UNLOADING-FROM-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-F-UNLOADING-FROM-",format="%Y-%m-%d"),
+         sg.Text("Unloading date to:", size=16), sg.Input(key="-F-UNLOADING-TO-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-F-UNLOADING-TO-",format="%Y-%m-%d")],
+        [sg.Text("Pallet count min:", size=16), sg.Input(key="-F-PALLETS-MIN-",   size=25),
+         sg.Text("Pallet count max:", size=16), sg.Input(key="-F-PALLETS-MAX-",   size=25)],
+        [sg.Text("Gross weight min:", size=16), sg.Input(key="-F-WEIGHT-MIN-",   size=25),
+         sg.Text("Gross weight max:", size=16), sg.Input(key="-F-WEIGHT-MAX-",   size=25)],
+        [sg.Text("Forwarder:", size=16), sg.Input(key="-F-FORWARDER-",   size=72)],
+        [sg.Text("Cost min:", size=16), sg.Input(key="-F-COST-MIN-",   size=25),
+         sg.Text("Cost max:", size=16), sg.Input(key="-F-COST-MAX-",   size=25)],
+        [sg.Text("Customs:", size=16), sg.Combo(temperature_customs_options, key="-F-CUSTOMS-", default_value="", readonly=True, size=33)],
+        [sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-F-REF-", default_value="", readonly=True, size=33)],
         [sg.Button("Filter", key="-F-FILTER-"), sg.Button("Cancel")]
     ]
     app_window = sg.Window("Filter", layout, modal=True)
@@ -358,6 +358,7 @@ def main_menu(login_validation, theme_name):
                 sg.Text("Period:", size=5), sg.Combo(statistic_period, key="-PERIOD-TYPE-", default_value=statistic_period[1], readonly=True, size=10),
                 sg.VerticalSeparator(),
                 sg.Push(),sg.Button("Filter", key="-BTN-FILTER-STATISTICS-", size=10),
+                sg.Button("Show All", key="-BTN-ALLDATA-STATISTICS-", size=10),
                 sg.Text("Search:", pad=(5, 5)),
                 sg.Input(key="-SEARCH-STATISTICS-", size=20),
                 sg.Button("Search", key="-BTN-SEARCH-STATISTICS-", size=10),
@@ -552,8 +553,16 @@ def main_menu(login_validation, theme_name):
                 selected_row = row
         # ── Action triggered when Show All button is pressed - shows all data in database
         elif action == "-BTN-ALLDATA-":
+            table_key = action[0]
             current_df = read_all('transport')
             refresh_table(current_df, "-TABLE-")
+            app_window["-SEARCH-"].update("")
+            statuss("Showing all records!")
+            
+        elif action == "-BTN-ALLDATA-STATISTICS-":
+            table_key = action[0]
+            current_df = read_all('transport')
+            refresh_table(current_df, "-STATISTICS-TABLE-")
             app_window["-SEARCH-"].update("")
             statuss("Showing all records!")
             

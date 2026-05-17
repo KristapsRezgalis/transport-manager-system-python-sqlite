@@ -53,7 +53,12 @@ def generate_diagram(df, stat_type, period):
     elif stat_type == "Weight per cargo":
         grouped = df.groupby("period")
         result = grouped["weight"].sum() / grouped["pallets"].size()
+    
+    elif stat_type == "Pallets per cargo":
+        grouped = df.groupby("period")
+        result = grouped["pallets"].sum() / grouped["pallets"].size()
         
+    
     else:
         print("Unknown stat type")
         return
