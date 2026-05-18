@@ -190,6 +190,23 @@ def filter_db(filters):
     conn.close()
 
     return df
+
+def return_forwarders():
+    """ Get all current forwarder names from DB """
+    forw_list = []
+    
+    conn = sqlite3.connect(DB_FILE)
+    df = pd.read_sql(f"SELECT fw_name FROM t_forwarder ORDER BY fw_name", conn)
+    conn.close()
+    
+    forw_list = df['fw_name'].tolist()
+    forw_list.sort()
+    
+    print(forw_list)
+    
+    return forw_list
+
+return_forwarders()
     
 """   
 def filter_db(filters):

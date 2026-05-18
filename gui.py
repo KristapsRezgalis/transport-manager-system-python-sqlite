@@ -1,7 +1,7 @@
 import FreeSimpleGUI as sg
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders
 from pdf import create_order_pdf
 from stats import generate_diagram
 
@@ -15,6 +15,7 @@ user_roles = ['admin', 'user', 'spectator']
 temperature_customs_options = ['Yes', '']
 statistics_types = ['Cost per pallet', 'Cost per cargo', 'Total cost', 'Total cargos', 'Total pallets', 'Total weight', 'Pallets per cargo', 'Weight per pallet', 'Weight per cargo', 'Cargos per country', 'Cargos per forwarder', 'Cost per forwarder']
 statistic_period = ['Per day', 'Per month', 'Per year']
+forwarers_list = return_forwarders()
 
 TABLE_KEYS = [
     "-TABLE-",
@@ -138,21 +139,17 @@ def entry_modal(title, existing=None, nr=None):
         layout = [
             [sg.Text("SAP PO Nr:",           size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
             [sg.Text("Sender:",           size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=35)],
-            [sg.Text("Delivery:",           size=16), sg.Input(e.get("delivery", ""),          key="-DELIVERY-",   size=35)],
-            #[sg.Text("Loading date:",           size=16), sg.Input(e.get("loading", ""),          key="-LOADING-",   size=35)],
+            [sg.Text("Delivery:",           size=16), sg.Combo(['Gemoss M7', 'Gemoss M75'], key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33)],
             [sg.Text("Loading date:", size=16), sg.Input(e.get("loading", ""), key="-LOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
              sg.CalendarButton("Pick",target="-LOADING-",format="%Y-%m-%d")],
             [sg.Text("Unloading date:", size=16), sg.Input(e.get("unloading", ""), key="-UNLOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
              sg.CalendarButton("Pick",target="-UNLOADING-",format="%Y-%m-%d")],
-            #[sg.Text("Unloading date:",           size=16), sg.Input(e.get("unloading", ""),          key="-UNLOADING-",   size=35)],
             [sg.Text("Pallet count:",           size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
             [sg.Text("Gross weight:",           size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
-            [sg.Text("Forwarder:",           size=16), sg.Input(e.get("forwarder", ""),          key="-FORWARDER-",   size=35)],
+            [sg.Text("Forwarder:",           size=16), sg.Combo(forwarers_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33)],
             [sg.Text("Cost:",           size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
             [sg.Text("Customs:", size=16), sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33)],
             [sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
-            #[sg.Text("Customs:",           size=16), sg.Input(e.get("customs", ""),          key="-CUSTOMS-",   size=35)],
-            #[sg.Text("Temperature control:",        size=16), sg.Input(e.get("ref", ""),          key="-REF-",   size=35)],
             [sg.Push(),sg.Button("Create transport order in PDF", key="-CREATE-PDF-"), sg.Push()],
             [sg.Push(),sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()]
         ]
@@ -160,21 +157,17 @@ def entry_modal(title, existing=None, nr=None):
         layout = [
             [sg.Text("SAP PO Nr:",           size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
             [sg.Text("Sender:",           size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=35)],
-            [sg.Text("Delivery:",           size=16), sg.Input(e.get("delivery", ""),          key="-DELIVERY-",   size=35)],
+            [sg.Text("Delivery:",           size=16), sg.Combo(['Gemoss M7', 'Gemoss M75'], key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33)],
             [sg.Text("Loading date:", size=16), sg.Input(e.get("loading", ""), key="-LOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
              sg.CalendarButton("Pick",target="-LOADING-",format="%Y-%m-%d")],
             [sg.Text("Unloading date:", size=16), sg.Input(e.get("unloading", ""), key="-UNLOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
              sg.CalendarButton("Pick",target="-UNLOADING-",format="%Y-%m-%d")],
-            #[sg.Text("Loading date:",           size=16), sg.Input(e.get("loading", ""),          key="-LOADING-",   size=35)],
-            #[sg.Text("Unloading date:",           size=16), sg.Input(e.get("unloading", ""),          key="-UNLOADING-",   size=35)],
             [sg.Text("Pallet count:",           size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
             [sg.Text("Gross weight:",           size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
-            [sg.Text("Forwarder:",           size=16), sg.Input(e.get("forwarder", ""),          key="-FORWARDER-",   size=35)],
+            [sg.Text("Forwarder:",           size=16), sg.Combo(forwarers_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33)],
             [sg.Text("Cost:",           size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
             [sg.Text("Customs:", size=16), sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33)],
             [sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
-            #[sg.Text("Customs:",           size=16), sg.Input(e.get("customs", ""),          key="-CUSTOMS-",   size=35)],
-            #[sg.Text("Temperature control:",        size=16), sg.Input(e.get("ref", ""),          key="-REF-",   size=35)],
             [sg.Button("Save", key="-SAVE-"), sg.Button("Cancel")]
         ]
         
@@ -353,7 +346,7 @@ def main_menu(login_validation, theme_name):
     
     statistics_layout = [
             [
-                sg.Button("Create", key="-BTN-CREATE-DIAGRAM-", size=5),
+                sg.Button("Create diagram", key="-BTN-CREATE-DIAGRAM-", size=12),
                 sg.Text("Stat type:", size=7), sg.Combo(statistics_types, key="-STATISTICS-TYPE-", default_value=statistics_types[0], readonly=True, size=20),
                 sg.Text("Period:", size=5), sg.Combo(statistic_period, key="-PERIOD-TYPE-", default_value=statistic_period[1], readonly=True, size=10),
                 sg.VerticalSeparator(),
@@ -706,6 +699,10 @@ def main_menu(login_validation, theme_name):
             else:
                 row = current_df.iloc[selected_row]
                 nr = int(row["nr"])
+                print(f'row = {row}')
+                print(f'nr = {nr}')
+                for forw in current_df:
+                    print(f'name = {current_df["name"]}')
                 
                 existing = {
                     "name": str(row["name"]),
