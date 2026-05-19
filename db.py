@@ -41,10 +41,10 @@ CREATE TABLE IF NOT EXISTS transport (
     conn.commit()
     conn.close()
     
-def read_all(table_name):
+def read_all(table_name, id_header):
     """ Reads all data from database """
     conn = sqlite3.connect(DB_FILE)
-    df = pd.read_sql(f"SELECT * FROM {table_name} ORDER BY nr", conn)
+    df = pd.read_sql(f"SELECT * FROM {table_name} ORDER BY {id_header}", conn)
     conn.close()
     return df
 
@@ -87,8 +87,26 @@ def add_user(name, surname, role, email, phone, login, password):
     conn.close()
 
     return new_record
-    
-    
+
+def add_forwarder(name, reg, vat, street, city, postcode, country, payment):
+    """Adds new user record into database"""
+    new_row=pd.DataFrame([{
+        'fw_name': name,
+        'fw_reg.nr': reg,
+        'fw_vat_nr': vat,
+        'fw_street': street,
+        'fw_city': city,
+        'fw_post_code': postcode,
+        'fw_country': country,
+        'fw_payment_terms': payment
+    }])
+    conn = sqlite3.connect(DB_FILE)
+    new_row.to_sql("t_forwarder", conn, if_exists="append", index=False)
+    new_record = pd.read_sql("SELECT MAX(forwarder_id) as nr FROM t_forwarder", conn)["nr"].iloc[0]
+    conn.close()
+
+    return new_record
+
 def edit_db(nr, updated_values, table_name):
     """Updates record in a database"""
     conn = sqlite3.connect(DB_FILE)
@@ -202,12 +220,8 @@ def return_forwarders():
     forw_list = df['fw_name'].tolist()
     forw_list.sort()
     
-    print(forw_list)
-    
     return forw_list
 
-return_forwarders()
-    
 """   
 def filter_db(filters):
     conditions = []

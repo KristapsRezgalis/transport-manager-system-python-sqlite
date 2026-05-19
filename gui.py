@@ -1,7 +1,7 @@
 import FreeSimpleGUI as sg
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder
 from pdf import create_order_pdf
 from stats import generate_diagram
 
@@ -12,6 +12,7 @@ ORDER_COLUMNS = ["Nr.", "SAP PO", "Sender", "Delivery", "Loading",
 
 USER_COLUMNS = ["Nr", "Name", "Surname", "Role", "E-mail","Phone","Login","Password",]
 user_roles = ['admin', 'user', 'spectator']
+FORWARDER_COLUMNS = ['Nr', 'Name', 'Reg Nr', 'VAT Nr', 'Street', 'City', 'Post code', 'Country', 'Payment days']
 temperature_customs_options = ['Yes', '']
 statistics_types = ['Cost per pallet', 'Cost per cargo', 'Total cost', 'Total cargos', 'Total pallets', 'Total weight', 'Pallets per cargo', 'Weight per pallet', 'Weight per cargo', 'Cargos per country', 'Cargos per forwarder', 'Cost per forwarder']
 statistic_period = ['Per day', 'Per month', 'Per year']
@@ -299,6 +300,23 @@ def main_menu(login_validation, theme_name):
             expand_y=True,
             )]], expand_x=True)
     ]
+    # ['Nr', 'Name', 'Reg Nr', 'VAT Nr', 'Street', 'City', 'Post code', 'Country', 'Payment days']
+    forwarder_columns = [
+        sg.Column([[sg.Table(
+            values=[],
+            headings=FORWARDER_COLUMNS,
+            key="-FORWARDER-TABLE-",
+            auto_size_columns=False,
+            col_widths=[14, 14, 14, 14, 14, 14, 14, 14, 14],
+            justification="left",
+            num_rows=30,
+            enable_events=True,
+            enable_click_events=True, # for sorting
+            select_mode=sg.TABLE_SELECT_MODE_BROWSE,
+            expand_x=True,
+            expand_y=True,
+            )]], expand_x=True)
+    ]
 
     total_records = [[sg.Text(key="-TOTAL-ACTIVE-RECORDS-")]]
     total_cost = [[sg.Text(key="-TOTAL-COST-")]]
@@ -374,8 +392,17 @@ def main_menu(login_validation, theme_name):
     
     forwarders_layout = [
             [
-                sg.Button("Create New Forwarder",  key="-BTN-CREATE-FORWARDER-", size=10),
-            ]
+                sg.Button("Create",  key="-BTN-CREATE-FORWARDER-", size=10),
+                sg.Button("Edit", key="-BTN-EDIT-FORWARDER-", size=10),
+                sg.Button("Delete", key="-BTN-DELETE-FORWARDER-", size=10),
+                sg.Button("Show All", key="-BTN-ALL-FORWARDERS-", size=10),
+                sg.VerticalSeparator(),
+                sg.Text("Search:", pad=(5, 5)),
+                sg.Input(key="-SEARCH-FORWARDER-", size=20),
+                sg.Button("Search", key="-BTN-SEARCH-FORWARDER-", size=10),
+                sg.Button("Exit", key="-BTN-EXIT-FORWARDER-", size=10),
+            ],
+            forwarder_columns
         ]
     
     users_layout = [
@@ -457,7 +484,7 @@ def main_menu(login_validation, theme_name):
     
     
     # --- initial data + sorting state ---
-    current_df = read_all('transport')
+    current_df = read_all('transport', 'nr')
     sort_column = None
     sort_ascending = True
     selected_row = None
@@ -473,21 +500,21 @@ def main_menu(login_validation, theme_name):
     while True:
         action, values = app_window.read()
         
-        if action in (sg.WIN_CLOSED, "-BTN-EXIT-", "-BTN-EXIT-STATISTICS-", "-BTN-EXIT-USER-"):
+        if action in (sg.WIN_CLOSED, "-BTN-EXIT-", "-BTN-EXIT-STATISTICS-", "-BTN-EXIT-USER-", "-BTN-EXIT-FORWARDER-"):
             app_window.close()
             break
         
         if action == '-TRANSPORT-ORDERS-':
             show_view('-VIEW-TRANSPORT-')
             reset_sort_select()
-            current_df = read_all('transport')
+            current_df = read_all('transport', 'nr')
             refresh_table(current_df, "-TABLE-")
             print('Transport Orders menu selected')
         elif action == '-STATISTICS-':
             print('Statisitcs menu selected')
             reset_sort_select()
             show_view('-VIEW-STATISTICS-')
-            current_df = read_all('transport')
+            current_df = read_all('transport', 'nr')
             refresh_table(current_df, "-STATISTICS-TABLE-")
         elif action == '-COMPANIES-':
             print('Company menu selected')
@@ -501,11 +528,13 @@ def main_menu(login_validation, theme_name):
             print('Forwarders menu selected')
             show_view('-VIEW-FORWARDERS-')
             reset_sort_select()
+            current_df = read_all('t_forwarder', 'forwarder_id')
+            refresh_table(current_df, "-FORWARDER-TABLE-")
         elif action == '-USERS-':
             print('Users menu selected')
             show_view('-VIEW-USERS-')
             reset_sort_select()
-            current_df = read_all('user')
+            current_df = read_all('user', 'nr')
             refresh_table(current_df, "-USER-TABLE-")
         
         # - default theme color changing
@@ -547,14 +576,14 @@ def main_menu(login_validation, theme_name):
         # ── Action triggered when Show All button is pressed - shows all data in database
         elif action == "-BTN-ALLDATA-":
             table_key = action[0]
-            current_df = read_all('transport')
+            current_df = read_all('transport', 'nr')
             refresh_table(current_df, "-TABLE-")
             app_window["-SEARCH-"].update("")
             statuss("Showing all records!")
             
         elif action == "-BTN-ALLDATA-STATISTICS-":
             table_key = action[0]
-            current_df = read_all('transport')
+            current_df = read_all('transport', 'nr')
             refresh_table(current_df, "-STATISTICS-TABLE-")
             app_window["-SEARCH-"].update("")
             statuss("Showing all records!")
@@ -568,6 +597,16 @@ def main_menu(login_validation, theme_name):
                 current_df = search_db(search_value)
                 refresh_table(current_df, "-TABLE-")
                 statuss(f"Found: {len(current_df)} records")
+                
+        elif action == "-BTN-SEARCH-STATISTICS-":
+            search_value = values["-SEARCH-STATISTICS-"].strip()
+            if not search_value:
+                statuss("Ievadi meklēšanas tekstu!", "red")
+            else:
+                current_df = search_db(search_value)
+                refresh_table(current_df, "-STATISTICS-TABLE-")
+                statuss(f"Found: {len(current_df)} records")
+                
         
         # ── Action triggered when Filtrs button is pressed - opens a Filter modal window with filtring options
         elif action == "-BTN-FILTER-":
@@ -595,7 +634,7 @@ def main_menu(login_validation, theme_name):
                     new_values["-UNLOADING-"], new_values["-PALLETS-"], new_values["-WEIGHT-"], new_values["-FORWARDER-"],
                     new_values["-COST-"], new_values["-CUSTOMS-"], new_values["-REF-"]
                 )
-                current_df = read_all('transport')
+                current_df = read_all('transport', 'nr')
                 refresh_table(current_df, "-TABLE-")
                 statuss(f"✅ Record Nr.{new_record} added!")
         
@@ -607,7 +646,7 @@ def main_menu(login_validation, theme_name):
                     new_values["-USER-NAME-"], new_values["-USER-SURNAME-"], new_values["-USER-ROLE-"], new_values["-USER-EMAIL-"],
                     new_values["-USER-PHONE-"], new_values["-USER-LOGIN-"], new_values["-USER-PASSWORD-"]
                 )
-                current_df = read_all('user')
+                current_df = ('user')
                 refresh_table(current_df, "-USER-TABLE-")
                 statuss(f"✅ User Nr.{new_record} added!")
                 
@@ -626,7 +665,7 @@ def main_menu(login_validation, theme_name):
                 )
                 if confirm == "Yes":
                     delete_db(nr, 'transport')
-                    current_df = read_all('transport')
+                    current_df = read_all('transport', 'nr')
                     refresh_table(current_df, "-TABLE-")
                     selected_row = None
                     statuss(f"🗑️ Nr.{nr} deleted!")
@@ -645,7 +684,7 @@ def main_menu(login_validation, theme_name):
                 )
                 if confirm == "Yes":
                     delete_db(nr, 'user')
-                    current_df = read_all('user')
+                    current_df = read_all('user', 'nr')
                     refresh_table(current_df, "-USER-TABLE-")
                     selected_row = None
                     statuss(f"🗑️ Nr.{nr} deleted!")
@@ -688,7 +727,7 @@ def main_menu(login_validation, theme_name):
                     }
                     edit_db(nr, updated_values, 'transport')
                     
-                    current_df = read_all('transport')
+                    current_df = read_all('transport', 'nr')
                     refresh_table(current_df, "-TABLE-")
                     statuss(f"✅ Nr.{nr} updated!")
                     app_window["-SEARCH-"].update("")
@@ -726,7 +765,7 @@ def main_menu(login_validation, theme_name):
                     }
                     edit_db(nr, updated_values, 'user')
                     
-                    current_df = read_all('user')
+                    current_df = read_all('user', 'nr')
                     refresh_table(current_df, "-USER-TABLE-")
                     statuss(f"✅ Nr.{nr} updated!")
                     #app_window["-SEARCH-"].update("")
