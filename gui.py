@@ -13,6 +13,7 @@ ORDER_COLUMNS = ["Nr.", "SAP PO", "Sender", "Delivery", "Loading",
 USER_COLUMNS = ["Nr", "Name", "Surname", "Role", "E-mail","Phone","Login","Password",]
 user_roles = ['admin', 'user', 'spectator']
 FORWARDER_COLUMNS = ['Nr', 'Name', 'Reg Nr', 'VAT Nr', 'Street', 'City', 'Post code', 'Country', 'Payment days']
+countries = ["Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "Russia", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom", "Vatican City"]
 temperature_customs_options = ['Yes', '']
 statistics_types = ['Cost per pallet', 'Cost per cargo', 'Total cost', 'Total cargos', 'Total pallets', 'Total weight', 'Pallets per cargo', 'Weight per pallet', 'Weight per cargo', 'Cargos per country', 'Cargos per forwarder', 'Cost per forwarder']
 statistic_period = ['Per day', 'Per month', 'Per year']
@@ -129,6 +130,32 @@ def user_entry_modal(title, existing=None):
             app_window.close()
             return None
         if action == "-USER-SAVE-":
+            app_window.close()
+            return values
+        
+def forwarder_entry_modal(title, existing=None):
+    e = existing or {}
+    layout =[
+        [sg.Text("Name:", size=16), sg.Input(e.get("fw_name", ""), key="-FW-NAME-", size=35)],
+        [sg.Text("Reg. Nr:", size=16), sg.Input(e.get("fw_reg_nr", ""), key="-FW-REG-", size=35)],
+        [sg.Text("VAT Nr:", size=16), sg.Input(e.get("fw_vat_nr", ""), key="-FW-VAT-", size=35)],
+        [sg.Text("Street:", size=16), sg.Input(e.get("fw_street", ""), key="-FW-STREET-", size=35)],
+        [sg.Text("City:", size=16), sg.Input(e.get("fw_city", ""), key="-FW-CITY-", size=35)],
+        [sg.Text("Post code:", size=16), sg.Input(e.get("fw_post_code", ""), key="-FW-POST-", size=35)],
+        [sg.Text("Country:", size=16), sg.Combo(countries, key="-FW-COUNTRY-", default_value=e.get("fw_country", countries[20]), readonly=True, size=35)],
+        [sg.Text("Payment days:", size=16), sg.Input(e.get("fw_payment_terms", ""), key="-FW-PAYMENT-", size=35)],
+        [sg.Button("Save", key="-FORWARDER-SAVE-"), sg.Button("Cancel")]
+    ]
+        
+    app_window = sg.Window(title, layout, modal=True)
+
+    while True:
+        action, values = app_window.read()
+        
+        if action in (sg.WIN_CLOSED, "Cancel"):
+            app_window.close()
+            return None
+        if action == "-FORWARDER-SAVE-":
             app_window.close()
             return values
 
@@ -307,7 +334,7 @@ def main_menu(login_validation, theme_name):
             headings=FORWARDER_COLUMNS,
             key="-FORWARDER-TABLE-",
             auto_size_columns=False,
-            col_widths=[14, 14, 14, 14, 14, 14, 14, 14, 14],
+            col_widths=[5, 22, 15, 15, 15, 15, 15, 15, 8],
             justification="left",
             num_rows=30,
             enable_events=True,
@@ -416,6 +443,7 @@ def main_menu(login_validation, theme_name):
             user_columns
         ]
     
+    # Area of each section buttons, tables etc. - 6 possible layout views - only 1 visible at each time
     content_area = [
         [
          sg.Column(transport_layout, key='-VIEW-TRANSPORT-', visible=True, expand_x=True, expand_y=True),
@@ -427,6 +455,7 @@ def main_menu(login_validation, theme_name):
         ]
     ]
     
+    # Actual displayed layout
     layout = [
         [
             sg.Text("Transport Management System", font=("Helvetica", 14, "bold"), pad=(10,10)), 
@@ -646,9 +675,21 @@ def main_menu(login_validation, theme_name):
                     new_values["-USER-NAME-"], new_values["-USER-SURNAME-"], new_values["-USER-ROLE-"], new_values["-USER-EMAIL-"],
                     new_values["-USER-PHONE-"], new_values["-USER-LOGIN-"], new_values["-USER-PASSWORD-"]
                 )
-                current_df = ('user')
+                current_df = read_all('user', 'nr')
                 refresh_table(current_df, "-USER-TABLE-")
                 statuss(f"✅ User Nr.{new_record} added!")
+
+        # ── Action triggered when CREATE FORWARDER button is pressed - opens Entry modal for creating new record
+        elif action == "-BTN-CREATE-FORWARDER-":
+            new_values = forwarder_entry_modal("NEW FORWARDER")
+            if new_values:
+                new_record = add_forwarder(
+                    new_values["-FW-NAME-"], new_values["-FW-REG-"], new_values["-FW-VAT-"], new_values["-FW-STREET-"],
+                    new_values["-FW-CITY-"], new_values["-FW-POST-"], new_values["-FW-COUNTRY-"], new_values["-FW-PAYMENT-"]
+                )
+                current_df = read_all('t_forwarder', 'forwarder_id')
+                refresh_table(current_df, "-FORWARDER-TABLE-")
+                statuss(f"✅ Forwarder Nr.{new_record} added!")
                 
         # ── Action triggered when Delete button is pressed - deletes the selected record
         elif action == "-BTN-DELETE-":
@@ -688,7 +729,26 @@ def main_menu(login_validation, theme_name):
                     refresh_table(current_df, "-USER-TABLE-")
                     selected_row = None
                     statuss(f"🗑️ Nr.{nr} deleted!")
+        # ── Action triggered when Delete User button is pressed - deletes the selected record
+        elif action == "-BTN-DELETE-FORWARDER-":
+            if selected_row is None:
+                statuss("Select a record in the table!", "red")
+            else:
+                row = current_df.iloc[selected_row]
+                nr = int(row["forwarder_id"])
                 
+                confirm = sg.popup_yes_no(
+                    f"Delete rectord Nr.{nr}?\n"
+                    f"{row['fw_name']}",
+                    title="Confirm deleting a record"
+                )
+                if confirm == "Yes":
+                    delete_db(nr, 't_forwarder', 'forwarder_id')
+                    current_df = read_all('t_forwarder', 'forwarder_id')
+                    refresh_table(current_df, "-FORWARDER-TABLE-")
+                    selected_row = None
+                    statuss(f"🗑️ Nr.{nr} deleted!")
+                    
         # ── Action triggered when Edit button is pressed - opens Entry modal for editing an existing record
         elif action == "-BTN-EDIT-":
             if selected_row is None:
@@ -738,10 +798,6 @@ def main_menu(login_validation, theme_name):
             else:
                 row = current_df.iloc[selected_row]
                 nr = int(row["nr"])
-                print(f'row = {row}')
-                print(f'nr = {nr}')
-                for forw in current_df:
-                    print(f'name = {current_df["name"]}')
                 
                 existing = {
                     "name": str(row["name"]),
@@ -769,6 +825,44 @@ def main_menu(login_validation, theme_name):
                     refresh_table(current_df, "-USER-TABLE-")
                     statuss(f"✅ Nr.{nr} updated!")
                     #app_window["-SEARCH-"].update("")
+                    
+        # ── Action triggered when Edit Forwarder button is pressed - opens Entry modal for editing an existing record
+        elif action == "-BTN-EDIT-FORWARDER-":
+            if selected_row is None:
+                statuss("Select a record in the table!", "red")
+            else:
+                row = current_df.iloc[selected_row]
+                nr = int(row["forwarder_id"])
+                
+                existing = {
+                    "fw_name": str(row["fw_name"]),
+                    "fw_reg_nr": str(row["fw_reg_nr"]),
+                    "fw_vat_nr": str(row["fw_vat_nr"]),
+                    "fw_street": str(row["fw_street"]),
+                    "fw_city": str(row["fw_city"]),
+                    "fw_post_code": str(row["fw_post_code"]),
+                    "fw_country": str(row["fw_country"]),
+                    "fw_payment_terms": str(row["fw_payment_terms"]),
+                }
+                new_values = forwarder_entry_modal(f"Editing record Nr.{nr}", existing)
+                if new_values:
+                    updated_values = {
+                        "fw_name": new_values["-FW-NAME-"],
+                        "fw_reg_nr": new_values["-FW-REG-"],
+                        "fw_vat_nr": new_values["-FW-VAT-"],
+                        "fw_street": new_values["-FW-STREET-"],
+                        "fw_city": new_values["-FW-CITY-"],
+                        "fw_post_code": new_values["-FW-POST-"],
+                        "fw_country": new_values["-FW-COUNTRY-"],
+                        "fw_payment_terms": new_values["-FW-PAYMENT-"],
+                    }
+                    edit_db(nr, updated_values, 't_forwarder', 'forwarder_id')
+                    
+                    current_df = read_all('t_forwarder', 'forwarder_id')
+                    refresh_table(current_df, "-FORWARDER-TABLE-")
+                    statuss(f"✅ Nr.{nr} updated!")
+                    #app_window["-SEARCH-"].update("")
+                    
         elif action == "-BTN-CREATE-DIAGRAM-":
             print('-BTN-CREATE-DIAGRAM- was pressed!!!')
             generate_diagram(current_df, values['-STATISTICS-TYPE-'], values['-PERIOD-TYPE-'])

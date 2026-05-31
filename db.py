@@ -92,7 +92,7 @@ def add_forwarder(name, reg, vat, street, city, postcode, country, payment):
     """Adds new user record into database"""
     new_row=pd.DataFrame([{
         'fw_name': name,
-        'fw_reg.nr': reg,
+        'fw_reg_nr': reg,
         'fw_vat_nr': vat,
         'fw_street': street,
         'fw_city': city,
@@ -107,7 +107,7 @@ def add_forwarder(name, reg, vat, street, city, postcode, country, payment):
 
     return new_record
 
-def edit_db(nr, updated_values, table_name):
+def edit_db(nr, updated_values, table_name, id_name = 'nr'):
     """Updates record in a database"""
     conn = sqlite3.connect(DB_FILE)
     cur = conn.cursor()
@@ -116,7 +116,7 @@ def edit_db(nr, updated_values, table_name):
     values = list(updated_values.values())
     values.append(nr)
     
-    cur.execute(f"UPDATE {table_name} SET {set_variables} WHERE nr = ?", values)
+    cur.execute(f"UPDATE {table_name} SET {set_variables} WHERE {id_name} = ?", values)
     
     conn.commit()
     conn.close()
@@ -131,10 +131,10 @@ def search_db(search_value):
     conn.close()
     return df
     
-def delete_db(nr, table_name):
+def delete_db(nr, table_name, id_name = 'nr'):
     """Deletes selected record/Nr"""
     conn = sqlite3.connect(DB_FILE)
-    conn.execute(f"DELETE FROM {table_name} WHERE nr = ?", (nr,))
+    conn.execute(f"DELETE FROM {table_name} WHERE {id_name} = ?", (nr,))
     conn.commit()
     conn.close()
     
