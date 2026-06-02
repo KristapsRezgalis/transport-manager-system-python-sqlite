@@ -422,8 +422,11 @@ def main_menu(login_validation, theme_name):
                 sg.Button("Create",  key="-BTN-CREATE-FORWARDER-", size=10),
                 sg.Button("Edit", key="-BTN-EDIT-FORWARDER-", size=10),
                 sg.Button("Delete", key="-BTN-DELETE-FORWARDER-", size=10),
-                sg.Button("Show All", key="-BTN-ALL-FORWARDERS-", size=10),
                 sg.VerticalSeparator(),
+                sg.Button("Create contact", key="-CREATE-FW-CONTACT-", size=12),
+                sg.Button("Show contacts", key="-SHOW-FW-CONTACT-", size=12),
+                sg.VerticalSeparator(),
+                sg.Button("Show All", key="-BTN-ALLDATA-FORWARDER-", size=10),
                 sg.Text("Search:", pad=(5, 5)),
                 sg.Input(key="-SEARCH-FORWARDER-", size=20),
                 sg.Button("Search", key="-BTN-SEARCH-FORWARDER-", size=10),
@@ -614,17 +617,33 @@ def main_menu(login_validation, theme_name):
             table_key = action[0]
             current_df = read_all('transport', 'nr')
             refresh_table(current_df, "-STATISTICS-TABLE-")
-            app_window["-SEARCH-"].update("")
+            app_window["-SEARCH-STATISTICS-"].update("")
             statuss("Showing all records!")
             
-        # ── Action triggered when Search button is pressed - seasrches in database for values that match from the searchbox
+        elif action == "-BTN-ALLDATA-FORWARDER-":
+            table_key = action[0]
+            current_df = read_all('t_forwarder', 'forwarder_id')
+            refresh_table(current_df, "-FORWARDER-TABLE-")
+            app_window["-SEARCH-FORWARDER-"].update("")
+            statuss("Showing all records!")
+            
+        # ── Action triggered when Search button is pressed - seasrches in Transport orders database for values that match from the searchbox
         elif action == "-BTN-SEARCH-":
             search_value = values["-SEARCH-"].strip()
             if not search_value:
                 statuss("Ievadi meklēšanas tekstu!", "red")
             else:
-                current_df = search_db(search_value)
+                current_df = search_db(search_value, 'transport')
                 refresh_table(current_df, "-TABLE-")
+                statuss(f"Found: {len(current_df)} records")
+        # ── Action triggered when Search button is pressed - seasrches in Forwarder table database for values that match from the searchbox
+        elif action == "-BTN-SEARCH-FORWARDER-":
+            search_value = values["-SEARCH-FORWARDER-"].strip()
+            if not search_value:
+                statuss("Ievadi meklēšanas tekstu!", "red")
+            else:
+                current_df = search_db(search_value, 't_forwarder')
+                refresh_table(current_df, "-FORWARDER-TABLE-")
                 statuss(f"Found: {len(current_df)} records")
                 
         elif action == "-BTN-SEARCH-STATISTICS-":
@@ -632,7 +651,7 @@ def main_menu(login_validation, theme_name):
             if not search_value:
                 statuss("Ievadi meklēšanas tekstu!", "red")
             else:
-                current_df = search_db(search_value)
+                current_df = search_db(search_value, 'transport')
                 refresh_table(current_df, "-STATISTICS-TABLE-")
                 statuss(f"Found: {len(current_df)} records")
                 

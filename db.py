@@ -121,15 +121,22 @@ def edit_db(nr, updated_values, table_name, id_name = 'nr'):
     conn.commit()
     conn.close()
     
-def search_db(search_value):
+def search_db(search_value, tableName):
     conn = sqlite3.connect(DB_FILE)
-    df = pd.read_sql(""" SELECT * FROM transport
-    WHERE sap_po LIKE ? OR sender LIKE ? OR delivery LIKE ? OR loading LIKE ? OR unloading LIKE ? OR pallets LIKE ? OR weight LIKE ? OR forwarder LIKE ? OR cost LIKE ?
-    ORDER BY nr
-    """, conn, params=(f"%{search_value}%", f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%"))
+    if tableName == 'transport':
+        df = pd.read_sql(f""" SELECT * FROM {tableName}
+        WHERE sap_po LIKE ? OR sender LIKE ? OR delivery LIKE ? OR loading LIKE ? OR unloading LIKE ? OR pallets LIKE ? OR weight LIKE ? OR forwarder LIKE ? OR cost LIKE ?
+        ORDER BY nr
+        """, conn, params=(f"%{search_value}%", f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%"))
+    elif tableName == 't_forwarder':
+        df = pd.read_sql(f""" SELECT * FROM {tableName}
+        WHERE fw_name LIKE ? OR fw_reg_nr LIKE ? OR fw_vat_nr LIKE ? OR fw_street LIKE ? OR fw_city LIKE ? OR fw_post_code LIKE ? OR fw_country LIKE ? OR fw_payment_terms LIKE ? 
+        ORDER BY forwarder_id
+        """, conn, params=(f"%{search_value}%", f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%"))
     
     conn.close()
     return df
+
     
 def delete_db(nr, table_name, id_name = 'nr'):
     """Deletes selected record/Nr"""
