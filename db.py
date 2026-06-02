@@ -229,6 +229,13 @@ def return_forwarders():
     
     return forw_list
 
+def return_fw_contacts(forwarder_id):
+    conn = sqlite3.connect(DB_FILE)
+    df = pd.read_sql(f"SELECT * FROM t_fw_contact WHERE forwarder_id = {forwarder_id} ORDER BY fw_contact_id", conn)
+    conn.close()
+    
+    return df
+
 """   
 def filter_db(filters):
     conditions = []

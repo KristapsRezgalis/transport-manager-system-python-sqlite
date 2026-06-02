@@ -1,18 +1,20 @@
 import FreeSimpleGUI as sg
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts
 from pdf import create_order_pdf
 from stats import generate_diagram
 
 sg.theme("DarkAmber")
 
-ORDER_COLUMNS = ["Nr.", "SAP PO", "Sender", "Delivery", "Loading",
-            "Unloading", "Pallets", "Weight", "Forwarder", "Cost","Customs","REF"]
-
+# table column names
+ORDER_COLUMNS = ["Nr.", "SAP PO", "Sender", "Delivery", "Loading", "Unloading", "Pallets", "Weight", "Forwarder", "Cost","Customs","REF"]
 USER_COLUMNS = ["Nr", "Name", "Surname", "Role", "E-mail","Phone","Login","Password",]
-user_roles = ['admin', 'user', 'spectator']
 FORWARDER_COLUMNS = ['Nr', 'Name', 'Reg Nr', 'VAT Nr', 'Street', 'City', 'Post code', 'Country', 'Payment days']
+FORWARDER_CONTACT_COLUMNS = ['Nr', 'Name', 'Surname', 'Position', 'Phone', 'Email']
+
+# dropdown variables
+user_roles = ['admin', 'user', 'spectator']
 countries = ["Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "Russia", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom", "Vatican City"]
 temperature_customs_options = ['Yes', '']
 statistics_types = ['Cost per pallet', 'Cost per cargo', 'Total cost', 'Total cargos', 'Total pallets', 'Total weight', 'Pallets per cargo', 'Weight per pallet', 'Weight per cargo', 'Cargos per country', 'Cargos per forwarder', 'Cost per forwarder']
@@ -26,12 +28,18 @@ TABLE_KEYS = [
     "-COMPANY-TABLE-"
 ]
 
-def df_to_table(df):
+def df_to_table(df, columns_to_keep=None):
     """Changes DataFrame to list for FreeSimpleGUI table."""
     if df.empty:
         return []
 
-    df = df.copy()
+    # 1. Filter columns if a list is provided, otherwise keep all
+    if columns_to_keep is not None:
+        # Ensure we only select columns that actually exist in the DataFrame
+        existing_cols = [col for col in columns_to_keep if col in df.columns]
+        df = df[existing_cols].copy()
+    else:
+        df = df.copy()
 
     # Format columns to 2 decimal places
     if "weight" in df.columns:
@@ -93,6 +101,54 @@ def filter_modal():
             }
             app_window.close()
             return filtered_values
+
+def forwarder_contacts_modal(fw_nr, fw_name):
+    fw_contact_df = return_fw_contacts(fw_nr)
+    
+    fw_contact_columns = [
+        sg.Column([[sg.Table(
+            values=[],
+            headings=FORWARDER_CONTACT_COLUMNS,
+            key="-FW-CONTACTS-TABLE-",
+            auto_size_columns=False,
+            col_widths=[3, 15, 15, 15, 15, 20],
+            justification="left",
+            num_rows=15,
+            enable_events=True,
+            enable_click_events=True, # for sorting
+            select_mode=sg.TABLE_SELECT_MODE_BROWSE,
+            expand_x=True,
+            expand_y=True,
+            )]], expand_x=True)
+    ]
+    
+    layout = [
+        [
+        sg.Button("Create New Contact",  key="-BTN-CREATE-FWCONTACT-", size=15),
+        sg.Button("Edit Contact", key="-BTN-EDIT-FWCONTACT-", size=15),
+        sg.Button("Delete Contact", key="-BTN-DELETE-FWCONTACT-", size=15),
+        sg.Button("Exit", key="-BTN-EXIT-FWCONTACT-", size=15),
+        ],
+        [sg.Text("", key="-STATUS-", size=60, text_color="green")],
+        fw_contact_columns
+    ]
+    
+    app_window2 = sg.Window(
+        f"{fw_name} contacts",
+        layout,
+        resizable=True,
+        size=(1000, 400),
+        finalize=True
+    )
+    
+    app_window2["-FW-CONTACTS-TABLE-"].update(values=df_to_table(fw_contact_df, ["fw_contact_id", "fw_c_name", "fw_c_surname", "fw_c_position", "fw_c_phone", "fw_c_email"]))
+    
+    while True:
+        action, values = app_window2.read()
+        
+        if action in (sg.WIN_CLOSED, "-BTN-EXIT-FWCONTACT-"):
+            app_window2.close()
+            break
 
 def user_entry_modal(title, existing=None):
     e = existing or {}
@@ -432,6 +488,7 @@ def main_menu(login_validation, theme_name):
                 sg.Button("Search", key="-BTN-SEARCH-FORWARDER-", size=10),
                 sg.Button("Exit", key="-BTN-EXIT-FORWARDER-", size=10),
             ],
+            [sg.Text("", key="-FWSTATUS-", size=60, text_color="green")],
             forwarder_columns
         ]
     
@@ -512,7 +569,8 @@ def main_menu(login_validation, theme_name):
         
     def statuss(text, sel_color="green"):
         app_window["-STATUS-"].update(text, text_color=sel_color)
-
+    def fw_statuss(text, sel_color="green"):
+        app_window["-FWSTATUS-"].update(text, text_color=sel_color)
     
     
     # --- initial data + sorting state ---
@@ -644,12 +702,12 @@ def main_menu(login_validation, theme_name):
             else:
                 current_df = search_db(search_value, 't_forwarder')
                 refresh_table(current_df, "-FORWARDER-TABLE-")
-                statuss(f"Found: {len(current_df)} records")
+                fw_statuss(f"Found: {len(current_df)} records")
                 
         elif action == "-BTN-SEARCH-STATISTICS-":
             search_value = values["-SEARCH-STATISTICS-"].strip()
             if not search_value:
-                statuss("Ievadi meklēšanas tekstu!", "red")
+                ("Ievadi meklēšanas tekstu!", "red")
             else:
                 current_df = search_db(search_value, 'transport')
                 refresh_table(current_df, "-STATISTICS-TABLE-")
@@ -708,7 +766,7 @@ def main_menu(login_validation, theme_name):
                 )
                 current_df = read_all('t_forwarder', 'forwarder_id')
                 refresh_table(current_df, "-FORWARDER-TABLE-")
-                statuss(f"✅ Forwarder Nr.{new_record} added!")
+                fw_statuss(f"✅ Forwarder Nr.{new_record} added!")
                 
         # ── Action triggered when Delete button is pressed - deletes the selected record
         elif action == "-BTN-DELETE-":
@@ -766,7 +824,7 @@ def main_menu(login_validation, theme_name):
                     current_df = read_all('t_forwarder', 'forwarder_id')
                     refresh_table(current_df, "-FORWARDER-TABLE-")
                     selected_row = None
-                    statuss(f"🗑️ Nr.{nr} deleted!")
+                    fw_statuss(f"🗑️ Nr.{nr} deleted!")
                     
         # ── Action triggered when Edit button is pressed - opens Entry modal for editing an existing record
         elif action == "-BTN-EDIT-":
@@ -879,8 +937,16 @@ def main_menu(login_validation, theme_name):
                     
                     current_df = read_all('t_forwarder', 'forwarder_id')
                     refresh_table(current_df, "-FORWARDER-TABLE-")
-                    statuss(f"✅ Nr.{nr} updated!")
+                    fw_statuss(f"✅ Nr.{nr} updated!")
                     #app_window["-SEARCH-"].update("")
+        elif action == "-SHOW-FW-CONTACT-":
+            if selected_row is None:
+                fw_statuss("Select a record in the table!", "red")
+            else:
+                row = current_df.iloc[selected_row]
+                fw_id = int(row['forwarder_id'])
+                fw_name = str(row['fw_name'])
+                forwarder_contacts_modal(fw_id, fw_name)
                     
         elif action == "-BTN-CREATE-DIAGRAM-":
             print('-BTN-CREATE-DIAGRAM- was pressed!!!')
