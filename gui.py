@@ -1,7 +1,7 @@
 import FreeSimpleGUI as sg
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact
 from pdf import create_order_pdf
 from stats import generate_diagram
 
@@ -103,6 +103,7 @@ def filter_modal():
             return filtered_values
 
 def forwarder_contacts_modal(fw_nr, fw_name):
+    # checks contacts in databse for the selected forwarder
     fw_contact_df = return_fw_contacts(fw_nr)
     
     fw_contact_columns = [
@@ -149,6 +150,30 @@ def forwarder_contacts_modal(fw_nr, fw_name):
         if action in (sg.WIN_CLOSED, "-BTN-EXIT-FWCONTACT-"):
             app_window2.close()
             break
+
+def create_fw_contact_modal(title, existing=None):
+    e = existing or {}
+    layout =[
+        [sg.Text("Name:", size=16), sg.Input(e.get("fw_c_name", ""), key="-FWCONTACT-NAME-", size=35)],
+        [sg.Text("Surname:", size=16), sg.Input(e.get("fw_c_surname", ""), key="-FWCONTACT-SURNAME-", size=35)],
+        [sg.Text("Position:", size=16), sg.Input(e.get("fw_c_position", ""), key="-FWCONTACT-POS-", size=35)],
+        [sg.Text("Phone Nr:", size=16), sg.Input(e.get("fw_c_phone", ""), key="-FWCONTACT-PHONE-", size=35)],
+        [sg.Text("E-mail:", size=16), sg.Input(e.get("fw_c_email", ""), key="-FWCONTACT-EMAIL-", size=35)],
+        [sg.Button("Save", key="-FWCONTACT-SAVE-"), sg.Button("Cancel")]
+    ]
+        
+    app_window = sg.Window(title, layout, modal=True)
+
+    while True:
+        action, values = app_window.read()
+        
+        if action in (sg.WIN_CLOSED, "Cancel"):
+            app_window.close()
+            return None
+        if action == "-FWCONTACT-SAVE-":
+            app_window.close()
+            return values
+    
 
 def user_entry_modal(title, existing=None):
     e = existing or {}
@@ -947,7 +972,25 @@ def main_menu(login_validation, theme_name):
                 fw_id = int(row['forwarder_id'])
                 fw_name = str(row['fw_name'])
                 forwarder_contacts_modal(fw_id, fw_name)
-                    
+        # Ation to create a new forwarder contact -> opens a model where the contact can be created
+        elif action == "-BTN-CREATE-FWCONTACT-" or action == "-CREATE-FW-CONTACT-":
+            if selected_row is None:
+                fw_statuss("Select a forwarder in the table for which to create a new contact!", "red")
+            else:
+                row = current_df.iloc[selected_row]
+                fw_id = int(row['forwarder_id'])
+                fw_name = str(row['fw_name'])
+                
+                new_values = create_fw_contact_modal(f"Create a new contact for {fw_name}")
+                if new_values:
+                    new_record = add_fw_contact(
+                        fw_id, new_values["-FWCONTACT-NAME-"], new_values["-FWCONTACT-SURNAME-"], new_values["-FWCONTACT-POS-"],
+                        new_values["-FWCONTACT-PHONE-"],new_values["-FWCONTACT-EMAIL-"]
+                    )
+                    current_df = read_all('t_forwarder', 'forwarder_id')
+                    #refresh_table(current_df, "-FORWARDER-TABLE-")
+                    fw_statuss(f"✅ {fw_name} contact Nr.{new_record} added!")
+        # Action to generate a diagram in Statistic section
         elif action == "-BTN-CREATE-DIAGRAM-":
             print('-BTN-CREATE-DIAGRAM- was pressed!!!')
             generate_diagram(current_df, values['-STATISTICS-TYPE-'], values['-PERIOD-TYPE-'])
