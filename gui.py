@@ -8,10 +8,11 @@ from stats import generate_diagram
 sg.theme("DarkAmber")
 
 # table column names
-ORDER_COLUMNS = ["Nr.", "SAP PO", "Sender", "Delivery", "Loading", "Unloading", "Pallets", "Weight", "Forwarder", "Cost","Customs","REF"]
-USER_COLUMNS = ["Nr", "Name", "Surname", "Role", "E-mail","Phone","Login","Password",]
-FORWARDER_COLUMNS = ['Nr', 'Name', 'Reg Nr', 'VAT Nr', 'Street', 'City', 'Post code', 'Country', 'Payment days']
-FORWARDER_CONTACT_COLUMNS = ['Nr', 'Name', 'Surname', 'Position', 'Phone', 'Email']
+ORDER_COLUMNS = ["ID", "SAP PO", "Sender", "Delivery", "Loading", "Unloading", "Pallets", "Weight", "Forwarder", "Contact", "Cost","Customs","REF"]
+USER_COLUMNS = ["ID", "Name", "Surname", "Role", "E-mail","Phone","Login","Password",]
+FORWARDER_COLUMNS = ['ID', 'Name', 'Reg Nr', 'VAT Nr', 'Street', 'City', 'Post code', 'Country', 'Payment days']
+FORWARDER_CONTACT_COLUMNS = ['ID', 'Name', 'Surname', 'Position', 'Phone', 'Email']
+FW_CONTACT_DB_COLUMNS = ["fw_contact_id","fw_c_name","fw_c_surname","fw_c_position","fw_c_phone","fw_c_email"]
 
 # dropdown variables
 user_roles = ['admin', 'user', 'spectator']
@@ -65,6 +66,7 @@ def filter_modal():
         [sg.Text("Gross weight min:", size=16), sg.Input(key="-F-WEIGHT-MIN-",   size=25),
          sg.Text("Gross weight max:", size=16), sg.Input(key="-F-WEIGHT-MAX-",   size=25)],
         [sg.Text("Forwarder:", size=16), sg.Input(key="-F-FORWARDER-",   size=72)],
+        [sg.Text("Forwarder contact:", size=16), sg.Input(key="-F-FORWARDER-CONTACT-",   size=72)],
         [sg.Text("Cost min:", size=16), sg.Input(key="-F-COST-MIN-",   size=25),
          sg.Text("Cost max:", size=16), sg.Input(key="-F-COST-MAX-",   size=25)],
         [sg.Text("Customs:", size=16), sg.Combo(temperature_customs_options, key="-F-CUSTOMS-", default_value="", readonly=True, size=33)],
@@ -94,6 +96,7 @@ def filter_modal():
                 "weight_min":    values["-F-WEIGHT-MIN-"],
                 "weight_max":  values["-F-WEIGHT-MAX-"],
                 "forwarder":    values["-F-FORWARDER-"],
+                "forwarder_contact":    values["-F-FORWARDER-CONTACT-"],
                 "cost_min":  values["-F-COST-MIN-"],
                 "cost_max":  values["-F-COST-MAX-"],
                 "customs":  values["-F-CUSTOMS-"],
@@ -102,9 +105,13 @@ def filter_modal():
             app_window.close()
             return filtered_values
 
-def forwarder_contacts_modal(fw_nr, fw_name):
+def forwarder_contacts_modal(fw_id, fw_name):
     # checks contacts in databse for the selected forwarder
-    fw_contact_df = return_fw_contacts(fw_nr)
+    fw_contact_df = return_fw_contacts(fw_id)
+    
+    selected_row = None
+    sort_column = None
+    sort_ascending = True
     
     fw_contact_columns = [
         sg.Column([[sg.Table(
@@ -130,11 +137,11 @@ def forwarder_contacts_modal(fw_nr, fw_name):
         sg.Button("Delete Contact", key="-BTN-DELETE-FWCONTACT-", size=15),
         sg.Button("Exit", key="-BTN-EXIT-FWCONTACT-", size=15),
         ],
-        [sg.Text("", key="-STATUS-", size=60, text_color="green")],
+        [sg.Text("", key="-FW-C-STATUS-", size=60, text_color="green")],
         fw_contact_columns
     ]
     
-    app_window2 = sg.Window(
+    app_window = sg.Window(
         f"{fw_name} contacts",
         layout,
         resizable=True,
@@ -142,15 +149,98 @@ def forwarder_contacts_modal(fw_nr, fw_name):
         finalize=True
     )
     
-    app_window2["-FW-CONTACTS-TABLE-"].update(values=df_to_table(fw_contact_df, ["fw_contact_id", "fw_c_name", "fw_c_surname", "fw_c_position", "fw_c_phone", "fw_c_email"]))
+    app_window["-FW-CONTACTS-TABLE-"].update(values=df_to_table(fw_contact_df, FW_CONTACT_DB_COLUMNS))
+    
+    # function to display/change statuss text
+    def fw_cont_statuss(text, sel_color="green"):
+        app_window["-FW-C-STATUS-"].update(text, text_color=sel_color)
+    
+    # function to refresh forwarder contacts table
+    def refresh_fw_contacts():
+        nonlocal fw_contact_df
+
+        fw_contact_df = return_fw_contacts(fw_id)
+
+        app_window["-FW-CONTACTS-TABLE-"].update(
+            values=df_to_table(
+                fw_contact_df,
+                FW_CONTACT_DB_COLUMNS
+            )
+        )
     
     while True:
-        action, values = app_window2.read()
+        action, values = app_window.read()
+        
+        if isinstance(action, tuple) and action[0] == "-FW-CONTACTS-TABLE-":
+            row, col = action[2]
+            if row == -1:
+                column_name = FW_CONTACT_DB_COLUMNS[col]
+                if sort_column == column_name:
+                    sort_ascending = not sort_ascending
+                else:
+                    sort_column = column_name
+                    sort_ascending = True
+                fw_contact_df = fw_contact_df.sort_values(
+                    by=column_name,
+                    ascending=sort_ascending,
+                    ignore_index=True
+                )
+                app_window["-FW-CONTACTS-TABLE-"].update(
+                    values=df_to_table(
+                        fw_contact_df,
+                        ["fw_contact_id", "fw_c_name", "fw_c_surname",
+                         "fw_c_position", "fw_c_phone", "fw_c_email"]
+                    )
+                )
+            else:
+                selected_row = row
         
         if action in (sg.WIN_CLOSED, "-BTN-EXIT-FWCONTACT-"):
-            app_window2.close()
+            app_window.close()
             break
-
+        elif action == "-BTN-CREATE-FWCONTACT-":
+            # fw_id, fw_name
+            new_values = create_fw_contact_modal(f"Create a new contact for {fw_name}")
+            if new_values:
+                new_record = add_fw_contact(
+                    fw_id, new_values["-FWCONTACT-NAME-"], new_values["-FWCONTACT-SURNAME-"], new_values["-FWCONTACT-POS-"],
+                    new_values["-FWCONTACT-PHONE-"],new_values["-FWCONTACT-EMAIL-"]
+                )
+                # Reload contacts
+                fw_contact_df = return_fw_contacts(fw_id)
+                app_window["-FW-CONTACTS-TABLE-"].update(values=df_to_table(fw_contact_df, FW_CONTACT_DB_COLUMNS))
+                fw_cont_statuss(f"✅ {fw_name} contact Nr.{new_record} added!")
+                selected_row = None
+        
+        elif action == "-BTN-EDIT-FWCONTACT-":
+            if selected_row is None:
+                fw_cont_statuss("Select a contact!", "red")
+            else:
+                row = fw_contact_df.iloc[selected_row]
+                contact_id = int(row["fw_contact_id"])
+                
+                existing = {
+                    "fw_c_name": str(row["fw_c_name"]),
+                    "fw_c_surname": str(row["fw_c_surname"]),
+                    "fw_c_position": str(row["fw_c_position"]),
+                    "fw_c_phone": str(row["fw_c_phone"]),
+                    "fw_c_email": str(row["fw_c_email"]),
+                }
+                new_values = create_fw_contact_modal(f"Editing contact Nr.{contact_id}", existing)
+                if new_values:
+                    updated_values = {
+                        "fw_c_name": new_values["-FWCONTACT-NAME-"],
+                        "fw_c_surname": new_values["-FWCONTACT-SURNAME-"],
+                        "fw_c_position": new_values["-FWCONTACT-POS-"],
+                        "fw_c_phone": new_values["-FWCONTACT-PHONE-"],
+                        "fw_c_email": new_values["-FWCONTACT-EMAIL-"],
+                    }
+                    edit_db(contact_id, updated_values, 't_fw_contact', 'fw_contact_id')
+                    
+                    refresh_fw_contacts()
+                    fw_cont_statuss(f"✅ Contact Nr.{contact_id} updated!")
+                    selected_row = None
+            
 def create_fw_contact_modal(title, existing=None):
     e = existing or {}
     layout =[
@@ -256,6 +346,7 @@ def entry_modal(title, existing=None, nr=None):
             [sg.Text("Pallet count:",           size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
             [sg.Text("Gross weight:",           size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
             [sg.Text("Forwarder:",           size=16), sg.Combo(forwarers_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33)],
+            [sg.Text("Forwarder contact:",           size=16), sg.Combo(forwarers_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder", ""), readonly=True, size=33)],
             [sg.Text("Cost:",           size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
             [sg.Text("Customs:", size=16), sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33)],
             [sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
@@ -264,17 +355,18 @@ def entry_modal(title, existing=None, nr=None):
         ]
     else:
         layout = [
-            [sg.Text("SAP PO Nr:",           size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
-            [sg.Text("Sender:",           size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=35)],
-            [sg.Text("Delivery:",           size=16), sg.Combo(['Gemoss M7', 'Gemoss M75'], key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33)],
+            [sg.Text("SAP PO Nr:", size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
+            [sg.Text("Sender:", size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=35)],
+            [sg.Text("Delivery:", size=16), sg.Combo(['Gemoss M7', 'Gemoss M75'], key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33)],
             [sg.Text("Loading date:", size=16), sg.Input(e.get("loading", ""), key="-LOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
              sg.CalendarButton("Pick",target="-LOADING-",format="%Y-%m-%d")],
             [sg.Text("Unloading date:", size=16), sg.Input(e.get("unloading", ""), key="-UNLOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
              sg.CalendarButton("Pick",target="-UNLOADING-",format="%Y-%m-%d")],
-            [sg.Text("Pallet count:",           size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
-            [sg.Text("Gross weight:",           size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
-            [sg.Text("Forwarder:",           size=16), sg.Combo(forwarers_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33)],
-            [sg.Text("Cost:",           size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
+            [sg.Text("Pallet count:", size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
+            [sg.Text("Gross weight:", size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
+            [sg.Text("Forwarder:", size=16), sg.Combo(forwarers_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33)],
+            [sg.Text("Forwarder contact:", size=16), sg.Combo(forwarers_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder", ""), readonly=True, size=33)],
+            [sg.Text("Cost:", size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
             [sg.Text("Customs:", size=16), sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33)],
             [sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
             [sg.Button("Save", key="-SAVE-"), sg.Button("Cancel")]
@@ -382,7 +474,7 @@ def main_menu(login_validation, theme_name):
                 headings=ORDER_COLUMNS,
                 key=table_key,
                 auto_size_columns=False,
-                col_widths=[4, 8, 20, 20, 10, 10, 5, 8, 20, 10, 6, 5],
+                col_widths=[4, 8, 20, 20, 10, 10, 5, 8, 20, 20, 10, 6, 5],
                 justification="left",
                 num_rows=30,
                 enable_events=True,
@@ -762,7 +854,7 @@ def main_menu(login_validation, theme_name):
             if new_values:
                 new_record = add_db(
                     new_values["-SAP_PO-"], new_values["-SENDER-"], new_values["-DELIVERY-"], new_values["-LOADING-"],
-                    new_values["-UNLOADING-"], new_values["-PALLETS-"], new_values["-WEIGHT-"], new_values["-FORWARDER-"],
+                    new_values["-UNLOADING-"], new_values["-PALLETS-"], new_values["-WEIGHT-"], new_values["-FORWARDER-"], new_values["-FORWARDER-CONTACT-"],
                     new_values["-COST-"], new_values["-CUSTOMS-"], new_values["-REF-"]
                 )
                 current_df = read_all('transport', 'nr')
@@ -868,6 +960,7 @@ def main_menu(login_validation, theme_name):
                     "pallets":          str(row["pallets"]),
                     "weight":          str(row["weight"]),
                     "forwarder":          str(row["forwarder"]),
+                    "forwarder_contact":          str(row["forwarder_contact"]),
                     "cost":          str(row["cost"]),
                     "customs":          str(row["customs"]),
                     "ref":          str(row["ref"]),
@@ -883,6 +976,7 @@ def main_menu(login_validation, theme_name):
                         "pallets":          int(new_values["-PALLETS-"]),
                         "weight":          float(new_values["-WEIGHT-"]),
                         "forwarder":          new_values["-FORWARDER-"],
+                        "forwarder_contact":          new_values["-FORWARDER-CONTACT-"],
                         "cost":          float(new_values["-COST-"]),
                         "customs":          new_values["-CUSTOMS-"],
                         "ref":          new_values["-REF-"],
@@ -990,6 +1084,7 @@ def main_menu(login_validation, theme_name):
                     current_df = read_all('t_forwarder', 'forwarder_id')
                     #refresh_table(current_df, "-FORWARDER-TABLE-")
                     fw_statuss(f"✅ {fw_name} contact Nr.{new_record} added!")
+                    
         # Action to generate a diagram in Statistic section
         elif action == "-BTN-CREATE-DIAGRAM-":
             print('-BTN-CREATE-DIAGRAM- was pressed!!!')

@@ -32,6 +32,7 @@ CREATE TABLE IF NOT EXISTS transport (
     pallets INTEGER,
     weight REAL,
     forwarder TEXT,
+    forwarder_contact TEXT,
     cost INTEGER,
     customs TEXT,
     ref TEXT,
@@ -48,7 +49,7 @@ def read_all(table_name, id_header):
     conn.close()
     return df
 
-def add_db(sap_po, sender, delivery, loading, unloading, pallets, weight, forwarder, cost, customs, ref):
+def add_db(sap_po, sender, delivery, loading, unloading, pallets, weight, forwarder, forwarder_contact, cost, customs, ref):
     """Adds new transport order record into database"""
     new_row = pd.DataFrame([{
         "sap_po":	sap_po,
@@ -59,6 +60,7 @@ def add_db(sap_po, sender, delivery, loading, unloading, pallets, weight, forwar
         "pallets":	pallets,
         "weight":	weight,
         "forwarder":forwarder,
+        "forwarder_contact":forwarder_contact,
         "cost":		cost,
         "customs":	customs,
         "ref":		ref,
@@ -125,9 +127,9 @@ def search_db(search_value, tableName):
     conn = sqlite3.connect(DB_FILE)
     if tableName == 'transport':
         df = pd.read_sql(f""" SELECT * FROM {tableName}
-        WHERE sap_po LIKE ? OR sender LIKE ? OR delivery LIKE ? OR loading LIKE ? OR unloading LIKE ? OR pallets LIKE ? OR weight LIKE ? OR forwarder LIKE ? OR cost LIKE ?
+        WHERE sap_po LIKE ? OR sender LIKE ? OR delivery LIKE ? OR loading LIKE ? OR unloading LIKE ? OR pallets LIKE ? OR weight LIKE ? OR forwarder LIKE ? OR forwarder_contact LIKE ? OR cost LIKE ?
         ORDER BY nr
-        """, conn, params=(f"%{search_value}%", f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%"))
+        """, conn, params=(f"%{search_value}%", f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%"))
     elif tableName == 't_forwarder':
         df = pd.read_sql(f""" SELECT * FROM {tableName}
         WHERE fw_name LIKE ? OR fw_reg_nr LIKE ? OR fw_vat_nr LIKE ? OR fw_street LIKE ? OR fw_city LIKE ? OR fw_post_code LIKE ? OR fw_country LIKE ? OR fw_payment_terms LIKE ? 
