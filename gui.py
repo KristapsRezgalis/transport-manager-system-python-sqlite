@@ -20,7 +20,7 @@ countries = ["Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and 
 temperature_customs_options = ['Yes', '']
 statistics_types = ['Cost per pallet', 'Cost per cargo', 'Total cost', 'Total cargos', 'Total pallets', 'Total weight', 'Pallets per cargo', 'Weight per pallet', 'Weight per cargo', 'Cargos per country', 'Cargos per forwarder', 'Cost per forwarder']
 statistic_period = ['Per day', 'Per month', 'Per year']
-forwarers_list = return_forwarders()
+forwarders_list = return_forwarders()
 
 TABLE_KEYS = [
     "-TABLE-",
@@ -171,6 +171,7 @@ def forwarder_contacts_modal(fw_id, fw_name):
     while True:
         action, values = app_window.read()
         
+        # Make the columns sortable
         if isinstance(action, tuple) and action[0] == "-FW-CONTACTS-TABLE-":
             row, col = action[2]
             if row == -1:
@@ -194,10 +195,11 @@ def forwarder_contacts_modal(fw_id, fw_name):
                 )
             else:
                 selected_row = row
-        
+        # Closes the forwarder contact modal
         if action in (sg.WIN_CLOSED, "-BTN-EXIT-FWCONTACT-"):
             app_window.close()
             break
+        # opens a modal to create a new forwarder contact
         elif action == "-BTN-CREATE-FWCONTACT-":
             # fw_id, fw_name
             new_values = create_fw_contact_modal(f"Create a new contact for {fw_name}")
@@ -211,7 +213,7 @@ def forwarder_contacts_modal(fw_id, fw_name):
                 app_window["-FW-CONTACTS-TABLE-"].update(values=df_to_table(fw_contact_df, FW_CONTACT_DB_COLUMNS))
                 fw_cont_statuss(f"✅ {fw_name} contact Nr.{new_record} added!")
                 selected_row = None
-        
+        # opens a modal to edit a new forwarder contact
         elif action == "-BTN-EDIT-FWCONTACT-":
             if selected_row is None:
                 fw_cont_statuss("Select a contact!", "red")
@@ -240,6 +242,26 @@ def forwarder_contacts_modal(fw_id, fw_name):
                     refresh_fw_contacts()
                     fw_cont_statuss(f"✅ Contact Nr.{contact_id} updated!")
                     selected_row = None
+        elif action == "-BTN-DELETE-FWCONTACT-":
+            if selected_row is None:
+                fw_cont_statuss("Select a contact!", "red")
+            else:
+                row = fw_contact_df.iloc[selected_row]
+                contact_id = int(row["fw_contact_id"])
+                contact_name_surname = f"{str(row["fw_c_name"])} {str(row["fw_c_surname"])}"
+                
+                confirm = sg.popup_yes_no(
+                    f"Delete ID Nr.{contact_id}?\n"
+                    f"{contact_name_surname}\n"
+                    f"from {fw_name}",
+                    title="Confirm deleting a record"
+                )
+                if confirm == "Yes":
+                    delete_db(contact_id, 't_fw_contact', 'fw_contact_id')
+                    refresh_fw_contacts()
+                    selected_row = None
+                    fw_cont_statuss(f"🗑   ID Nr.{contact_id} deleted!")
+                    
             
 def create_fw_contact_modal(title, existing=None):
     e = existing or {}
@@ -333,6 +355,7 @@ def forwarder_entry_modal(title, existing=None):
 # Entry modal window for creating new records and editing existin ones
 def entry_modal(title, existing=None, nr=None):
     e = existing or {}
+    forwarder_contact_list = []
     
     if existing:
         layout = [
@@ -345,8 +368,8 @@ def entry_modal(title, existing=None, nr=None):
              sg.CalendarButton("Pick",target="-UNLOADING-",format="%Y-%m-%d")],
             [sg.Text("Pallet count:",           size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
             [sg.Text("Gross weight:",           size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
-            [sg.Text("Forwarder:",           size=16), sg.Combo(forwarers_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33)],
-            [sg.Text("Forwarder contact:",           size=16), sg.Combo(forwarers_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder", ""), readonly=True, size=33)],
+            [sg.Text("Forwarder:", size=16), sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True)],
+            [sg.Text("Forwarder contact:", size=16), sg.Combo(forwarder_contact_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder_contact", ""), readonly=True, size=33)],
             [sg.Text("Cost:",           size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
             [sg.Text("Customs:", size=16), sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33)],
             [sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
@@ -364,8 +387,8 @@ def entry_modal(title, existing=None, nr=None):
              sg.CalendarButton("Pick",target="-UNLOADING-",format="%Y-%m-%d")],
             [sg.Text("Pallet count:", size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
             [sg.Text("Gross weight:", size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
-            [sg.Text("Forwarder:", size=16), sg.Combo(forwarers_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33)],
-            [sg.Text("Forwarder contact:", size=16), sg.Combo(forwarers_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder", ""), readonly=True, size=33)],
+            [sg.Text("Forwarder:", size=16), sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True)],
+            [sg.Text("Forwarder contact:", size=16), sg.Combo(forwarder_contact_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder", ""), readonly=True, size=33)],
             [sg.Text("Cost:", size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
             [sg.Text("Customs:", size=16), sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33)],
             [sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
@@ -388,9 +411,20 @@ def entry_modal(title, existing=None, nr=None):
         if action == "-CREATE-PDF-":
             create_order_pdf(existing, nr)
             print('Create transport order in PDF button pressed!')
+        elif action == "-FORWARDER-":
+            selected_forwarder_name = values['-FORWARDER-']
+            print(f'User selected forwarder - {selected_forwarder_name}')
+            fw_id = return_forwarders(selected_forwarder_name)
+            print(f'Forwarder id = {fw_id}')
+            forwarder_contact_list = return_fw_contacts(fw_id, 'list_required')
+            print(forwarder_contact_list)
+            
+            if forwarder_contact_list:
+                app_window["-FORWARDER-CONTACT-"].update(values=forwarder_contact_list, value=forwarder_contact_list[0])
+            else:
+                app_window["-FORWARDER-CONTACT-"].update(values=['No contact'], value='No contact')
 
-def login_modal():
-    
+def login_modal():  
     #Creates an error popup window. Accepts Enter as keypress to close the window
     def error_popup(message):
         layout = [
@@ -526,12 +560,12 @@ def main_menu(login_validation, theme_name):
     pallets_per_cargo = [[sg.Text(key="-PALLETS-PER-CARGO-")]]
     
     sidebar_layout = [
-        [sg.Button('Transport orders', key='-TRANSPORT-ORDERS-', size=(15, 3))],
-        [sg.Button('Statistics', key='-STATISTICS-', size=(15, 3))],
-        [sg.Button('Companies', key='-COMPANIES-', size=(15, 3))],
-        [sg.Button('Addresses', key='-ADDRESSES-', size=(15, 3))],
-        [sg.Button('Forwarders', key='-MENU-FORWARDERS-', size=(15, 3))],
-        [sg.Button('Users', key='-USERS-', size=(15, 3))],
+        [sg.Button('Transport orders', key='-TRANSPORT-ORDERS-', size=(18, 3))],
+        [sg.Button('Statistics', key='-STATISTICS-', size=(18, 3))],
+        [sg.Button('Companies', key='-COMPANIES-', size=(18, 3))],
+        [sg.Button('Addresses', key='-ADDRESSES-', size=(18, 3))],
+        [sg.Button('Forwarders', key='-MENU-FORWARDERS-', size=(18, 3))],
+        [sg.Button('Users', key='-USERS-', size=(18, 3))],
         #[sg.VPush()] # Nobīda pogas uz augšu
     ]
     
@@ -623,28 +657,53 @@ def main_menu(login_validation, theme_name):
     # Area of each section buttons, tables etc. - 6 possible layout views - only 1 visible at each time
     content_area = [
         [
-         sg.Column(transport_layout, key='-VIEW-TRANSPORT-', visible=True, expand_x=True, expand_y=True),
-         sg.Column(statistics_layout, key='-VIEW-STATISTICS-', visible=False, expand_x=True, expand_y=True),
-         sg.Column(companies_layout, key='-VIEW-COMPANIES-', visible=False, expand_x=True, expand_y=True),
-         sg.Column(addresses_layout, key='-VIEW-ADDRESSES-', visible=False, expand_x=True, expand_y=True),
-         sg.Column(forwarders_layout, key='-VIEW-FORWARDERS-', visible=False, expand_x=True, expand_y=True),
-         sg.Column(users_layout, key='-VIEW-USERS-', visible=False, expand_x=True, expand_y=True),
+            sg.Column(transport_layout,   key='-VIEW-TRANSPORT-',  visible=True,  expand_x=True, expand_y=True),
+            sg.Column(statistics_layout,  key='-VIEW-STATISTICS-', visible=False, expand_x=True, expand_y=True),
+            sg.Column(companies_layout,   key='-VIEW-COMPANIES-',  visible=False, expand_x=True, expand_y=True),
+            sg.Column(addresses_layout,   key='-VIEW-ADDRESSES-',  visible=False, expand_x=True, expand_y=True),
+            sg.Column(forwarders_layout,  key='-VIEW-FORWARDERS-', visible=False, expand_x=True, expand_y=True),
+            sg.Column(users_layout,       key='-VIEW-USERS-',      visible=False, expand_x=True, expand_y=True),
         ]
     ]
     
-    # Actual displayed layout
-    layout = [
+    # Detect screen size and scale layout to fit any screen (laptop or desktop)
+    import tkinter as _tk
+    _root = _tk.Tk()
+    _root.withdraw()
+    SCREEN_W = _root.winfo_screenwidth()
+    SCREEN_H = _root.winfo_screenheight()
+    _root.destroy()
+
+    SIDEBAR_W = 180
+    CONTENT_W = SCREEN_W - SIDEBAR_W - 20   # 20px breathing room for separator + padding
+    CONTENT_H = SCREEN_H - 80               # 80px for title bar + top header row
+
+    # Actual displayed layout - inner fixed layout, wrapped in scrollable column
+    inner_layout = [
         [
             sg.Text("Transport Management System", font=("Helvetica", 14, "bold"), pad=(10,10)), 
             sg.Push(),sg.Text(f'{login_validation.get("name")} {login_validation.get("surname")}', font=("Helvetica", 10, "bold"), pad=(10,10))
         ],
         [
-            sg.Column(sidebar_layout, expand_y=True),
-            sg.VerticalSeparator(), # Vizuāla līnija starp sānjoslu un saturu
-            sg.Column(content_area, expand_x=True, expand_y=True) 
+            sg.Column(sidebar_layout, key="-SIDEBAR-", size=(SIDEBAR_W, CONTENT_H), expand_x=False, expand_y=False),
+            sg.VerticalSeparator(),
+            sg.Column(content_area, key="-CONTENT-", size=(CONTENT_W, CONTENT_H), expand_x=False, expand_y=False)
         ]
     ]
-    
+
+    # Wrap everything in a scrollable column so scrollbars appear when the
+    # window is resized smaller than the fixed inner layout dimensions.
+    layout = [[
+        sg.Column(
+            inner_layout,
+            key="-SCROLL-AREA-",
+            scrollable=True,
+            vertical_scroll_only=False,
+            expand_x=True,
+            expand_y=True,
+        )
+    ]]
+
     app_window = sg.Window(
         "Transport Management System",
         layout,
@@ -652,7 +711,54 @@ def main_menu(login_validation, theme_name):
         size=(1200, 600),
         finalize=True
     )
-        
+
+    # Fixed content dimensions — must match the size= values set on
+    # -SIDEBAR- (180) + separator (~2) + -CONTENT- (1700) and height (900).
+    CONTENT_W = 1900
+    CONTENT_H = 950
+
+    scroll_elem  = app_window["-SCROLL-AREA-"]
+    scroll_frame = scroll_elem.TKColFrame
+    canvas       = scroll_frame.canvas
+    hsb          = scroll_elem.hsb
+    vsb          = scroll_elem.vsb
+
+    # Save the original pack settings FreeSimpleGUI used so we can restore them
+    hsb_pack = hsb.pack_info()
+    vsb_pack = vsb.pack_info()
+
+    # Hide both initially — window starts maximized so no scrollbars needed
+    hsb.pack_forget()
+    vsb.pack_forget()
+
+    def _update_scrollbars(event=None):
+        win_w = app_window.TKroot.winfo_width()
+        win_h = app_window.TKroot.winfo_height()
+
+        hsb_visible = hsb.winfo_ismapped()
+        vsb_visible = vsb.winfo_ismapped()
+
+        if win_w < CONTENT_W:
+            if not hsb_visible:
+                hsb.pack(**hsb_pack)
+        else:
+            if hsb_visible:
+                hsb.pack_forget()
+                canvas.xview_moveto(0)
+
+        if win_h < CONTENT_H:
+            if not vsb_visible:
+                vsb.pack(**vsb_pack)
+        else:
+            if vsb_visible:
+                vsb.pack_forget()
+                canvas.yview_moveto(0)
+
+        canvas.config(width=win_w, height=win_h)
+        canvas.configure(scrollregion=canvas.bbox("all"))
+
+    app_window.TKroot.bind("<Configure>", _update_scrollbars)
+
     app_window.maximize() 
     
     def refresh_table(df, table_key):
@@ -863,7 +969,16 @@ def main_menu(login_validation, theme_name):
         
         # ── Action triggered when CREATE USER button is pressed - opens Entry modal for creating new record
         elif action == "-BTN-CREATE-USER-":
+            print(
+                "Sidebar:",
+                app_window["-CONTENT-"].Widget.winfo_width()
+            )
             new_values = user_entry_modal("NEW USER")
+            print(
+                "Sidebar:",
+                app_window["-CONTENT-"].Widget.winfo_width()
+            )
+            
             if new_values:
                 new_record = add_user(
                     new_values["-USER-NAME-"], new_values["-USER-SURNAME-"], new_values["-USER-ROLE-"], new_values["-USER-EMAIL-"],

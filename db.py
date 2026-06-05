@@ -218,25 +218,40 @@ def filter_db(filters):
 
     return df
 
-def return_forwarders():
+def return_forwarders(selected_forwarder_name = None):
     """ Get all current forwarder names from DB """
     forw_list = []
     
     conn = sqlite3.connect(DB_FILE)
-    df = pd.read_sql(f"SELECT fw_name FROM t_forwarder ORDER BY fw_name", conn)
-    conn.close()
     
-    forw_list = df['fw_name'].tolist()
-    forw_list.sort()
+    if selected_forwarder_name:
+        fw_id = pd.read_sql(f"SELECT forwarder_id FROM t_forwarder WHERE fw_name = '{selected_forwarder_name}'", conn)
+        conn.close()
+        print(f'fw_id = {fw_id}')
+         # Pārbauda, vai rezultāts nav tukšs
+        if not fw_id.empty:
+            print(f'int(fw_id.iloc[0, 0]) = {int(fw_id.iloc[0, 0])}')
+            return int(fw_id.iloc[0, 0]) 
     
-    return forw_list
+    else:
+        df = pd.read_sql(f"SELECT fw_name FROM t_forwarder ORDER BY fw_name", conn)
+        conn.close()
+        forw_list = df['fw_name'].tolist()
+        forw_list.sort()
+        return forw_list
 
-def return_fw_contacts(forwarder_id):
+def return_fw_contacts(forwarder_id, list_required = None):
     conn = sqlite3.connect(DB_FILE)
-    df = pd.read_sql(f"SELECT * FROM t_fw_contact WHERE forwarder_id = {forwarder_id} ORDER BY fw_contact_id", conn)
-    conn.close()
     
-    return df
+    if list_required:
+        df = pd.read_sql(f"SELECT concat(fw_c_name, ' ',fw_c_surname) FROM t_fw_contact  WHERE forwarder_id = {forwarder_id} ORDER BY fw_c_name", conn)
+        conn.close()
+        forw_cont_list = df.iloc[:, 0].tolist()
+        return forw_cont_list
+    else:
+        df = pd.read_sql(f"SELECT * FROM t_fw_contact WHERE forwarder_id = {forwarder_id} ORDER BY fw_contact_id", conn)
+        conn.close()
+        return df
 
 def add_fw_contact(fw_id, fwc_name, fwc_surname, fwc_position, fwc_phone, fwc_email):
     """Adds new forwarder contact record into database"""
