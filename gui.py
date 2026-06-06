@@ -1,7 +1,7 @@
 import FreeSimpleGUI as sg
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company
 from pdf import create_order_pdf
 from stats import generate_diagram
 
@@ -10,6 +10,7 @@ sg.theme("DarkAmber")
 # table column names
 ORDER_COLUMNS = ["ID", "SAP PO", "Sender", "Delivery", "Loading", "Unloading", "Pallets", "Weight", "Forwarder", "Contact", "Cost","Customs","REF"]
 USER_COLUMNS = ["ID", "Name", "Surname", "Role", "E-mail","Phone","Login","Password",]
+COMPANY_COLUMNS = ['ID', 'Name', 'Reg Nr', 'VAT Nr', 'Street', 'City', 'Post code', 'Country']
 FORWARDER_COLUMNS = ['ID', 'Name', 'Reg Nr', 'VAT Nr', 'Street', 'City', 'Post code', 'Country', 'Payment days']
 FORWARDER_CONTACT_COLUMNS = ['ID', 'Name', 'Surname', 'Position', 'Phone', 'Email']
 FW_CONTACT_DB_COLUMNS = ["fw_contact_id","fw_c_name","fw_c_surname","fw_c_position","fw_c_phone","fw_c_email"]
@@ -248,7 +249,7 @@ def forwarder_contacts_modal(fw_id, fw_name):
             else:
                 row = fw_contact_df.iloc[selected_row]
                 contact_id = int(row["fw_contact_id"])
-                contact_name_surname = f"{str(row["fw_c_name"])} {str(row["fw_c_surname"])}"
+                contact_name_surname = f'{str(row["fw_c_name"])} {str(row["fw_c_surname"])}'
                 
                 confirm = sg.popup_yes_no(
                     f"Delete ID Nr.{contact_id}?\n"
@@ -349,6 +350,33 @@ def forwarder_entry_modal(title, existing=None):
             app_window.close()
             return None
         if action == "-FORWARDER-SAVE-":
+            app_window.close()
+            return values
+        
+def company_entry_modal(title, existing=None):
+    e = existing or {}
+    layout =[
+        [sg.Text("Company name:", size=16), sg.Input(e.get("c_name", ""), key="-TXT-COMPANY-NAME-", size=35)],
+        [sg.Text("Reg. Nr:", size=16), sg.Input(e.get("c_reg", ""), key="-TXT-COMPANY-REG-", size=35)],
+        [sg.Text("VAT Nr:", size=16), sg.Input(e.get("c_vat", ""), key="-TXT-COMPANY-VAT-", size=35)],
+        [sg.Text("Street:", size=16), sg.Input(e.get("c_street", ""), key="-TXT-COMPANY-STREET-", size=35)],
+        [sg.Text("City:", size=16), sg.Input(e.get("c_city", ""), key="-TXT-COMPANY-CITY-", size=35)],
+        [sg.Text("Post code:", size=16), sg.Input(e.get("c_post_code", ""), key="-TXT-COMPANY-POST-", size=35)],
+        [sg.Text("Country:", size=16), sg.Combo(countries, key="-TXT-COMPANY-COUNTRY-", default_value=e.get("c_country", countries[20]), readonly=True, size=35)],
+        [sg.Text("More information:", size=16), sg.Multiline(e.get("c_notes", ""), key="-IN-COMPANY-DETAILS-", size=(40, 6))],
+        [sg.Text("Product type:", size=16), sg.Input(e.get("c_prod_type", ""), key="-TXT-COMPANY-PRODUCT-", size=35)],
+        [sg.Button("Save", key="-BTN-COMPANY-SAVE-"), sg.Button("Cancel")]
+    ]
+        
+    app_window = sg.Window(title, layout, modal=True)
+
+    while True:
+        action, values = app_window.read()
+        
+        if action in (sg.WIN_CLOSED, "Cancel"):
+            app_window.close()
+            return None
+        if action == "-BTN-COMPANY-SAVE-":
             app_window.close()
             return values
 
@@ -495,7 +523,6 @@ def main_menu(login_validation, theme_name):
             '-VIEW-TRANSPORT-',
             '-VIEW-STATISTICS-',
             '-VIEW-COMPANIES-',
-            '-VIEW-ADDRESSES-',
             '-VIEW-FORWARDERS-',
             '-VIEW-USERS-'
         ]
@@ -508,7 +535,7 @@ def main_menu(login_validation, theme_name):
                 headings=ORDER_COLUMNS,
                 key=table_key,
                 auto_size_columns=False,
-                col_widths=[4, 8, 20, 20, 10, 10, 5, 8, 20, 20, 10, 6, 5],
+                col_widths=[4, 8, 18, 18, 10, 10, 5, 8, 18, 15, 10, 6, 5],
                 justification="left",
                 num_rows=30,
                 enable_events=True,
@@ -551,6 +578,23 @@ def main_menu(login_validation, theme_name):
             expand_y=True,
             )]], expand_x=True)
     ]
+    
+    company_columns = [
+        sg.Column([[sg.Table(
+            values=[],
+            headings=COMPANY_COLUMNS,
+            key="-COMPANY-TABLE-",
+            auto_size_columns=False,
+            col_widths=[5, 20, 13, 13, 13, 13, 13, 13],
+            justification="left",
+            num_rows=30,
+            enable_events=True,
+            enable_click_events=True, # for sorting
+            select_mode=sg.TABLE_SELECT_MODE_BROWSE,
+            expand_x=True,
+            expand_y=True,
+            )]], expand_x=True)
+    ]
 
     total_records = [[sg.Text(key="-TOTAL-ACTIVE-RECORDS-")]]
     total_cost = [[sg.Text(key="-TOTAL-COST-")]]
@@ -563,7 +607,6 @@ def main_menu(login_validation, theme_name):
         [sg.Button('Transport orders', key='-TRANSPORT-ORDERS-', size=(18, 3))],
         [sg.Button('Statistics', key='-STATISTICS-', size=(18, 3))],
         [sg.Button('Companies', key='-COMPANIES-', size=(18, 3))],
-        [sg.Button('Addresses', key='-ADDRESSES-', size=(18, 3))],
         [sg.Button('Forwarders', key='-MENU-FORWARDERS-', size=(18, 3))],
         [sg.Button('Users', key='-USERS-', size=(18, 3))],
         #[sg.VPush()] # Nobīda pogas uz augšu
@@ -614,14 +657,24 @@ def main_menu(login_validation, theme_name):
     
     companies_layout = [
             [
-                sg.Button("Create New Company",  key="-BTN-CREATE-COMPANY-", size=10),
-            ]
-        ]
-    
-    addresses_layout = [
-            [
-                sg.Button("Create New Address",  key="-BTN-CREATE-ADDRESS-", size=10),
-            ]
+                sg.Button("Create company",  key="-BTN_CREATE-COMPANY-", size=(8, 2)),
+                sg.Button("Edit company", key="-BTN-EDIT-COMPANY-", size=(8, 2)),
+                sg.Button("Delete company", key="-BTN-DELETE-COMPANY-", size=(8, 2)),
+                sg.VerticalSeparator(),
+                sg.Button("Create contact", key="-BTN-CREATE-CONTACT-", size=(8, 2)),
+                sg.Button("Show contacts", key="-BTN-SHOW-CONTACT-", size=(8, 2)),
+                sg.VerticalSeparator(),
+                sg.Button("Create address", key="-BTN-CREATE-ADDRESS-", size=(8, 2)),
+                sg.Button("Show addresses", key="-BTN-SHOW-ADDRESS-", size=(8, 2)),
+                sg.VerticalSeparator(),
+                sg.Button("Show All", key="-BTN-ALLDATA-COMPANY-", size=(8, 2)),
+                sg.Text("Search:", pad=(5, 5)),
+                sg.Input(key="-IN-SEARCH-COMPANY-", size=20),
+                sg.Button("Search", key="-BTN-SEARCH-COMPANY-", size=(8, 2)),
+                sg.Button("Exit", key="-BTN-EXIT-COMPANY-", size=(8, 2)),
+            ],
+            [sg.Text("", key="-TXT-COMPANY-STATUS-", size=60, text_color="green")],
+            company_columns
         ]
     
     forwarders_layout = [
@@ -660,7 +713,6 @@ def main_menu(login_validation, theme_name):
             sg.Column(transport_layout,   key='-VIEW-TRANSPORT-',  visible=True,  expand_x=True, expand_y=True),
             sg.Column(statistics_layout,  key='-VIEW-STATISTICS-', visible=False, expand_x=True, expand_y=True),
             sg.Column(companies_layout,   key='-VIEW-COMPANIES-',  visible=False, expand_x=True, expand_y=True),
-            sg.Column(addresses_layout,   key='-VIEW-ADDRESSES-',  visible=False, expand_x=True, expand_y=True),
             sg.Column(forwarders_layout,  key='-VIEW-FORWARDERS-', visible=False, expand_x=True, expand_y=True),
             sg.Column(users_layout,       key='-VIEW-USERS-',      visible=False, expand_x=True, expand_y=True),
         ]
@@ -813,7 +865,7 @@ def main_menu(login_validation, theme_name):
     while True:
         action, values = app_window.read()
         
-        if action in (sg.WIN_CLOSED, "-BTN-EXIT-", "-BTN-EXIT-STATISTICS-", "-BTN-EXIT-USER-", "-BTN-EXIT-FORWARDER-"):
+        if action in (sg.WIN_CLOSED, "-BTN-EXIT-", "-BTN-EXIT-STATISTICS-", "-BTN-EXIT-USER-", "-BTN-EXIT-FORWARDER-", "-BTN-EXIT-COMPANY-"):
             app_window.close()
             break
         
@@ -833,10 +885,8 @@ def main_menu(login_validation, theme_name):
             print('Company menu selected')
             show_view('-VIEW-COMPANIES-')
             reset_sort_select()
-        elif action == '-ADDRESSES-':
-            print('Address menu selected')
-            show_view('-VIEW-ADDRESSES-')
-            reset_sort_select()
+            current_df = read_all('t_company', 'company_id')
+            refresh_table(current_df, "-COMPANY-TABLE-")
         elif action == '-MENU-FORWARDERS-':
             print('Forwarders menu selected')
             show_view('-VIEW-FORWARDERS-')
@@ -999,7 +1049,19 @@ def main_menu(login_validation, theme_name):
                 current_df = read_all('t_forwarder', 'forwarder_id')
                 refresh_table(current_df, "-FORWARDER-TABLE-")
                 fw_statuss(f"✅ Forwarder Nr.{new_record} added!")
-                
+        
+        # ── Action triggered when CREATE COMPANY button is pressed - opens Entry modal for creating new record
+        elif action == "-BTN_CREATE-COMPANY-":
+            new_values = company_entry_modal("NEW COMPANY")
+            if new_values:
+                new_record = add_company(
+                    new_values["-TXT-COMPANY-NAME-"], new_values["-TXT-COMPANY-REG-"], new_values["-TXT-COMPANY-VAT-"], new_values["-TXT-COMPANY-STREET-"],
+                    new_values["-TXT-COMPANY-CITY-"], new_values["-TXT-COMPANY-POST-"], new_values["-TXT-COMPANY-COUNTRY-"], new_values["-IN-COMPANY-DETAILS-"], new_values["-TXT-COMPANY-PRODUCT-"]
+                )
+                current_df = read_all('t_company', 'company_id')
+                refresh_table(current_df, "-COMPANY-TABLE-")
+                fw_statuss(f"✅ Company Nr.{new_record} added!")
+            
         # ── Action triggered when Delete button is pressed - deletes the selected record
         elif action == "-BTN-DELETE-":
             if selected_row is None:
@@ -1181,6 +1243,7 @@ def main_menu(login_validation, theme_name):
                 fw_id = int(row['forwarder_id'])
                 fw_name = str(row['fw_name'])
                 forwarder_contacts_modal(fw_id, fw_name)
+                
         # Ation to create a new forwarder contact -> opens a model where the contact can be created
         elif action == "-BTN-CREATE-FWCONTACT-" or action == "-CREATE-FW-CONTACT-":
             if selected_row is None:
@@ -1199,6 +1262,42 @@ def main_menu(login_validation, theme_name):
                     current_df = read_all('t_forwarder', 'forwarder_id')
                     #refresh_table(current_df, "-FORWARDER-TABLE-")
                     fw_statuss(f"✅ {fw_name} contact Nr.{new_record} added!")
+        
+        # ── Action triggered when Edit Forwarder button is pressed - opens Entry modal for editing an existing record
+        elif action == "-BTN-EDIT-COMPANY-":
+            if selected_row is None:
+                statuss("Select a record in the table!", "red")
+            else:
+                row = current_df.iloc[selected_row]
+                nr = int(row["company_id"])
+                
+                existing = {
+                    "fw_name": str(row["fw_name"]),
+                    "fw_reg_nr": str(row["fw_reg_nr"]),
+                    "fw_vat_nr": str(row["fw_vat_nr"]),
+                    "fw_street": str(row["fw_street"]),
+                    "fw_city": str(row["fw_city"]),
+                    "fw_post_code": str(row["fw_post_code"]),
+                    "fw_country": str(row["fw_country"]),
+                    "fw_payment_terms": str(row["fw_payment_terms"]),
+                }
+                new_values = forwarder_entry_modal(f"Editing record Nr.{nr}", existing)
+                if new_values:
+                    updated_values = {
+                        "fw_name": new_values["-FW-NAME-"],
+                        "fw_reg_nr": new_values["-FW-REG-"],
+                        "fw_vat_nr": new_values["-FW-VAT-"],
+                        "fw_street": new_values["-FW-STREET-"],
+                        "fw_city": new_values["-FW-CITY-"],
+                        "fw_post_code": new_values["-FW-POST-"],
+                        "fw_country": new_values["-FW-COUNTRY-"],
+                        "fw_payment_terms": new_values["-FW-PAYMENT-"],
+                    }
+                    edit_db(nr, updated_values, 't_forwarder', 'forwarder_id')
+                    
+                    current_df = read_all('t_company', 'company_id')
+                    refresh_table(current_df, "-COMPANY-TABLE-")
+                    fw_statuss(f"✅ Nr.{nr} updated!")
                     
         # Action to generate a diagram in Statistic section
         elif action == "-BTN-CREATE-DIAGRAM-":

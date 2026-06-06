@@ -91,7 +91,7 @@ def add_user(name, surname, role, email, phone, login, password):
     return new_record
 
 def add_forwarder(name, reg, vat, street, city, postcode, country, payment):
-    """Adds new user record into database"""
+    """Adds new forwarder record into database"""
     new_row=pd.DataFrame([{
         'fw_name': name,
         'fw_reg_nr': reg,
@@ -105,6 +105,26 @@ def add_forwarder(name, reg, vat, street, city, postcode, country, payment):
     conn = sqlite3.connect(DB_FILE)
     new_row.to_sql("t_forwarder", conn, if_exists="append", index=False)
     new_record = pd.read_sql("SELECT MAX(forwarder_id) as nr FROM t_forwarder", conn)["nr"].iloc[0]
+    conn.close()
+
+    return new_record
+
+def add_company(name, reg, vat, street, city, postcode, country, notes, product):
+    """Adds new company record into database"""
+    new_row=pd.DataFrame([{
+        'c_name': name,
+        'c_reg': reg,
+        'c_vat': vat,
+        'c_street': street,
+        'c_city': city,
+        'c_post_code': postcode,
+        'c_country': country,
+        'c_notes': notes,
+        'c_prod_type': product
+    }])
+    conn = sqlite3.connect(DB_FILE)
+    new_row.to_sql("t_company", conn, if_exists="append", index=False)
+    new_record = pd.read_sql("SELECT MAX(company_id) as nr FROM t_company", conn)["nr"].iloc[0]
     conn.close()
 
     return new_record
@@ -244,7 +264,7 @@ def return_fw_contacts(forwarder_id, list_required = None):
     conn = sqlite3.connect(DB_FILE)
     
     if list_required:
-        df = pd.read_sql(f"SELECT concat(fw_c_name, ' ',fw_c_surname) FROM t_fw_contact  WHERE forwarder_id = {forwarder_id} ORDER BY fw_c_name", conn)
+        df = pd.read_sql(f"SELECT fw_c_name || ' ' || fw_c_surname FROM t_fw_contact  WHERE forwarder_id = {forwarder_id} ORDER BY fw_c_name", conn)
         conn.close()
         forw_cont_list = df.iloc[:, 0].tolist()
         return forw_cont_list
