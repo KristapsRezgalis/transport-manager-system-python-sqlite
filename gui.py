@@ -4,6 +4,8 @@ from datetime import datetime
 from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company
 from pdf import create_order_pdf
 from stats import generate_diagram
+from company import company_entry_modal
+from forwarder import forwarder_entry_modal
 
 sg.theme("DarkAmber")
 
@@ -327,59 +329,6 @@ def user_entry_modal(title, existing=None):
             app_window.close()
             return values
         
-def forwarder_entry_modal(title, existing=None):
-    e = existing or {}
-    layout =[
-        [sg.Text("Name:", size=16), sg.Input(e.get("fw_name", ""), key="-FW-NAME-", size=35)],
-        [sg.Text("Reg. Nr:", size=16), sg.Input(e.get("fw_reg_nr", ""), key="-FW-REG-", size=35)],
-        [sg.Text("VAT Nr:", size=16), sg.Input(e.get("fw_vat_nr", ""), key="-FW-VAT-", size=35)],
-        [sg.Text("Street:", size=16), sg.Input(e.get("fw_street", ""), key="-FW-STREET-", size=35)],
-        [sg.Text("City:", size=16), sg.Input(e.get("fw_city", ""), key="-FW-CITY-", size=35)],
-        [sg.Text("Post code:", size=16), sg.Input(e.get("fw_post_code", ""), key="-FW-POST-", size=35)],
-        [sg.Text("Country:", size=16), sg.Combo(countries, key="-FW-COUNTRY-", default_value=e.get("fw_country", countries[20]), readonly=True, size=35)],
-        [sg.Text("Payment days:", size=16), sg.Input(e.get("fw_payment_terms", ""), key="-FW-PAYMENT-", size=35)],
-        [sg.Button("Save", key="-FORWARDER-SAVE-"), sg.Button("Cancel")]
-    ]
-        
-    app_window = sg.Window(title, layout, modal=True)
-
-    while True:
-        action, values = app_window.read()
-        
-        if action in (sg.WIN_CLOSED, "Cancel"):
-            app_window.close()
-            return None
-        if action == "-FORWARDER-SAVE-":
-            app_window.close()
-            return values
-        
-def company_entry_modal(title, existing=None):
-    e = existing or {}
-    layout =[
-        [sg.Text("Company name:", size=16), sg.Input(e.get("c_name", ""), key="-TXT-COMPANY-NAME-", size=35)],
-        [sg.Text("Reg. Nr:", size=16), sg.Input(e.get("c_reg", ""), key="-TXT-COMPANY-REG-", size=35)],
-        [sg.Text("VAT Nr:", size=16), sg.Input(e.get("c_vat", ""), key="-TXT-COMPANY-VAT-", size=35)],
-        [sg.Text("Street:", size=16), sg.Input(e.get("c_street", ""), key="-TXT-COMPANY-STREET-", size=35)],
-        [sg.Text("City:", size=16), sg.Input(e.get("c_city", ""), key="-TXT-COMPANY-CITY-", size=35)],
-        [sg.Text("Post code:", size=16), sg.Input(e.get("c_post_code", ""), key="-TXT-COMPANY-POST-", size=35)],
-        [sg.Text("Country:", size=16), sg.Combo(countries, key="-TXT-COMPANY-COUNTRY-", default_value=e.get("c_country", countries[20]), readonly=True, size=35)],
-        [sg.Text("More information:", size=16), sg.Multiline(e.get("c_notes", ""), key="-IN-COMPANY-DETAILS-", size=(40, 6))],
-        [sg.Text("Product type:", size=16), sg.Input(e.get("c_prod_type", ""), key="-TXT-COMPANY-PRODUCT-", size=35)],
-        [sg.Button("Save", key="-BTN-COMPANY-SAVE-"), sg.Button("Cancel")]
-    ]
-        
-    app_window = sg.Window(title, layout, modal=True)
-
-    while True:
-        action, values = app_window.read()
-        
-        if action in (sg.WIN_CLOSED, "Cancel"):
-            app_window.close()
-            return None
-        if action == "-BTN-COMPANY-SAVE-":
-            app_window.close()
-            return values
-
 # Entry modal window for creating new records and editing existin ones
 def entry_modal(title, existing=None, nr=None):
     e = existing or {}
@@ -1119,6 +1068,25 @@ def main_menu(login_validation, theme_name):
                     refresh_table(current_df, "-FORWARDER-TABLE-")
                     selected_row = None
                     fw_statuss(f"🗑️ Nr.{nr} deleted!")
+        # ── Action triggered when Delete User button is pressed - deletes the selected record
+        elif action == "-BTN-DELETE-COMPANY-":
+            if selected_row is None:
+                statuss("Select a record in the table!", "red")
+            else:
+                row = current_df.iloc[selected_row]
+                nr = int(row["company_id"])
+                
+                confirm = sg.popup_yes_no(
+                    f"Delete rectord Nr.{nr}?\n"
+                    f"{row['c_name']}",
+                    title="Confirm deleting a record"
+                )
+                if confirm == "Yes":
+                    delete_db(nr, 't_company', 'company_id')
+                    current_df = read_all('t_company', 'company_id')
+                    refresh_table(current_df, "-COMPANY-TABLE-")
+                    selected_row = None
+                    fw_statuss(f"🗑️ Nr.{nr} deleted!")
                     
         # ── Action triggered when Edit button is pressed - opens Entry modal for editing an existing record
         elif action == "-BTN-EDIT-":
@@ -1272,33 +1240,35 @@ def main_menu(login_validation, theme_name):
                 nr = int(row["company_id"])
                 
                 existing = {
-                    "fw_name": str(row["fw_name"]),
-                    "fw_reg_nr": str(row["fw_reg_nr"]),
-                    "fw_vat_nr": str(row["fw_vat_nr"]),
-                    "fw_street": str(row["fw_street"]),
-                    "fw_city": str(row["fw_city"]),
-                    "fw_post_code": str(row["fw_post_code"]),
-                    "fw_country": str(row["fw_country"]),
-                    "fw_payment_terms": str(row["fw_payment_terms"]),
+                    "c_name": str(row["c_name"]),
+                    "c_reg": str(row["c_reg"]),
+                    "c_vat": str(row["c_vat"]),
+                    "c_street": str(row["c_street"]),
+                    "c_city": str(row["c_city"]),
+                    "c_post_code": str(row["c_post_code"]),
+                    "c_country": str(row["c_country"]),
+                    "c_notes": str(row["c_notes"]),
+                    "c_prod_type": str(row["c_prod_type"]),
                 }
-                new_values = forwarder_entry_modal(f"Editing record Nr.{nr}", existing)
+                new_values = company_entry_modal(f"Editing record Nr.{nr}", existing)
                 if new_values:
                     updated_values = {
-                        "fw_name": new_values["-FW-NAME-"],
-                        "fw_reg_nr": new_values["-FW-REG-"],
-                        "fw_vat_nr": new_values["-FW-VAT-"],
-                        "fw_street": new_values["-FW-STREET-"],
-                        "fw_city": new_values["-FW-CITY-"],
-                        "fw_post_code": new_values["-FW-POST-"],
-                        "fw_country": new_values["-FW-COUNTRY-"],
-                        "fw_payment_terms": new_values["-FW-PAYMENT-"],
+                        "c_name": new_values["-TXT-COMPANY-NAME-"],
+                        "c_reg": new_values["-TXT-COMPANY-REG-"],
+                        "c_vat": new_values["-TXT-COMPANY-VAT-"],
+                        "c_street": new_values["-TXT-COMPANY-STREET-"],
+                        "c_city": new_values["-TXT-COMPANY-CITY-"],
+                        "c_post_code": new_values["-TXT-COMPANY-POST-"],
+                        "c_country": new_values["-TXT-COMPANY-COUNTRY-"],
+                        "c_notes": new_values["-IN-COMPANY-DETAILS-"],
+                        "c_prod_type": new_values["-TXT-COMPANY-PRODUCT-"],
                     }
-                    edit_db(nr, updated_values, 't_forwarder', 'forwarder_id')
+                    edit_db(nr, updated_values, 't_company', 'company_id')
                     
                     current_df = read_all('t_company', 'company_id')
                     refresh_table(current_df, "-COMPANY-TABLE-")
                     fw_statuss(f"✅ Nr.{nr} updated!")
-                    
+
         # Action to generate a diagram in Statistic section
         elif action == "-BTN-CREATE-DIAGRAM-":
             print('-BTN-CREATE-DIAGRAM- was pressed!!!')
