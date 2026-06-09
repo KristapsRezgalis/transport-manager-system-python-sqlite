@@ -4,7 +4,7 @@ from datetime import datetime
 from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company
 from pdf import create_order_pdf
 from stats import generate_diagram
-from company import company_entry_modal
+from company import company_entry_modal, company_contacts_modal
 from forwarder import forwarder_entry_modal
 
 sg.theme("DarkAmber")
@@ -795,7 +795,8 @@ def main_menu(login_validation, theme_name):
         app_window["-STATUS-"].update(text, text_color=sel_color)
     def fw_statuss(text, sel_color="green"):
         app_window["-FWSTATUS-"].update(text, text_color=sel_color)
-    
+    def company_statuss(text, sel_color="green"):
+        app_window["-TXT-COMPANY-STATUS-"].update(text, text_color=sel_color)
     
     # --- initial data + sorting state ---
     current_df = read_all('transport', 'nr')
@@ -1203,6 +1204,7 @@ def main_menu(login_validation, theme_name):
                     refresh_table(current_df, "-FORWARDER-TABLE-")
                     fw_statuss(f"✅ Nr.{nr} updated!")
                     #app_window["-SEARCH-"].update("")
+        # Ation to open Forwarder Contacts modal and display active contacts
         elif action == "-SHOW-FW-CONTACT-":
             if selected_row is None:
                 fw_statuss("Select a record in the table!", "red")
@@ -1268,6 +1270,15 @@ def main_menu(login_validation, theme_name):
                     current_df = read_all('t_company', 'company_id')
                     refresh_table(current_df, "-COMPANY-TABLE-")
                     fw_statuss(f"✅ Nr.{nr} updated!")
+        # Ation to open Company Contacts modal and display active contacts
+        elif action == "-BTN-SHOW-CONTACT-":
+            if selected_row is None:
+                company_statuss("Select a record in the table!", "red")
+            else:
+                row = current_df.iloc[selected_row]
+                company_id = int(row['company_id'])
+                company_name = str(row['c_name'])
+                company_contacts_modal(company_id, company_name)
 
         # Action to generate a diagram in Statistic section
         elif action == "-BTN-CREATE-DIAGRAM-":

@@ -1,6 +1,9 @@
 import FreeSimpleGUI as sg
+from db import return_company_contacts
+from gui import df_to_table
 
 countries = ["Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "Russia", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom", "Vatican City"]
+COMPANY_CONTACT_COLUMNS = ['ID', 'Name', 'Surname', 'Position', 'Phone', 'Email']
 
 def company_entry_modal(title, existing=None):
     e = existing or {}
@@ -31,7 +34,7 @@ def company_entry_modal(title, existing=None):
         
 def company_contacts_modal(company_id, c_name):
     # checks contacts in databse for the selected forwarder
-    comp_contact_df = return_fw_contacts(fw_id)
+    comp_contact_df = return_company_contacts(company_id)
     
     selected_row = None
     sort_column = None
@@ -62,7 +65,7 @@ def company_contacts_modal(company_id, c_name):
         sg.Button("Exit", key="-BTN-EXIT-COMPCONTACT-", size=15),
         ],
         [sg.Text("", key="-TXT-COMPCONTACT-STATUS-", size=60, text_color="green")],
-        fw_contact_columns
+        comp_contact_columns
     ]
     
     app_window = sg.Window(
@@ -76,14 +79,14 @@ def company_contacts_modal(company_id, c_name):
     app_window["-COMPANY-CONTACTS-TABLE-"].update(values=df_to_table(comp_contact_df, FW_CONTACT_DB_COLUMNS))
     
     # function to display/change statuss text
-    def fw_cont_statuss(text, sel_color="green"):
+    def company_cont_statuss(text, sel_color="green"):
         app_window["-TXT-COMPCONTACT-STATUS-"].update(text, text_color=sel_color)
     
     # function to refresh forwarder contacts table
     def refresh_fw_contacts():
         nonlocal comp_contact_df
 
-        comp_contact_df = return_fw_contacts(fw_id)
+        comp_contact_df = return_company_contacts(company_id)
 
         app_window["-COMPANY-CONTACTS-"].update(
             values=df_to_table(
@@ -133,14 +136,14 @@ def company_contacts_modal(company_id, c_name):
                     new_values["-FWCONTACT-PHONE-"],new_values["-FWCONTACT-EMAIL-"]
                 )
                 # Reload contacts
-                comp_contact_df = return_fw_contacts(fw_id)
+                comp_contact_df = return_company_contacts(company_id)
                 app_window["-COMPANY-CONTACTS-TABLE-"].update(values=df_to_table(comp_contact_df, FW_CONTACT_DB_COLUMNS))
-                fw_cont_statuss(f"✅ {fw_name} contact Nr.{new_record} added!")
+                company_cont_statuss(f"✅ {fw_name} contact Nr.{new_record} added!")
                 selected_row = None
         # opens a modal to edit a new forwarder contact
         elif action == "-BTN-EDIT-FWCONTACT-":
             if selected_row is None:
-                fw_cont_statuss("Select a contact!", "red")
+                company_cont_statuss("Select a contact!", "red")
             else:
                 row = comp_contact_df.iloc[selected_row]
                 contact_id = int(row["fw_contact_id"])
@@ -164,11 +167,11 @@ def company_contacts_modal(company_id, c_name):
                     edit_db(contact_id, updated_values, 't_fw_contact', 'fw_contact_id')
                     
                     refresh_fw_contacts()
-                    fw_cont_statuss(f"✅ Contact Nr.{contact_id} updated!")
+                    company_cont_statuss(f"✅ Contact Nr.{contact_id} updated!")
                     selected_row = None
         elif action == "-BTN-DELETE-FWCONTACT-":
             if selected_row is None:
-                fw_cont_statuss("Select a contact!", "red")
+                company_cont_statuss("Select a contact!", "red")
             else:
                 row = comp_contact_df.iloc[selected_row]
                 contact_id = int(row["fw_contact_id"])
@@ -184,4 +187,4 @@ def company_contacts_modal(company_id, c_name):
                     delete_db(contact_id, 't_fw_contact', 'fw_contact_id')
                     refresh_fw_contacts()
                     selected_row = None
-                    fw_cont_statuss(f"🗑   ID Nr.{contact_id} deleted!")
+                    company_cont_statuss(f"🗑   ID Nr.{contact_id} deleted!")
