@@ -302,3 +302,20 @@ def return_company_contacts(company_id, list_required = None):
         df = pd.read_sql(f"SELECT * FROM t_company_contact WHERE company_id = {company_id} ORDER BY c_con_id", conn)
         conn.close()
         return df
+    
+def add_company_contact(company_id, compc_name, compc_surname, compc_position, compc_phone, compc_email):
+    """Adds new Company Contact record into database"""
+    new_row=pd.DataFrame([{
+        'company_id': company_id,
+        'c_con_name': compc_name,
+        'c_con_surname': compc_surname,
+        'c_con_position': compc_position,
+        'c_con_phone': compc_phone,
+        'c_con_email': compc_email
+    }])
+    conn = sqlite3.connect(DB_FILE)
+    new_row.to_sql("t_company_contact", conn, if_exists="append", index=False)
+    new_record = pd.read_sql("SELECT MAX(c_con_id) as nr FROM t_company_contact", conn)["nr"].iloc[0]
+    conn.close()
+
+    return new_record

@@ -1,10 +1,10 @@
 import FreeSimpleGUI as sg
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact
 from pdf import create_order_pdf
 from stats import generate_diagram
-from company import company_entry_modal, company_contacts_modal
+from company import company_entry_modal, company_contacts_modal, create_company_contact_modal
 from forwarder import forwarder_entry_modal
 
 sg.theme("DarkAmber")
@@ -332,7 +332,10 @@ def user_entry_modal(title, existing=None):
 # Entry modal window for creating new records and editing existin ones
 def entry_modal(title, existing=None, nr=None):
     e = existing or {}
-    forwarder_contact_list = []
+    # gets full list of all forwarder contacts upon opening modal. Forwarder contacts ropdowns shows the current/correct contact from the dropdown list.
+    selected_forwarder_name = e.get("forwarder")
+    fw_id = return_forwarders(selected_forwarder_name)
+    forwarder_contact_list = return_fw_contacts(fw_id, 'list_required')
     
     if existing:
         layout = [
@@ -394,6 +397,9 @@ def entry_modal(title, existing=None, nr=None):
             fw_id = return_forwarders(selected_forwarder_name)
             print(f'Forwarder id = {fw_id}')
             forwarder_contact_list = return_fw_contacts(fw_id, 'list_required')
+            #app_window["-FORWARDER-CONTACT-"].update(values=forwarder_contact_list)
+            #app_window["-FORWARDER-CONTACT-"].Widget.config(width=33)
+            #app_window.refresh()
             print(forwarder_contact_list)
             
             if forwarder_contact_list:
@@ -610,7 +616,7 @@ def main_menu(login_validation, theme_name):
                 sg.Button("Edit company", key="-BTN-EDIT-COMPANY-", size=(8, 2)),
                 sg.Button("Delete company", key="-BTN-DELETE-COMPANY-", size=(8, 2)),
                 sg.VerticalSeparator(),
-                sg.Button("Create contact", key="-BTN-CREATE-CONTACT-", size=(8, 2)),
+                sg.Button("Create contact", key="-BTN-COMP-CREATE-CONTACT-", size=(8, 2)),
                 sg.Button("Show contacts", key="-BTN-SHOW-CONTACT-", size=(8, 2)),
                 sg.VerticalSeparator(),
                 sg.Button("Create address", key="-BTN-CREATE-ADDRESS-", size=(8, 2)),
@@ -1171,7 +1177,7 @@ def main_menu(login_validation, theme_name):
         # ── Action triggered when Edit Forwarder button is pressed - opens Entry modal for editing an existing record
         elif action == "-BTN-EDIT-FORWARDER-":
             if selected_row is None:
-                statuss("Select a record in the table!", "red")
+                fw_statuss("Select a record in the table!", "red")
             else:
                 row = current_df.iloc[selected_row]
                 nr = int(row["forwarder_id"])
@@ -1215,7 +1221,7 @@ def main_menu(login_validation, theme_name):
                 forwarder_contacts_modal(fw_id, fw_name)
                 
         # Ation to create a new forwarder contact -> opens a model where the contact can be created
-        elif action == "-BTN-CREATE-FWCONTACT-" or action == "-CREATE-FW-CONTACT-":
+        elif action == "-CREATE-FW-CONTACT-": #action ==  "-BTN-CREATE-FWCONTACT-" or 
             if selected_row is None:
                 fw_statuss("Select a forwarder in the table for which to create a new contact!", "red")
             else:
@@ -1236,7 +1242,7 @@ def main_menu(login_validation, theme_name):
         # ── Action triggered when Edit Forwarder button is pressed - opens Entry modal for editing an existing record
         elif action == "-BTN-EDIT-COMPANY-":
             if selected_row is None:
-                statuss("Select a record in the table!", "red")
+                company_statuss("Select a company in the table!", "red")
             else:
                 row = current_df.iloc[selected_row]
                 nr = int(row["company_id"])
@@ -1269,7 +1275,7 @@ def main_menu(login_validation, theme_name):
                     
                     current_df = read_all('t_company', 'company_id')
                     refresh_table(current_df, "-COMPANY-TABLE-")
-                    fw_statuss(f"✅ Nr.{nr} updated!")
+                    company_statuss(f"✅ Nr.{nr} updated!")
         # Ation to open Company Contacts modal and display active contacts
         elif action == "-BTN-SHOW-CONTACT-":
             if selected_row is None:
@@ -1279,6 +1285,23 @@ def main_menu(login_validation, theme_name):
                 company_id = int(row['company_id'])
                 company_name = str(row['c_name'])
                 company_contacts_modal(company_id, company_name)
+        # Ation to create a new Company Contact -> opens a model where the contact can be created
+        elif action == "-BTN-COMP-CREATE-CONTACT-":
+            if selected_row is None:
+                company_statuss("Select a company in the table for which to create a new contact!", "red")
+            else:
+                row = current_df.iloc[selected_row]
+                company_id = int(row['company_id'])
+                company_name = str(row['c_name'])
+                new_values = create_company_contact_modal(f"Create a new contact for {company_name}")
+                if new_values:
+                    new_record = add_company_contact(
+                        company_id, new_values["-TXT-COMPCONTACT-NAME-"], new_values["-TXT-COMPCONTACT-SURNAME-"], new_values["-TXT-COMPCONTACT-POS-"],
+                        new_values["-TXT-COMPCONTACT-PHONE-"], new_values["-TXT-COMPCONTACT-EMAIL-"]
+                    )
+                    current_df = read_all('t_company', 'company_id')
+                    #refresh_table(current_df, "-FORWARDER-TABLE-")
+                    company_statuss(f"✅ {company_name} contact Nr.{new_record} added!")
 
         # Action to generate a diagram in Statistic section
         elif action == "-BTN-CREATE-DIAGRAM-":
