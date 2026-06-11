@@ -143,14 +143,23 @@ python gui.py
 ## Current Capabilities
 
 ✅ Transport order management
+
 ✅ Company management
+
 ✅ Forwarder management
+
 ✅ Contact management
+
 ✅ User administration
+
 ✅ PDF generation
+
 ✅ Advanced filtering
+
 ✅ Statistics dashboard
+
 ✅ Search functionality
+
 ✅ Dynamic table sorting
 
 ---
