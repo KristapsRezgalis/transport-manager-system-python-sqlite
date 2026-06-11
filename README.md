@@ -1,4 +1,4 @@
-# 🚛 GEMOSS Transport Management System (TMS)
+Transport Management System (TMS)
 
 A desktop-based Transport Management System built with Python, SQLite, Pandas, and FreeSimpleGUI for managing transportation operations, forwarders, companies, contacts, and logistics statistics.
 
@@ -6,9 +6,9 @@ Designed to replace spreadsheet-based transport tracking with a centralized data
 
 ---
 
-## ✨ Features
+## Features
 
-### 🚚 Transport Orders
+### Transport Orders
 - Create, edit and delete transport orders
 - Advanced filtering and search
 - Column sorting
@@ -19,7 +19,7 @@ Designed to replace spreadsheet-based transport tracking with a centralized data
 - Cost tracking
 - Customs and temperature-control tracking
 
-### 📊 Statistics & Analytics
+### Statistics & Analytics
 - Transport cost analysis
 - Pallet volume analysis
 - Reporting by selected period
@@ -32,36 +32,36 @@ Designed to replace spreadsheet-based transport tracking with a centralized data
   - Cost per pallet
   - Pallets per shipment
 
-### 🏢 Company Management
+### Company Management
 - Company database
 - Company contacts
 - Company addresses
 - Product category tracking
 - Internal notes
 
-### 🚛 Forwarder Management
+### Forwarder Management
 - Forwarder database
 - Payment terms
 - Contact management
 - Search and filtering
 
-### 👤 User Management
+### User Management
 - Login system
 - User administration
 - Role management
 - Credential storage
 
-### 📄 PDF Generation
+### PDF Generation
 Generate transport order PDFs directly from transport records.
 
-### 🎨 Customizable Interface
+### Customizable Interface
 - Multiple GUI themes
 - Dynamic theme switching
 - Responsive desktop layout
 
 ---
 
-## 🛠 Technology Stack
+## Technology Stack
 
 - Python
 - SQLite
@@ -72,7 +72,7 @@ Generate transport order PDFs directly from transport records.
 
 ---
 
-## 📂 Project Structure
+## Project Structure
 
 ```text
 project/
@@ -96,7 +96,7 @@ project/
 
 ---
 
-## 🗄 Database Tables
+## Database Tables
 
 - transport
 - user
@@ -108,7 +108,7 @@ project/
 
 ---
 
-## 🚀 Installation
+## Installation
 
 ### Clone Repository
 
@@ -143,23 +143,14 @@ python gui.py
 ## Current Capabilities
 
 ✅ Transport order management
-
 ✅ Company management
-
 ✅ Forwarder management
-
 ✅ Contact management
-
 ✅ User administration
-
 ✅ PDF generation
-
 ✅ Advanced filtering
-
 ✅ Statistics dashboard
-
 ✅ Search functionality
-
 ✅ Dynamic table sorting
 
 ---
@@ -184,13 +175,9 @@ This application was developed to streamline logistics and transportation operat
 ---
 
 ## License
-
 MIT License
 
 ---
 
 ## Author
-
 **Kristaps Rezgalis**
-
-Transport Planner | Logistics Specialist | Python Developer
