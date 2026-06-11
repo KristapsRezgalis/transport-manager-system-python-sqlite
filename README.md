@@ -113,23 +113,8 @@ project/
 ### Clone Repository
 
 ```bash
-git clone https://github.com/yourusername/gemoss-tms.git
-cd gemoss-tms
-```
-
-### Install Dependencies
-
-```bash
-pip install -r requirements.txt
-```
-
-Example requirements:
-
-```text
-FreeSimpleGUI
-pandas
-matplotlib
-reportlab
+git clone https://github.com/KristapsRezgalis/transport-manager-system-python-sqlite.git
+cd transport-manager-system-python-sqlite
 ```
 
 ### Run
@@ -172,7 +157,6 @@ python gui.py
 - ERP integration
 - Role-based permissions
 - Multi-language support
-- Audit logs
 - API integrations
 
 ---
