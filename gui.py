@@ -6,23 +6,8 @@ from pdf import create_order_pdf
 from stats import generate_diagram
 from company import company_entry_modal, company_contacts_modal, create_company_contact_modal
 from forwarder import forwarder_entry_modal
+from config import *
 
-sg.theme("DarkAmber")
-
-# table column names
-ORDER_COLUMNS = ["ID", "SAP PO", "Sender", "Delivery", "Loading", "Unloading", "Pallets", "Weight", "Forwarder", "Contact", "Cost","Customs","REF"]
-USER_COLUMNS = ["ID", "Name", "Surname", "Role", "E-mail","Phone","Login","Password",]
-COMPANY_COLUMNS = ['ID', 'Name', 'Reg Nr', 'VAT Nr', 'Street', 'City', 'Post code', 'Country']
-FORWARDER_COLUMNS = ['ID', 'Name', 'Reg Nr', 'VAT Nr', 'Street', 'City', 'Post code', 'Country', 'Payment days']
-FORWARDER_CONTACT_COLUMNS = ['ID', 'Name', 'Surname', 'Position', 'Phone', 'Email']
-FW_CONTACT_DB_COLUMNS = ["fw_contact_id","fw_c_name","fw_c_surname","fw_c_position","fw_c_phone","fw_c_email"]
-
-# dropdown variables
-user_roles = ['admin', 'user', 'spectator']
-countries = ["Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "Russia", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom", "Vatican City"]
-temperature_customs_options = ['Yes', '']
-statistics_types = ['Cost per pallet', 'Cost per cargo', 'Total cost', 'Total cargos', 'Total pallets', 'Total weight', 'Pallets per cargo', 'Weight per pallet', 'Weight per cargo', 'Cargos per country', 'Cargos per forwarder', 'Cost per forwarder']
-statistic_period = ['Per day', 'Per month', 'Per year']
 forwarders_list = return_forwarders()
 
 TABLE_KEYS = [
@@ -1302,7 +1287,41 @@ def main_menu(login_validation, theme_name):
                     current_df = read_all('t_company', 'company_id')
                     #refresh_table(current_df, "-FORWARDER-TABLE-")
                     company_statuss(f"✅ {company_name} contact Nr.{new_record} added!")
-
+        # Ation to open Company Adrresses modal and display active addresses for selected company
+        elif action == "-BTN-SHOW-ADDRESS-":
+            if selected_row is None:
+                company_statuss("Select a record in the table!", "red")
+            else:
+                row = current_df.iloc[selected_row]
+                company_id = int(row['company_id'])
+                company_name = str(row['c_name'])
+                company_address_modal(company_id, company_name) # opens a a modal with table of selected company's addresses
+        # Ation to create a new Company Address -> opens a model where an address can be created
+        elif action == "-BTN-CREATE-ADDRESS-":
+            if selected_row is None:
+                company_statuss("Select a company in the table for which to create a new address!", "red")
+            else:
+                row = current_df.iloc[selected_row]
+                company_id = int(row['company_id'])
+                company_name = str(row['c_name'])
+                new_values = create_company_address_modal(f"Create a new address for {company_name}")
+                if new_values:
+                    new_record = add_company_address(
+                        company_id,
+                        new_values["-TXT-ADDRESS-NAME-"],
+                        new_values["-TXT-ADDRESS-STREET-"],
+                        new_values["-TXT-ADDRESS-CITY-"],
+                        new_values["-TXT-ADDRESS-POST-"],
+                        new_values["-TXT-ADDRESS-COUNTRY-"],
+                        new_values["-TXT-ADDRESS-HOURS-"],
+                        new_values["-TXT-ADDRESS-SLOT-"],
+                        new_values["-TXT-ADDRESS-REFERENCE-"],
+                        new_values["-TXT-ADDRESS-NOTES-"]
+                    )
+                    current_df = read_all('t_company', 'company_id')
+                    #refresh_table(current_df, "-FORWARDER-TABLE-")
+                    company_statuss(f"✅ {company_name} contact Nr.{new_record} added!")
+        
         # Action to generate a diagram in Statistic section
         elif action == "-BTN-CREATE-DIAGRAM-":
             print('-BTN-CREATE-DIAGRAM- was pressed!!!')

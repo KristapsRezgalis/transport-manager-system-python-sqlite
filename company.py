@@ -5,6 +5,7 @@ countries = ["Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and 
 COMPANY_CONTACT_COLUMNS = ['ID', 'Name', 'Surname', 'Position', 'Phone', 'Email']
 COMP_CONTACT_DB_COLUMNS = ["c_con_id","c_con_name","c_con_surname","c_con_position","c_con_phone","c_con_email"]
 
+# Function that opens a modal where a new company can be created and saved in sql database
 def company_entry_modal(title, existing=None):
     e = existing or {}
     layout =[
@@ -31,7 +32,8 @@ def company_entry_modal(title, existing=None):
         if action == "-BTN-COMPANY-SAVE-":
             app_window.close()
             return values
-        
+
+# Function that opens a modal where all contaccts of selected company can be seen in a table / create / edit / delete buttons
 def company_contacts_modal(company_id, c_name):
     from gui import df_to_table
     
@@ -191,7 +193,8 @@ def company_contacts_modal(company_id, c_name):
                     refresh_company_contacts()
                     selected_row = None
                     company_cont_statuss(f"🗑   ID Nr.{contact_id} deleted!")
-                    
+
+# Function that opens a modal to create a new company contact
 def create_company_contact_modal(title, existing=None):
     e = existing or {}
     layout =[
@@ -214,3 +217,43 @@ def create_company_contact_modal(title, existing=None):
         if action == "-BTN-COMPCONTACT-SAVE-":
             app_window.close()
             return values
+        
+# Function that opens a modal to create a new company loading/delivery address
+def create_company_address_modal(title, existing=None):
+    e = existing or {}
+    layout =[
+        [sg.Text("Address name:", size=16), sg.Input(e.get("adr_name", ""), key="-TXT-ADDRESS-NAME-", size=35)],
+        [sg.Text("Street:", size=16), sg.Input(e.get("adr_street", ""), key="-TXT-ADDRESS-STREET-", size=35)],
+        [sg.Text("City:", size=16), sg.Input(e.get("adr_city", ""), key="-TXT-ADDRESS-CITY-", size=35)],
+        [sg.Text("Post code:", size=16), sg.Input(e.get("adr_post_code", ""), key="-TXT-ADDRESS-POST-", size=35)],
+        [sg.Text("Country:", size=16), sg.Input(e.get("adr_country", ""), key="-TXT-ADDRESS-COUNTRY-", size=35)],
+        [sg.Text("Working hours:", size=16), sg.Input(e.get("adr_hours", ""), key="-TXT-ADDRESS-HOURS-", size=35)],
+        [sg.Text("Slot booking:", size=16), sg.Input(e.get("adr_book_slot", ""), key="-TXT-ADDRESS-SLOT-", size=35)],
+        [sg.Text("Loading reference:", size=16), sg.Input(e.get("adr_reference", ""), key="-TXT-ADDRESS-REFERENCE-", size=35)],
+        [sg.Text("Notes:", size=16), sg.Input(e.get("adr_notes", ""), key="-TXT-ADDRESS-NOTES-", size=35)],
+        [sg.Button("Save", key="-BTN-COMPANY-ADDRESS-SAVE-"), sg.Button("Cancel")]
+    ]
+        
+    app_window = sg.Window(title, layout, modal=True)
+
+    while True:
+        action, values = app_window.read()
+        
+        if action in (sg.WIN_CLOSED, "Cancel"):
+            app_window.close()
+            return None
+        if action == "-BTN-COMPANY-ADDRESS-SAVE-":
+            app_window.close()
+            return values
+        
+'''
+        [sg.Text("Address name:", size=16), sg.Input(e.get("adr_name", ""), key="-TXT-ADDRESS-NAME-", size=35)],
+        [sg.Text("Street:", size=16), sg.Input(e.get("adr_street", ""), key="-TXT-ADDRESS-STREET-", size=35)],
+        [sg.Text("City:", size=16), sg.Input(e.get("adr_city", ""), key="-TXT-ADDRESS-CITY-", size=35)],
+        [sg.Text("Post code:", size=16), sg.Input(e.get("adr_post_code", ""), key="-TXT-ADDRESS-POST-", size=35)],
+        [sg.Text("Country:", size=16), sg.Input(e.get("adr_country", ""), key="-TXT-ADDRESS-COUNTRY-", size=35)],
+        [sg.Text("Working hours:", size=16), sg.Input(e.get("adr_hours", ""), key="-TXT-ADDRESS-HOURS-", size=35)],
+        [sg.Text("Slot booking:", size=16), sg.Input(e.get("adr_book_slot", ""), key="-TXT-ADDRESS-SLOT-", size=35)],
+        [sg.Text("Loading reference:", size=16), sg.Input(e.get("adr_reference", ""), key="-TXT-ADDRESS-REFERENCE-", size=35)],
+        [sg.Text("Notes:", size=16), sg.Input(e.get("adr_notes", ""), key="-TXT-ADDRESS-NOTES-", size=35)],
+'''

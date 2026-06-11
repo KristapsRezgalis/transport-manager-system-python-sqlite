@@ -319,3 +319,36 @@ def add_company_contact(company_id, compc_name, compc_surname, compc_position, c
     conn.close()
 
     return new_record
+
+'''
+        [sg.Text("Address name:", size=16), sg.Input(e.get("adr_name", ""), key="-TXT-ADDRESS-NAME-", size=35)],
+        [sg.Text("Street:", size=16), sg.Input(e.get("adr_street", ""), key="-TXT-ADDRESS-STREET-", size=35)],
+        [sg.Text("City:", size=16), sg.Input(e.get("adr_city", ""), key="-TXT-ADDRESS-CITY-", size=35)],
+        [sg.Text("Post code:", size=16), sg.Input(e.get("adr_post_code", ""), key="-TXT-ADDRESS-POST-", size=35)],
+        [sg.Text("Country:", size=16), sg.Input(e.get("adr_country", ""), key="-TXT-ADDRESS-COUNTRY-", size=35)],
+        [sg.Text("Working hours:", size=16), sg.Input(e.get("adr_hours", ""), key="-TXT-ADDRESS-HOURS-", size=35)],
+        [sg.Text("Slot booking:", size=16), sg.Input(e.get("adr_book_slot", ""), key="-TXT-ADDRESS-SLOT-", size=35)],
+        [sg.Text("Loading reference:", size=16), sg.Input(e.get("adr_reference", ""), key="-TXT-ADDRESS-REFERENCE-", size=35)],
+        [sg.Text("Notes:", size=16), sg.Input(e.get("adr_notes", ""), key="-TXT-ADDRESS-NOTES-", size=35)],
+'''
+
+def add_company_address(company_id, c_a_name, c_a_street, c_a_city, c_a_post_code, c_a_country, c_a_hours, c_a_book_slot, c_a_reference, c_a_notes):
+    """Adds new Company Contact record into database"""
+    new_row=pd.DataFrame([{
+        'company_id': company_id,
+        'adr_name': c_a_name,
+        'adr_street': c_a_street,
+        'adr_city': c_a_city,
+        'adr_post_code': c_a_post_code,
+        'adr_country': c_a_country,
+        'adr_hours': c_a_hours,
+        'adr_book_slot': c_a_book_slot,
+        'adr_reference': c_a_reference,
+        'adr_notes': c_a_notes,
+    }])
+    conn = sqlite3.connect(DB_FILE)
+    new_row.to_sql("t_company_address", conn, if_exists="append", index=False)
+    new_record = pd.read_sql("SELECT MAX(address_id) as nr FROM t_company_address", conn)["nr"].iloc[0]
+    conn.close()
+
+    return new_record
