@@ -104,12 +104,14 @@ def company_contacts_modal(company_id, c_name):
         if isinstance(action, tuple) and action[0] == "-COMPANY-CONTACTS-TABLE-":
             row, col = action[2]
             if row == -1:
-                column_name = COMPANY_CONTACT_COLUMNS[col]
+                column_name = COMP_CONTACT_DB_COLUMNS[col]
                 if sort_column == column_name:
                     sort_ascending = not sort_ascending
+                    selected_row = None
                 else:
                     sort_column = column_name
                     sort_ascending = True
+                    selected_row = None
                 comp_contact_df = comp_contact_df.sort_values(
                     by=column_name,
                     ascending=sort_ascending,
