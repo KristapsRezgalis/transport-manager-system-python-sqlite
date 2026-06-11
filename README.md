@@ -4,7 +4,7 @@ A desktop-based Transport Management System built with Python, SQLite, Pandas, a
 Designed to replace spreadsheet-based transport tracking with a centralized database solution.
 
 **- Overview:**
-> The system provides a complete workflow for:
+The system provides a complete workflow for:
   Transport order management
   Forwarder database management
   Customer/company management
