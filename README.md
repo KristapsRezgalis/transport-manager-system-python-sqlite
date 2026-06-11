@@ -5,15 +5,15 @@ Designed to replace spreadsheet-based transport tracking with a centralized data
 
 **- Overview:**
 The system provides a complete workflow for:
-  Transport order management
-  Forwarder database management
-  Customer/company management
-  Contact management
-  Transportation cost analysis
-  PDF transport order generation
-  User administration
-  Advanced filtering and searching
-  Logistics reporting
+Transport order management
+Forwarder database management
+Customer/company management
+Contact management
+Transportation cost analysis
+PDF transport order generation
+User administration
+Advanced filtering and searching
+Logistics reporting
 
 **-- Features --**
 
