@@ -1,10 +1,10 @@
 import FreeSimpleGUI as sg
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address
 from pdf import create_order_pdf
 from stats import generate_diagram
-from company import company_entry_modal, company_contacts_modal, create_company_contact_modal
+from company import company_entry_modal, company_contacts_modal, create_company_contact_modal, create_company_address_modal
 from forwarder import forwarder_entry_modal
 from config import *
 

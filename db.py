@@ -352,3 +352,16 @@ def add_company_address(company_id, c_a_name, c_a_street, c_a_city, c_a_post_cod
     conn.close()
 
     return new_record
+
+def return_company_addresses(company_id, list_required = None):
+    conn = sqlite3.connect(DB_FILE)
+    
+    if list_required:
+        df = pd.read_sql(f"SELECT adr_name FROM t_company_address WHERE company_id = {company_id} ORDER BY adr_name", conn)
+        conn.close()
+        company_cont_list = df.iloc[:, 0].tolist()
+        return company_cont_list
+    else:
+        df = pd.read_sql(f"SELECT * FROM t_company_address WHERE company_id = {company_id} ORDER BY address_id", conn)
+        conn.close()
+        return df
