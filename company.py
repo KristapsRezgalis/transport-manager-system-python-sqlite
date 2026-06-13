@@ -1,10 +1,11 @@
 import FreeSimpleGUI as sg
-from db import return_company_contacts, edit_db, add_company_contact, delete_db, return_company_addresses
+from db import return_company_contacts, edit_db, add_company_contact, delete_db, return_company_addresses, add_company_address
 
 countries = ["Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and Herzegovina", "Bulgaria", "Croatia", "Cyprus", "Czech Republic", "Denmark", "Estonia", "Finland", "France", "Germany", "Greece", "Hungary", "Iceland", "Ireland", "Italy", "Latvia", "Liechtenstein", "Lithuania", "Luxembourg", "Malta", "Moldova", "Monaco", "Montenegro", "Netherlands", "North Macedonia", "Norway", "Poland", "Portugal", "Romania", "Russia", "San Marino", "Serbia", "Slovakia", "Slovenia", "Spain", "Sweden", "Switzerland", "Ukraine", "United Kingdom", "Vatican City"]
 COMPANY_CONTACT_COLUMNS = ['ID', 'Name', 'Surname', 'Position', 'Phone', 'Email']
 COMP_CONTACT_DB_COLUMNS = ["c_con_id","c_con_name","c_con_surname","c_con_position","c_con_phone","c_con_email"]
 COMPANY_ADDRESS_DB_COLUMNS = ["address_id", "adr_name", "adr_street", "adr_city", "adr_post_code", "adr_country", "adr_hours", "adr_book_slot", "adr_reference", "adr_notes"]
+COMPANY_ADDRESS_COLUMNS = ["ID", "Name", "Street", "City", "Post code", "Country", "Working hours", "Slot booking", "Reference", "Notes"]
 
 # Function that opens a modal where a new company can be created and saved in sql database
 def company_entry_modal(title, existing=None):
@@ -262,10 +263,10 @@ def company_address_modal(company_id, c_name):
     company_address_columns = [
         sg.Column([[sg.Table(
             values=[],
-            headings=COMPANY_ADDRESS_DB_COLUMNS,
+            headings=COMPANY_ADDRESS_COLUMNS,
             key="-COMPANY-ADDRESS-TABLE-",
             auto_size_columns=False,
-            col_widths=[3, 15, 15, 15, 15, 20],
+            col_widths=[3, 15, 15, 10, 8, 10, 10, 5, 5, 10],
             justification="left",
             num_rows=15,
             enable_events=True,
@@ -283,7 +284,7 @@ def company_address_modal(company_id, c_name):
         sg.Button("Delete Address", key="-BTN-DELETE-ADDRESS-", size=15),
         sg.Button("Exit", key="-BTN-EXIT-ADDRESS-", size=15),
         ],
-        [sg.Text("", key="-TXT-COMPCONTACT-STATUS-", size=60, text_color="green")],
+        [sg.Text("", key="-TXT-ADDRESS-STATUS-", size=60, text_color="green")],
         company_address_columns
     ]
     
@@ -291,26 +292,26 @@ def company_address_modal(company_id, c_name):
         f"{c_name} contacts",
         layout,
         resizable=True,
-        size=(1000, 400),
+        size=(1200, 400),
         finalize=True
     )
     
     app_window["-COMPANY-ADDRESS-TABLE-"].update(values=df_to_table(company_address_df, COMPANY_ADDRESS_DB_COLUMNS))
     
     # function to display/change statuss text
-    def company_cont_statuss(text, sel_color="green"):
-        app_window["-TXT-COMPCONTACT-STATUS-"].update(text, text_color=sel_color)
+    def company_address_statuss(text, sel_color="green"):
+        app_window["-TXT-ADDRESS-STATUS-"].update(text, text_color=sel_color)
     
     # function to refresh company contacts table
-    def refresh_company_contacts():
+    def refresh_company_address_table():
         nonlocal company_address_df
 
-        company_address_df = return_company_contacts(company_id)
+        company_address_df = return_company_addresses(company_id)
 
-        app_window["-COMPANY-CONTACTS-TABLE-"].update(
+        app_window["-COMPANY-ADDRESS-TABLE-"].update(
             values=df_to_table(
                 company_address_df,
-                COMP_CONTACT_DB_COLUMNS
+                COMPANY_ADDRESS_DB_COLUMNS
             )
         )
     
@@ -318,10 +319,10 @@ def company_address_modal(company_id, c_name):
         action, values = app_window.read()
         
         # Make the columns sortable
-        if isinstance(action, tuple) and action[0] == "-COMPANY-CONTACTS-TABLE-":
+        if isinstance(action, tuple) and action[0] == "-COMPANY-ADDRESS-TABLE-":
             row, col = action[2]
             if row == -1:
-                column_name = COMP_CONTACT_DB_COLUMNS[col]
+                column_name = COMPANY_ADDRESS_DB_COLUMNS[col]
                 if sort_column == column_name:
                     sort_ascending = not sort_ascending
                     selected_row = None
@@ -334,80 +335,95 @@ def company_address_modal(company_id, c_name):
                     ascending=sort_ascending,
                     ignore_index=True
                 )
-                app_window["-COMPANY-CONTACTS-TABLE-"].update(
+                app_window["-COMPANY-ADDRESS-TABLE-"].update(
                     values=df_to_table(
                         company_address_df,
-                        ["c_con_id", "c_con_name", "c_con_surname",
-                         "c_con_position", "c_con_phone", "c_con_email"]
+                        ["address_id", "adr_name", "adr_street", "adr_city", "adr_post_code",
+                         "adr_country", "adr_hours", "adr_book_slot", "adr_reference", "adr_notes"]
                     )
                 )
             else:
                 selected_row = row
         # Closes the forwarder contact modal
-        if action in (sg.WIN_CLOSED, "-BTN-EXIT-COMPCONTACT-"):
+        if action in (sg.WIN_CLOSED, "-BTN-EXIT-ADDRESS-"):
             app_window.close()
             break
-        # opens a modal to create a new forwarder contact
-        elif action == "-BTN-CREATE-COMPCONTACT-":
-            new_values = create_company_contact_modal(f"Create a new contact for {c_name}")
+        # opens a modal to create a new company address
+        elif action == "-BTN-CREATE-ADDRESS-":
+            new_values = create_company_address_modal(f"Create a new address for {c_name}")
             if new_values:
-                new_record = add_company_contact(
-                    company_id, new_values["-TXT-COMPCONTACT-NAME-"], new_values["-TXT-COMPCONTACT-SURNAME-"], new_values["-TXT-COMPCONTACT-POS-"],
-                    new_values["-TXT-COMPCONTACT-PHONE-"],new_values["-TXT-COMPCONTACT-EMAIL-"]
+                new_record = add_company_address(
+                    company_id,
+                    new_values["-TXT-ADDRESS-NAME-"],
+                    new_values["-TXT-ADDRESS-STREET-"],
+                    new_values["-TXT-ADDRESS-CITY-"],
+                    new_values["-TXT-ADDRESS-POST-"],
+                    new_values["-TXT-ADDRESS-COUNTRY-"],
+                    new_values["-TXT-ADDRESS-HOURS-"],
+                    new_values["-TXT-ADDRESS-SLOT-"],
+                    new_values["-TXT-ADDRESS-REFERENCE-"],
+                    new_values["-TXT-ADDRESS-NOTES-"]
                 )
                 # Reload contacts
-                company_address_df = return_company_contacts(company_id)
-                app_window["-COMPANY-CONTACTS-TABLE-"].update(values=df_to_table(company_address_df, COMP_CONTACT_DB_COLUMNS))
-                company_cont_statuss(f"✅ {c_name} contact Nr.{new_record} added!")
+                company_address_df = return_company_addresses(company_id)
+                app_window["-COMPANY-ADDRESS-TABLE-"].update(values=df_to_table(company_address_df, COMPANY_ADDRESS_DB_COLUMNS))
+                company_address_statuss(f"✅ {c_name} address Nr.{new_record} added!")
                 selected_row = None
-        # opens a modal to edit a new forwarder contact
-        elif action == "-BTN-EDIT-COMPCONTACT-":
+        # opens a modal to edit a company address
+        elif action == "-BTN-EDIT-ADDRESS-":
             if selected_row is None:
-                company_cont_statuss("Select a contact!", "red")
+                company_address_statuss("Select an address!", "red")
             else:
                 row = company_address_df.iloc[selected_row]
-                contact_id = int(row["c_con_id"])
-                
+                address_id = int(row["address_id"])
+
                 existing = {
-                    "c_con_name": str(row["c_con_name"]),
-                    "c_con_surname": str(row["c_con_surname"]),
-                    "c_con_position": str(row["c_con_position"]),
-                    "c_con_phone": str(row["c_con_phone"]),
-                    "c_con_email": str(row["c_con_email"]),
+                    "adr_name": str(row["adr_name"]),
+                    "adr_street": str(row["adr_street"]),
+                    "adr_city": str(row["adr_city"]),
+                    "adr_post_code": str(row["adr_post_code"]),
+                    "adr_country": str(row["adr_country"]),
+                    "adr_hours": str(row["adr_hours"]),
+                    "adr_book_slot": str(row["adr_book_slot"]),
+                    "adr_reference": str(row["adr_reference"]),
+                    "adr_notes": str(row["adr_notes"]),
                 }
-                new_values = create_company_contact_modal(f"Editing contact Nr.{contact_id}", existing)
+                new_values = create_company_address_modal(f"Editing address Nr.{address_id}", existing)
                 if new_values:
                     updated_values = {
-                        "c_con_name": new_values["-TXT-COMPCONTACT-NAME-"],
-                        "c_con_surname": new_values["-TXT-COMPCONTACT-SURNAME-"],
-                        "c_con_position": new_values["-TXT-COMPCONTACT-POS-"],
-                        "c_con_phone": new_values["-TXT-COMPCONTACT-PHONE-"],
-                        "c_con_email": new_values["-TXT-COMPCONTACT-EMAIL-"],
+                        "adr_name": new_values["-TXT-ADDRESS-NAME-"],
+                        "adr_street": new_values["-TXT-ADDRESS-STREET-"],
+                        "adr_city": new_values["-TXT-ADDRESS-CITY-"],
+                        "adr_post_code": new_values["-TXT-ADDRESS-POST-"],
+                        "adr_country": new_values["-TXT-ADDRESS-COUNTRY-"],
+                        "adr_hours": new_values["-TXT-ADDRESS-HOURS-"],
+                        "adr_book_slot": new_values["-TXT-ADDRESS-SLOT-"],
+                        "adr_reference": new_values["-TXT-ADDRESS-REFERENCE-"],
+                        "adr_notes": new_values["-TXT-ADDRESS-NOTES-"],
                     }
-                    edit_db(contact_id, updated_values, 't_company_contact', 'c_con_id')
+                    edit_db(address_id, updated_values, 't_company_address', 'address_id')
                     
-                    refresh_company_contacts()
-                    company_cont_statuss(f"✅ Contact Nr.{contact_id} updated!")
+                    refresh_company_address_table()
+                    company_address_statuss(f"✅ Contact Nr.{address_id} updated!")
                     selected_row = None
-        elif action == "-BTN-DELETE-COMPCONTACT-":
+        elif action == "-BTN-DELETE-ADDRESS-":
             if selected_row is None:
-                company_cont_statuss("Select a contact!", "red")
+                company_address_statuss("Select an address!", "red")
             else:
                 row = company_address_df.iloc[selected_row]
-                contact_id = int(row["c_con_id"])
-                contact_name_surname = f'{str(row["c_con_name"])} {str(row["c_con_surname"])}'
+                address_id = int(row["address_id"])
+                #contact_name_surname = f'{str(row["adr_name"])} {str(row["c_con_surname"])}'
                 
                 confirm = sg.popup_yes_no(
-                    f"Delete ID Nr.{contact_id}?\n"
-                    f"{contact_name_surname}\n"
-                    f"from {c_name}",
+                    f"Delete ID Nr.{address_id}?\n"
+                    f"{str(row['adr_name'])}\n",
                     title="Confirm deleting a record"
                 )
                 if confirm == "Yes":
-                    delete_db(contact_id, 't_company_contact', 'c_con_id')
-                    refresh_company_contacts()
+                    delete_db(address_id, 't_company_address', 'address_id')
+                    refresh_company_address_table()
                     selected_row = None
-                    company_cont_statuss(f"🗑   ID Nr.{contact_id} deleted!")
+                    company_address_statuss(f"🗑   ID Nr.{address_id} deleted!")
 
 
 '''
