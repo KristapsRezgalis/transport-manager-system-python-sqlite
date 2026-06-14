@@ -1,7 +1,7 @@
 import FreeSimpleGUI as sg
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company
 from pdf import create_order_pdf
 from stats import generate_diagram
 from company import company_entry_modal, company_contacts_modal, create_company_contact_modal, create_company_address_modal, company_address_modal
@@ -9,6 +9,7 @@ from forwarder import forwarder_entry_modal
 from config import *
 
 forwarders_list = return_forwarders()
+company_list = return_company()
 
 TABLE_KEYS = [
     "-TABLE-",
@@ -317,16 +318,28 @@ def user_entry_modal(title, existing=None):
 # Entry modal window for creating new records and editing existin ones
 def entry_modal(title, existing=None, nr=None):
     e = existing or {}
-    # gets full list of all forwarder contacts upon opening modal. Forwarder contacts ropdowns shows the current/correct contact from the dropdown list.
+    # gets full list of all forwarder contacts upon opening modal. Forwarder contacts dropdowns shows the current/correct contact from the dropdown list.
     selected_forwarder_name = e.get("forwarder")
+    selected_sender_company_name = e.get("sender")
+    selected_delivery_company_name = e.get("delivery")
+    
     fw_id = return_forwarders(selected_forwarder_name)
+    send_id =return_company(selected_sender_company_name)
+    deliv_id = return_company(selected_delivery_company_name)
+
     forwarder_contact_list = return_fw_contacts(fw_id, 'list_required')
+    company_address_list = return_company_addresses(send_id, 'list_required')
+    company_contact_list = return_company_contacts(deliv_id, 'list_required')
     
     if existing:
         layout = [
             [sg.Text("SAP PO Nr:",           size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
             [sg.Text("Sender:",           size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=35)],
+            [sg.Text("Sender address:", size=16), sg.Combo(company_address_list, key="-SENDER-ADDRESS-", default_value=e.get("sender_adr", ""), readonly=True, size=33)],
+            [sg.Text("Sender contact:", size=16), sg.Combo(company_contact_list, key="-SENDER-CONTACT-", default_value=e.get("sender_cont", ""), readonly=True, size=33)],
             [sg.Text("Delivery:",           size=16), sg.Combo(['Gemoss M7', 'Gemoss M75'], key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33)],
+            [sg.Text("Delivery address:", size=16), sg.Combo(company_address_list, key="-DELIVERY-ADDRESS-", default_value=e.get("delivery_adr", ""), readonly=True, size=33)],
+            [sg.Text("Delivery contact:", size=16), sg.Combo(company_contact_list, key="-DELIVERY-CONTACT-", default_value=e.get("delivery_cont", ""), readonly=True, size=33)],
             [sg.Text("Loading date:", size=16), sg.Input(e.get("loading", ""), key="-LOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
              sg.CalendarButton("Pick",target="-LOADING-",format="%Y-%m-%d")],
             [sg.Text("Unloading date:", size=16), sg.Input(e.get("unloading", ""), key="-UNLOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
@@ -345,7 +358,11 @@ def entry_modal(title, existing=None, nr=None):
         layout = [
             [sg.Text("SAP PO Nr:", size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
             [sg.Text("Sender:", size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=35)],
+            [sg.Text("Sender address:", size=16), sg.Combo(company_address_list, key="-SENDER-ADDRESS-", default_value=e.get("sender_adr", ""), readonly=True, size=33)],
+            [sg.Text("Sender contact:", size=16), sg.Combo(company_contact_list, key="-SENDER-CONTACT-", default_value=e.get("sender_cont", ""), readonly=True, size=33)],
             [sg.Text("Delivery:", size=16), sg.Combo(['Gemoss M7', 'Gemoss M75'], key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33)],
+            [sg.Text("Delivery address:", size=16), sg.Combo(company_address_list, key="-DELIVERY-ADDRESS-", default_value=e.get("delivery_adr", ""), readonly=True, size=33)],
+            [sg.Text("Delivery contact:", size=16), sg.Combo(company_contact_list, key="-DELIVERY-CONTACT-", default_value=e.get("delivery_cont", ""), readonly=True, size=33)],
             [sg.Text("Loading date:", size=16), sg.Input(e.get("loading", ""), key="-LOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
              sg.CalendarButton("Pick",target="-LOADING-",format="%Y-%m-%d")],
             [sg.Text("Unloading date:", size=16), sg.Input(e.get("unloading", ""), key="-UNLOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
@@ -391,6 +408,19 @@ def entry_modal(title, existing=None, nr=None):
                 app_window["-FORWARDER-CONTACT-"].update(values=forwarder_contact_list, value=forwarder_contact_list[0])
             else:
                 app_window["-FORWARDER-CONTACT-"].update(values=['No contact'], value='No contact')
+        elif action == "-SENDER-":
+            selected_company_name = values['-SENDER-']
+            print(f'User selected forwarder - {selected_company_name}')
+            comp_id = return_company(selected_company_name)
+            print(f'Company id = {comp_id}')
+            forwarder_contact_list = return_fw_contacts(fw_id, 'list_required')
+            print(forwarder_contact_list)
+            
+            if forwarder_contact_list:
+                app_window["-FORWARDER-CONTACT-"].update(values=forwarder_contact_list, value=forwarder_contact_list[0])
+            else:
+                app_window["-FORWARDER-CONTACT-"].update(values=['No contact'], value='No contact')
+        return_fw_contacts
 
 def login_modal():  
     #Creates an error popup window. Accepts Enter as keypress to close the window
@@ -754,7 +784,11 @@ def main_menu(login_validation, theme_name):
     app_window.maximize() 
     
     def refresh_table(df, table_key):
-        app_window[table_key].update(values=df_to_table(df))
+        
+        if table_key in ("-TABLE-", "-STATISTICS-TABLE-"): # Order and Statistic table do not us all db columns, therefore they use selected columns from TRANSPORT_ORDER_DB_COLUMNS
+            app_window[table_key].update(values=df_to_table(df, TRANSPORT_ORDER_DB_COLUMNS))
+        else:
+            app_window[table_key].update(values=df_to_table(df)) #Forwarder and Users use all their db columns
         
         if table_key == "-TABLE-":
             app_window["-TOTAL-ACTIVE-RECORDS-"].update(f'{len(df)}')

@@ -320,18 +320,6 @@ def add_company_contact(company_id, compc_name, compc_surname, compc_position, c
 
     return new_record
 
-'''
-        [sg.Text("Address name:", size=16), sg.Input(e.get("adr_name", ""), key="-TXT-ADDRESS-NAME-", size=35)],
-        [sg.Text("Street:", size=16), sg.Input(e.get("adr_street", ""), key="-TXT-ADDRESS-STREET-", size=35)],
-        [sg.Text("City:", size=16), sg.Input(e.get("adr_city", ""), key="-TXT-ADDRESS-CITY-", size=35)],
-        [sg.Text("Post code:", size=16), sg.Input(e.get("adr_post_code", ""), key="-TXT-ADDRESS-POST-", size=35)],
-        [sg.Text("Country:", size=16), sg.Input(e.get("adr_country", ""), key="-TXT-ADDRESS-COUNTRY-", size=35)],
-        [sg.Text("Working hours:", size=16), sg.Input(e.get("adr_hours", ""), key="-TXT-ADDRESS-HOURS-", size=35)],
-        [sg.Text("Slot booking:", size=16), sg.Input(e.get("adr_book_slot", ""), key="-TXT-ADDRESS-SLOT-", size=35)],
-        [sg.Text("Loading reference:", size=16), sg.Input(e.get("adr_reference", ""), key="-TXT-ADDRESS-REFERENCE-", size=35)],
-        [sg.Text("Notes:", size=16), sg.Input(e.get("adr_notes", ""), key="-TXT-ADDRESS-NOTES-", size=35)],
-'''
-
 def add_company_address(company_id, c_a_name, c_a_street, c_a_city, c_a_post_code, c_a_country, c_a_hours, c_a_book_slot, c_a_reference, c_a_notes):
     """Adds new Company Contact record into database"""
     new_row=pd.DataFrame([{
@@ -365,3 +353,26 @@ def return_company_addresses(company_id, list_required = None):
         df = pd.read_sql(f"SELECT * FROM t_company_address WHERE company_id = {company_id} ORDER BY address_id", conn)
         conn.close()
         return df
+    
+def return_company(selected_company_name = None):
+    """ Get one or all company data from DB """
+    company_list = []
+    
+    conn = sqlite3.connect(DB_FILE)
+    
+    # used if only one company name needs to be returned
+    if selected_company_name:
+        comp_id = pd.read_sql(f"SELECT company_id FROM t_company WHERE c_name = '{selected_company_name}'", conn)
+        conn.close()
+        print(f'comp_id = {comp_id}')
+         # Pārbauda, vai rezultāts nav tukšs
+        if not comp_id.empty:
+            print(f'int(comp_id.iloc[0, 0]) = {int(comp_id.iloc[0, 0])}')
+            return int(comp_id.iloc[0, 0]) 
+    # used if all company names need to be returned
+    else:
+        df = pd.read_sql(f"SELECT c_name FROM t_company ORDER BY c_name", conn)
+        conn.close()
+        company_list = df['c_name'].tolist()
+        company_list.sort()
+        return company_list

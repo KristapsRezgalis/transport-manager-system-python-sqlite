@@ -3,7 +3,7 @@ import FreeSimpleGUI as sg
 sg.theme("DarkAmber")
 
 # table column names
-ORDER_COLUMNS = ["ID", "SAP PO", "Sender", "Delivery", "Loading", "Unloading", "Pallets", "Weight", "Forwarder", "Contact", "Cost","Customs","REF"]
+ORDER_COLUMNS = ["ID", "SAP PO", "Sender", "Delivery", "Loading", "Unloading", "Pallets", "Weight", "Forwarder", "Cost","Customs","REF"]
 USER_COLUMNS = ["ID", "Name", "Surname", "Role", "E-mail","Phone","Login","Password",]
 COMPANY_COLUMNS = ['ID', 'Name', 'Reg Nr', 'VAT Nr', 'Street', 'City', 'Post code', 'Country']
 FORWARDER_COLUMNS = ['ID', 'Name', 'Reg Nr', 'VAT Nr', 'Street', 'City', 'Post code', 'Country', 'Payment days']
