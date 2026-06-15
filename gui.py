@@ -1,15 +1,12 @@
 import FreeSimpleGUI as sg
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts
 from pdf import create_order_pdf
 from stats import generate_diagram
 from company import company_entry_modal, company_contacts_modal, create_company_contact_modal, create_company_address_modal, company_address_modal
 from forwarder import forwarder_entry_modal
 from config import *
-
-forwarders_list = return_forwarders()
-company_list = return_company()
 
 TABLE_KEYS = [
     "-TABLE-",
@@ -318,38 +315,58 @@ def user_entry_modal(title, existing=None):
 # Entry modal window for creating new records and editing existin ones
 def entry_modal(title, existing=None, nr=None):
     e = existing or {}
-    # gets full list of all forwarder contacts upon opening modal. Forwarder contacts dropdowns shows the current/correct contact from the dropdown list.
+    forwarders_list = return_forwarders()
+    company_list = return_company()
+    
+    forwarder_contact_list = []
+    sender_address_list = []
+    sender_contact_list = []
+    delivery_address_list = []
+    delivery_contact_list = []
+
+    # gets forwarders / company's name
     selected_forwarder_name = e.get("forwarder")
     selected_sender_company_name = e.get("sender")
     selected_delivery_company_name = e.get("delivery")
     
-    fw_id = return_forwarders(selected_forwarder_name)
-    send_id =return_company(selected_sender_company_name)
-    deliv_id = return_company(selected_delivery_company_name)
-
-    forwarder_contact_list = return_fw_contacts(fw_id, 'list_required')
-    company_address_list = return_company_addresses(send_id, 'list_required')
-    company_contact_list = return_company_contacts(deliv_id, 'list_required')
+    # gets forwarders / company's contacts and addresses to display in dropdown
+    if selected_forwarder_name:
+        fw_id = return_forwarders(selected_forwarder_name)
+        if fw_id:
+            forwarder_contact_list = return_fw_contacts(fw_id, 'list_required')
     
+    if selected_sender_company_name:
+        send_id = return_company(selected_sender_company_name)
+        if send_id:
+            sender_address_list = return_company_addresses(send_id, 'list_required')
+            sender_contact_list = return_company_contacts(send_id, 'list_required')
+    
+    if selected_delivery_company_name:
+        deliv_id = return_company(selected_delivery_company_name)
+        if deliv_id:
+            delivery_address_list = return_company_addresses(deliv_id, 'list_required')
+            delivery_contact_list = return_company_contacts(deliv_id, 'list_required')
+    
+    # fills order modal fields with existing data
     if existing:
         layout = [
-            [sg.Text("SAP PO Nr:",           size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
-            [sg.Text("Sender:",           size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=35)],
-            [sg.Text("Sender address:", size=16), sg.Combo(company_address_list, key="-SENDER-ADDRESS-", default_value=e.get("sender_adr", ""), readonly=True, size=33)],
-            [sg.Text("Sender contact:", size=16), sg.Combo(company_contact_list, key="-SENDER-CONTACT-", default_value=e.get("sender_cont", ""), readonly=True, size=33)],
-            [sg.Text("Delivery:",           size=16), sg.Combo(['Gemoss M7', 'Gemoss M75'], key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33)],
-            [sg.Text("Delivery address:", size=16), sg.Combo(company_address_list, key="-DELIVERY-ADDRESS-", default_value=e.get("delivery_adr", ""), readonly=True, size=33)],
-            [sg.Text("Delivery contact:", size=16), sg.Combo(company_contact_list, key="-DELIVERY-CONTACT-", default_value=e.get("delivery_cont", ""), readonly=True, size=33)],
-            [sg.Text("Loading date:", size=16), sg.Input(e.get("loading", ""), key="-LOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
+            [sg.Text("SAP PO Nr:", size=16),           sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
+            [sg.Text("Sender:", size=16),              sg.Combo(company_list, key="-SENDER-", default_value=e.get("sender", ""), readonly=True, size=33, enable_events=True)],
+            [sg.Text("Sender address:", size=16),      sg.Combo(sender_address_list, key="-SENDER-ADDRESS-", default_value=e.get("sender_adr", ""), readonly=True, size=33)],
+            [sg.Text("Sender contact:", size=16),      sg.Combo(sender_contact_list, key="-SENDER-CONTACT-", default_value=e.get("sender_cont", ""), readonly=True, size=33)],
+            [sg.Text("Delivery:", size=16),            sg.Combo(company_list, key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33, enable_events=True)],
+            [sg.Text("Delivery address:", size=16),    sg.Combo(delivery_address_list, key="-DELIVERY-ADDRESS-", default_value=e.get("delivery_adr", ""), readonly=True, size=33)],
+            [sg.Text("Delivery contact:", size=16),    sg.Combo(delivery_contact_list, key="-DELIVERY-CONTACT-", default_value=e.get("delivery_cont", ""), readonly=True, size=33)],
+            [sg.Text("Loading date:", size=16),        sg.Input(e.get("loading", ""), key="-LOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
              sg.CalendarButton("Pick",target="-LOADING-",format="%Y-%m-%d")],
-            [sg.Text("Unloading date:", size=16), sg.Input(e.get("unloading", ""), key="-UNLOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
+            [sg.Text("Unloading date:", size=16),      sg.Input(e.get("unloading", ""), key="-UNLOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
              sg.CalendarButton("Pick",target="-UNLOADING-",format="%Y-%m-%d")],
-            [sg.Text("Pallet count:",           size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
-            [sg.Text("Gross weight:",           size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
-            [sg.Text("Forwarder:", size=16), sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True)],
-            [sg.Text("Forwarder contact:", size=16), sg.Combo(forwarder_contact_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder_contact", ""), readonly=True, size=33)],
-            [sg.Text("Cost:",           size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
-            [sg.Text("Customs:", size=16), sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33)],
+            [sg.Text("Pallet count:",size=16),         sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
+            [sg.Text("Gross weight:",size=16),         sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
+            [sg.Text("Forwarder:", size=16),           sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True)],
+            [sg.Text("Forwarder contact:", size=16),   sg.Combo(forwarder_contact_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder_contact", ""), readonly=True, size=33)],
+            [sg.Text("Cost:", size=16),                sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
+            [sg.Text("Customs:", size=16),             sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33)],
             [sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
             [sg.Push(),sg.Button("Create transport order in PDF", key="-CREATE-PDF-"), sg.Push()],
             [sg.Push(),sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()]
@@ -357,12 +374,12 @@ def entry_modal(title, existing=None, nr=None):
     else:
         layout = [
             [sg.Text("SAP PO Nr:", size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
-            [sg.Text("Sender:", size=16), sg.Input(e.get("sender", ""),          key="-SENDER-",   size=35)],
-            [sg.Text("Sender address:", size=16), sg.Combo(company_address_list, key="-SENDER-ADDRESS-", default_value=e.get("sender_adr", ""), readonly=True, size=33)],
-            [sg.Text("Sender contact:", size=16), sg.Combo(company_contact_list, key="-SENDER-CONTACT-", default_value=e.get("sender_cont", ""), readonly=True, size=33)],
-            [sg.Text("Delivery:", size=16), sg.Combo(['Gemoss M7', 'Gemoss M75'], key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33)],
-            [sg.Text("Delivery address:", size=16), sg.Combo(company_address_list, key="-DELIVERY-ADDRESS-", default_value=e.get("delivery_adr", ""), readonly=True, size=33)],
-            [sg.Text("Delivery contact:", size=16), sg.Combo(company_contact_list, key="-DELIVERY-CONTACT-", default_value=e.get("delivery_cont", ""), readonly=True, size=33)],
+            [sg.Text("Sender:", size=16),              sg.Combo(company_list, key="-SENDER-", default_value=e.get("sender", ""), readonly=True, size=33, enable_events=True)],
+            [sg.Text("Sender address:", size=16), sg.Combo(sender_address_list, key="-SENDER-ADDRESS-", default_value=e.get("sender_adr", ""), readonly=True, size=33)],
+            [sg.Text("Sender contact:", size=16), sg.Combo(sender_contact_list, key="-SENDER-CONTACT-", default_value=e.get("sender_cont", ""), readonly=True, size=33)],
+            [sg.Text("Delivery:", size=16),            sg.Combo(company_list, key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33, enable_events=True)],
+            [sg.Text("Delivery address:", size=16), sg.Combo(delivery_address_list, key="-DELIVERY-ADDRESS-", default_value=e.get("delivery_adr", ""), readonly=True, size=33)],
+            [sg.Text("Delivery contact:", size=16), sg.Combo(delivery_contact_list, key="-DELIVERY-CONTACT-", default_value=e.get("delivery_cont", ""), readonly=True, size=33)],
             [sg.Text("Loading date:", size=16), sg.Input(e.get("loading", ""), key="-LOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
              sg.CalendarButton("Pick",target="-LOADING-",format="%Y-%m-%d")],
             [sg.Text("Unloading date:", size=16), sg.Input(e.get("unloading", ""), key="-UNLOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
@@ -395,9 +412,9 @@ def entry_modal(title, existing=None, nr=None):
             print('Create transport order in PDF button pressed!')
         elif action == "-FORWARDER-":
             selected_forwarder_name = values['-FORWARDER-']
-            print(f'User selected forwarder - {selected_forwarder_name}')
+            #print(f'User selected forwarder - {selected_forwarder_name}')
             fw_id = return_forwarders(selected_forwarder_name)
-            print(f'Forwarder id = {fw_id}')
+            #print(f'Forwarder id = {fw_id}')
             forwarder_contact_list = return_fw_contacts(fw_id, 'list_required')
             #app_window["-FORWARDER-CONTACT-"].update(values=forwarder_contact_list)
             #app_window["-FORWARDER-CONTACT-"].Widget.config(width=33)
@@ -407,20 +424,25 @@ def entry_modal(title, existing=None, nr=None):
             if forwarder_contact_list:
                 app_window["-FORWARDER-CONTACT-"].update(values=forwarder_contact_list, value=forwarder_contact_list[0])
             else:
-                app_window["-FORWARDER-CONTACT-"].update(values=['No contact'], value='No contact')
+                app_window["-FORWARDER-CONTACT-"].update(values=['No contacts'], value='No contacts')
+                
         elif action == "-SENDER-":
-            selected_company_name = values['-SENDER-']
-            print(f'User selected forwarder - {selected_company_name}')
-            comp_id = return_company(selected_company_name)
-            print(f'Company id = {comp_id}')
-            forwarder_contact_list = return_fw_contacts(fw_id, 'list_required')
-            print(forwarder_contact_list)
+            selected_sender_company_name = values['-SENDER-']
+            send_id = return_company(selected_sender_company_name)
             
-            if forwarder_contact_list:
-                app_window["-FORWARDER-CONTACT-"].update(values=forwarder_contact_list, value=forwarder_contact_list[0])
+            sender_address_list = return_company_addresses(send_id, 'list_required')
+            sender_contact_list = return_company_contacts(send_id, 'list_required')
+            
+            if sender_address_list:
+                app_window["-SENDER-ADDRESS-"].update(values=sender_address_list, value=sender_address_list[0])
             else:
-                app_window["-FORWARDER-CONTACT-"].update(values=['No contact'], value='No contact')
-        return_fw_contacts
+                app_window["-SENDER-ADDRESS-"].update(values=['No addresses'], value='No addresses')
+            
+            if sender_contact_list:
+                app_window["-SENDER-CONTACT-"].update(values=sender_contact_list, value=sender_contact_list[0])
+            else:
+                app_window["-SENDER-CONTACT-"].update(values=['No contacts'], value='No contacts')
+        #return_fw_contacts
 
 def login_modal():  
     #Creates an error popup window. Accepts Enter as keypress to close the window

@@ -1,6 +1,6 @@
 import FreeSimpleGUI as sg
 
-sg.theme("DarkAmber")
+sg.theme("DefaultNoMoreNagging")
 
 # table column names
 ORDER_COLUMNS = ["ID", "SAP PO", "Sender", "Delivery", "Loading", "Unloading", "Pallets", "Weight", "Forwarder", "Cost","Customs","REF"]
