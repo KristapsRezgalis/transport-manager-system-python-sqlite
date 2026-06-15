@@ -412,9 +412,7 @@ def entry_modal(title, existing=None, nr=None):
             print('Create transport order in PDF button pressed!')
         elif action == "-FORWARDER-":
             selected_forwarder_name = values['-FORWARDER-']
-            #print(f'User selected forwarder - {selected_forwarder_name}')
             fw_id = return_forwarders(selected_forwarder_name)
-            #print(f'Forwarder id = {fw_id}')
             forwarder_contact_list = return_fw_contacts(fw_id, 'list_required')
             #app_window["-FORWARDER-CONTACT-"].update(values=forwarder_contact_list)
             #app_window["-FORWARDER-CONTACT-"].Widget.config(width=33)
@@ -442,7 +440,29 @@ def entry_modal(title, existing=None, nr=None):
                 app_window["-SENDER-CONTACT-"].update(values=sender_contact_list, value=sender_contact_list[0])
             else:
                 app_window["-SENDER-CONTACT-"].update(values=['No contacts'], value='No contacts')
-        #return_fw_contacts
+        elif action == "-DELIVERY-":
+            selected_delivery_company_name = values['-DELIVERY-']
+            deliv_id = return_company(selected_delivery_company_name)
+            
+            delivery_address_list = return_company_addresses(deliv_id, 'list_required')
+            delivery_contact_list = return_company_contacts(deliv_id, 'list_required')
+            
+            if delivery_address_list:
+                app_window["-DELIVERY-ADDRESS-"].update(values=delivery_address_list, value=delivery_address_list[0])
+            else:
+                app_window["-DELIVERY-ADDRESS-"].update(values=['No addresses'], value='No addresses')
+            
+            if delivery_contact_list:
+                app_window["-DELIVERY-CONTACT-"].update(values=delivery_contact_list, value=delivery_contact_list[0])
+            else:
+                app_window["-DELIVERY-CONTACT-"].update(values=['No contacts'], value='No contacts')
+        """
+if selected_delivery_company_name:
+        deliv_id = return_company(selected_delivery_company_name)
+        if deliv_id:
+            delivery_address_list = return_company_addresses(deliv_id, 'list_required')
+            delivery_contact_list = return_company_contacts(deliv_id, 'list_required')
+"""
 
 def login_modal():  
     #Creates an error popup window. Accepts Enter as keypress to close the window
