@@ -354,54 +354,80 @@ def entry_modal(title, existing=None, nr=None):
     if existing:
         layout = [
             [sg.Text("SAP PO Nr:", size=16),           sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
-            [sg.Text("Sender:", size=16),              sg.Combo(company_list, key="-SENDER-", default_value=e.get("sender", ""), readonly=True, size=33, enable_events=True)],
-            [sg.Text("Sender address:", size=16),      sg.Combo(sender_address_list, key="-SENDER-ADDRESS-", default_value=e.get("sender_adr", ""), readonly=True, size=33)],
-            [sg.Text("Sender contact:", size=16),      sg.Combo(sender_contact_list, key="-SENDER-CONTACT-", default_value=e.get("sender_cont", ""), readonly=True, size=33)],
-            [sg.Text("Delivery:", size=16),            sg.Combo(company_list, key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33, enable_events=True)],
-            [sg.Text("Delivery address:", size=16),    sg.Combo(delivery_address_list, key="-DELIVERY-ADDRESS-", default_value=e.get("delivery_adr", ""), readonly=True, size=33)],
-            [sg.Text("Delivery contact:", size=16),    sg.Combo(delivery_contact_list, key="-DELIVERY-CONTACT-", default_value=e.get("delivery_cont", ""), readonly=True, size=33)],
-            [sg.Text("Loading date:", size=16),        sg.Input(e.get("loading", ""), key="-LOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
-             sg.CalendarButton("Pick",target="-LOADING-",format="%Y-%m-%d")],
-            [sg.Text("Unloading date:", size=16),      sg.Input(e.get("unloading", ""), key="-UNLOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
-             sg.CalendarButton("Pick",target="-UNLOADING-",format="%Y-%m-%d")],
+            [sg.HSeparator()],
+            [sg.Text("Sender:", size=16),              sg.Combo(company_list, key="-SENDER-", default_value=e.get("sender", ""), readonly=True, size=33, enable_events=True),
+             sg.Text("Delivery:", size=16),            sg.Combo(company_list, key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33, enable_events=True)],
+            
+            [sg.Text("Sender address:", size=16),      sg.Combo(sender_address_list, key="-SENDER-ADDRESS-", default_value=e.get("sender_adr", ""), readonly=True, size=33),
+             sg.Text("Delivery address:", size=16),    sg.Combo(delivery_address_list, key="-DELIVERY-ADDRESS-", default_value=e.get("delivery_adr", ""), readonly=True, size=33)],
+            
+            [sg.Text("Sender contact:", size=16),      sg.Combo(sender_contact_list, key="-SENDER-CONTACT-", default_value=e.get("sender_cont", ""), readonly=True, size=33),
+             sg.Text("Delivery contact:", size=16),    sg.Combo(delivery_contact_list, key="-DELIVERY-CONTACT-", default_value=e.get("delivery_cont", ""), readonly=True, size=33)],
+            [sg.HSeparator()],
+            [sg.Text("Loading from:", size=16),        sg.Input(e.get("loading", ""), key="-LOADING-",size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-LOADING-",format="%Y-%m-%d"),
+             sg.Text("Loading until:", size=16),       sg.Input(e.get("loading_to", ""), key="-LOADING-TO-",size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-LOADING-TO-",format="%Y-%m-%d")],
+            
+            [sg.Text("Unloading from:", size=16),      sg.Input(e.get("unloading", ""), key="-UNLOADING-",size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-UNLOADING-",format="%Y-%m-%d"),
+             sg.Text("Unloading until:", size=16),     sg.Input(e.get("unloading_to", ""), key="-UNLOADING-TO-",size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-UNLOADING-TO-",format="%Y-%m-%d")],
+            [sg.HSeparator()],
             [sg.Text("Pallet count:",size=16),         sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
             [sg.Text("Gross weight:",size=16),         sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
-            [sg.Text("Forwarder:", size=16),           sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True)],
-            [sg.Text("Forwarder contact:", size=16),   sg.Combo(forwarder_contact_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder_contact", ""), readonly=True, size=33)],
+            [sg.HSeparator()],
+            [sg.Text("Forwarder:", size=16),           sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True),
+             sg.Text("Forwarder contact:", size=16),   sg.Combo(forwarder_contact_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder_contact", ""), readonly=True, size=33)],
+
             [sg.Text("Cost:", size=16),                sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
-            [sg.Text("Customs:", size=16),             sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33)],
-            [sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
-            [sg.Text("Notes:", size=16),               sg.Multiline(e.get("info", ""), key="-IN-ORDER-DETAILS-", size=(40, 5)), sg.Button("Add to transport order", key="BTN-ADD_TO_ORDER-", size=(10, 2))],
-            [sg.Text("Purchase manager:", size=16),    sg.Combo(purchase_manager_list, key="-CMB-PURCHASE_MANAGER-", default_value=e.get("purch_manager", ""), readonly=True, size=33)],
-            [sg.Text("Product type:", size=16),        sg.Combo(['Edible products', 'Non-edible products', 'Electric devices', 'Furniture'], key="-CMB-CARGO_TYPE-", default_value=e.get("cargo_type", ""), readonly=True, size=33)],
+            
+            [sg.Text("Customs:", size=16),             sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33),
+             sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
+            
+            [sg.Text("Notes:", size=16),               sg.Multiline(e.get("info", ""), key="-IN-ORDER-DETAILS-", size=(33, 4)), sg.Checkbox('Add notes to transport order', default=False, key='-CB-ADD_TO_ORDER-')],
+            [sg.HSeparator()],
+            [sg.Text("Purchase manager:", size=16),    sg.Combo(purchase_manager_list, key="-CMB-PURCHASE_MANAGER-", default_value=e.get("purch_manager", ""), readonly=True, size=33),
+             sg.Text("Product type:", size=16),        sg.Combo(['Edible products', 'Non-edible products', 'Electric devices', 'Furniture'], key="-CMB-CARGO_TYPE-", default_value=e.get("cargo_type", ""), readonly=True, size=33)],
+            
             [sg.Text("Transport invoice:", size=16),   sg.Input(e.get("transport_invoice", ""), key="-IN-TRANSPORT-INVOICE-", size=35)],
+            
             [sg.Push(),sg.Button("Create transport order in PDF", key="-CREATE-PDF-"), sg.Push()],
             [sg.Push(),sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()]
         ]
     else:
         layout = [
-            [sg.Text("SAP PO Nr:", size=16), sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
-            [sg.Text("Sender:", size=16),              sg.Combo(company_list, key="-SENDER-", default_value=e.get("sender", ""), readonly=True, size=33, enable_events=True)],
-            [sg.Text("Sender address:", size=16), sg.Combo(sender_address_list, key="-SENDER-ADDRESS-", default_value=e.get("sender_adr", ""), readonly=True, size=33)],
-            [sg.Text("Sender contact:", size=16), sg.Combo(sender_contact_list, key="-SENDER-CONTACT-", default_value=e.get("sender_cont", ""), readonly=True, size=33)],
-            [sg.Text("Delivery:", size=16),            sg.Combo(company_list, key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33, enable_events=True)],
-            [sg.Text("Delivery address:", size=16), sg.Combo(delivery_address_list, key="-DELIVERY-ADDRESS-", default_value=e.get("delivery_adr", ""), readonly=True, size=33)],
-            [sg.Text("Delivery contact:", size=16), sg.Combo(delivery_contact_list, key="-DELIVERY-CONTACT-", default_value=e.get("delivery_cont", ""), readonly=True, size=33)],
-            [sg.Text("Loading date:", size=16), sg.Input(e.get("loading", ""), key="-LOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
-             sg.CalendarButton("Pick",target="-LOADING-",format="%Y-%m-%d")],
-            [sg.Text("Unloading date:", size=16), sg.Input(e.get("unloading", ""), key="-UNLOADING-",size=28,readonly=True,disabled_readonly_background_color="white"),
-             sg.CalendarButton("Pick",target="-UNLOADING-",format="%Y-%m-%d")],
-            [sg.Text("Pallet count:", size=16), sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
-            [sg.Text("Gross weight:", size=16), sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
-            [sg.Text("Forwarder:", size=16), sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True)],
-            [sg.Text("Forwarder contact:", size=16), sg.Combo(forwarder_contact_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder", ""), readonly=True, size=33)],
-            [sg.Text("Cost:", size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
-            [sg.Text("Customs:", size=16), sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33)],
-            [sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
-            [sg.Text("Notes:", size=16),               sg.Multiline(e.get("info", ""), key="-IN-ORDER-DETAILS-", size=(40, 5)), sg.Button("Add to transport order", key="BTN-ADD_TO_ORDER-", size=(10, 2))],
-            [sg.Text("Purchase manager:", size=16),    sg.Combo(purchase_manager_list, key="-CMB-PURCHASE_MANAGER-", default_value=e.get("purch_manager", ""), readonly=True, size=33)],
-            [sg.Text("Product type:", size=16),        sg.Combo(['Edible products', 'Non-edible products', 'Electric devices', 'Furniture'], key="-CMB-CARGO_TYPE-", default_value=e.get("cargo_type", ""), readonly=True, size=33)],
+            [sg.Text("SAP PO Nr:", size=16),           sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
+            [sg.HSeparator()],
+            [sg.Text("Sender:", size=16),              sg.Combo(company_list, key="-SENDER-", default_value=e.get("sender", ""), readonly=True, size=33, enable_events=True),
+             sg.Text("Delivery:", size=16),            sg.Combo(company_list, key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33, enable_events=True)],
+            
+            [sg.Text("Sender address:", size=16),      sg.Combo(sender_address_list, key="-SENDER-ADDRESS-", default_value=e.get("sender_adr", ""), readonly=True, size=33),
+             sg.Text("Delivery address:", size=16),    sg.Combo(delivery_address_list, key="-DELIVERY-ADDRESS-", default_value=e.get("delivery_adr", ""), readonly=True, size=33)],
+            
+            [sg.Text("Sender contact:", size=16),      sg.Combo(sender_contact_list, key="-SENDER-CONTACT-", default_value=e.get("sender_cont", ""), readonly=True, size=33),
+             sg.Text("Delivery contact:", size=16),    sg.Combo(delivery_contact_list, key="-DELIVERY-CONTACT-", default_value=e.get("delivery_cont", ""), readonly=True, size=33)],
+            [sg.HSeparator()],
+            [sg.Text("Loading from:", size=16),        sg.Input(e.get("loading", ""), key="-LOADING-",size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-LOADING-",format="%Y-%m-%d"),
+             sg.Text("Loading until:", size=16),       sg.Input(e.get("loading_to", ""), key="-LOADING-TO-",size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-LOADING-TO-",format="%Y-%m-%d")],
+            
+            [sg.Text("Unloading from:", size=16),      sg.Input(e.get("unloading", ""), key="-UNLOADING-",size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-UNLOADING-",format="%Y-%m-%d"),
+             sg.Text("Unloading until:", size=16),     sg.Input(e.get("unloading_to", ""), key="-UNLOADING-TO-",size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-UNLOADING-TO-",format="%Y-%m-%d")],
+            [sg.HSeparator()],
+            [sg.Text("Pallet count:",size=16),         sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
+            [sg.Text("Gross weight:",size=16),         sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
+            [sg.HSeparator()],
+            [sg.Text("Forwarder:", size=16),           sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True),
+             sg.Text("Forwarder contact:", size=16),   sg.Combo(forwarder_contact_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder_contact", ""), readonly=True, size=33)],
+
+            [sg.Text("Cost:", size=16),                sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
+            
+            [sg.Text("Customs:", size=16),             sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33),
+             sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
+            
+            [sg.Text("Notes:", size=16),               sg.Multiline(e.get("info", ""), key="-IN-ORDER-DETAILS-", size=(33, 4)), sg.Checkbox('Add notes to transport order', default=False, key='-CB-ADD_TO_ORDER-')],
+            [sg.HSeparator()],
+            [sg.Text("Purchase manager:", size=16),    sg.Combo(purchase_manager_list, key="-CMB-PURCHASE_MANAGER-", default_value=e.get("purch_manager", ""), readonly=True, size=33),
+             sg.Text("Product type:", size=16),        sg.Combo(['Edible products', 'Non-edible products', 'Electric devices', 'Furniture'], key="-CMB-CARGO_TYPE-", default_value=e.get("cargo_type", ""), readonly=True, size=33)],
+            
             [sg.Text("Transport invoice:", size=16),   sg.Input(e.get("transport_invoice", ""), key="-IN-TRANSPORT-INVOICE-", size=35)],
+            
             [sg.Button("Save", key="-SAVE-"), sg.Button("Cancel")]
         ]
         
