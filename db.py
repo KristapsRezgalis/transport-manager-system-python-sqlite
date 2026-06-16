@@ -49,12 +49,16 @@ def read_all(table_name, id_header):
     conn.close()
     return df
 
-def add_db(sap_po, sender, delivery, loading, unloading, pallets, weight, forwarder, forwarder_contact, cost, customs, ref):
+def add_db(sap_po, sender, sender_adr, sender_cont, delivery, delivery_adr, delivery_cont, loading, unloading, pallets, weight, forwarder, forwarder_contact, cost, customs, ref):
     """Adds new transport order record into database"""
     new_row = pd.DataFrame([{
         "sap_po":	sap_po,
         "sender":	sender,
+        "sender_adr": sender_adr,
+        "sender_cont": sender_cont,
         "delivery":	delivery,
+        "delivery_adr": delivery_adr,
+        "delivery_cont": delivery_cont,
         "loading":	loading,
         "unloading":unloading,
         "pallets":	pallets,
@@ -376,3 +380,13 @@ def return_company(selected_company_name = None):
         company_list = df['c_name'].tolist()
         company_list.sort()
         return company_list
+    
+def get_purchase_managers():
+    conn = sqlite3.connect(DB_FILE)
+    
+    purchase_manager_df = pd.read_sql(f"SELECT manager_name || ' ' || manager_surname FROM t_purchase_manager ORDER BY manager_name ASC", conn)
+    conn.close()
+    purchase_manager_df = purchase_manager_df.iloc[:, 0].tolist()
+    purchase_manager_df.sort()
+    
+    return purchase_manager_df

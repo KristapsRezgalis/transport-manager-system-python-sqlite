@@ -1,7 +1,7 @@
 import FreeSimpleGUI as sg
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts, get_purchase_managers
 from pdf import create_order_pdf
 from stats import generate_diagram
 from company import company_entry_modal, company_contacts_modal, create_company_contact_modal, create_company_address_modal, company_address_modal
@@ -315,6 +315,9 @@ def user_entry_modal(title, existing=None):
 # Entry modal window for creating new records and editing existin ones
 def entry_modal(title, existing=None, nr=None):
     e = existing or {}
+    
+    purchase_manager_list = get_purchase_managers()
+    
     forwarders_list = return_forwarders()
     company_list = return_company()
     
@@ -368,6 +371,10 @@ def entry_modal(title, existing=None, nr=None):
             [sg.Text("Cost:", size=16),                sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
             [sg.Text("Customs:", size=16),             sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33)],
             [sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
+            [sg.Text("Notes:", size=16),               sg.Multiline(e.get("info", ""), key="-IN-ORDER-DETAILS-", size=(40, 5)), sg.Button("Add to transport order", key="BTN-ADD_TO_ORDER-", size=(10, 2))],
+            [sg.Text("Purchase manager:", size=16),    sg.Combo(purchase_manager_list, key="-CMB-PURCHASE_MANAGER-", default_value=e.get("purch_manager", ""), readonly=True, size=33)],
+            [sg.Text("Product type:", size=16),        sg.Combo(['Edible products', 'Non-edible products', 'Electric devices', 'Furniture'], key="-CMB-CARGO_TYPE-", default_value=e.get("cargo_type", ""), readonly=True, size=33)],
+            [sg.Text("Transport invoice:", size=16),   sg.Input(e.get("transport_invoice", ""), key="-IN-TRANSPORT-INVOICE-", size=35)],
             [sg.Push(),sg.Button("Create transport order in PDF", key="-CREATE-PDF-"), sg.Push()],
             [sg.Push(),sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()]
         ]
@@ -391,6 +398,10 @@ def entry_modal(title, existing=None, nr=None):
             [sg.Text("Cost:", size=16), sg.Input(e.get("cost", ""),          key="-COST-",   size=35)],
             [sg.Text("Customs:", size=16), sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33)],
             [sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
+            [sg.Text("Notes:", size=16),               sg.Multiline(e.get("info", ""), key="-IN-ORDER-DETAILS-", size=(40, 5)), sg.Button("Add to transport order", key="BTN-ADD_TO_ORDER-", size=(10, 2))],
+            [sg.Text("Purchase manager:", size=16),    sg.Combo(purchase_manager_list, key="-CMB-PURCHASE_MANAGER-", default_value=e.get("purch_manager", ""), readonly=True, size=33)],
+            [sg.Text("Product type:", size=16),        sg.Combo(['Edible products', 'Non-edible products', 'Electric devices', 'Furniture'], key="-CMB-CARGO_TYPE-", default_value=e.get("cargo_type", ""), readonly=True, size=33)],
+            [sg.Text("Transport invoice:", size=16),   sg.Input(e.get("transport_invoice", ""), key="-IN-TRANSPORT-INVOICE-", size=35)],
             [sg.Button("Save", key="-SAVE-"), sg.Button("Cancel")]
         ]
         
@@ -1026,14 +1037,14 @@ def main_menu(login_validation, theme_name):
             new_values = entry_modal("NEW TRANSPORT RECORD")
             if new_values:
                 new_record = add_db(
-                    new_values["-SAP_PO-"], new_values["-SENDER-"], new_values["-DELIVERY-"], new_values["-LOADING-"],
+                    new_values["-SAP_PO-"], new_values["-SENDER-"], new_values["-SENDER-ADDRESS-"], new_values["-SENDER-CONTACT-"], new_values["-DELIVERY-"], new_values["-DELIVERY-ADDRESS-"], new_values["-DELIVERY-CONTACT-"], new_values["-LOADING-"],
                     new_values["-UNLOADING-"], new_values["-PALLETS-"], new_values["-WEIGHT-"], new_values["-FORWARDER-"], new_values["-FORWARDER-CONTACT-"],
                     new_values["-COST-"], new_values["-CUSTOMS-"], new_values["-REF-"]
                 )
                 current_df = read_all('transport', 'nr')
                 refresh_table(current_df, "-TABLE-")
                 statuss(f"✅ Record Nr.{new_record} added!")
-        
+                
         # ── Action triggered when CREATE USER button is pressed - opens Entry modal for creating new record
         elif action == "-BTN-CREATE-USER-":
             print(
@@ -1167,7 +1178,11 @@ def main_menu(login_validation, theme_name):
                 existing = {
                     "sap_po":          str(row["sap_po"]),
                     "sender":          str(row["sender"]),
+                    "sender_adr":          str(row["sender_adr"]),
+                    "sender_cont":          str(row["sender_cont"]),
                     "delivery":          str(row["delivery"]),
+                    "delivery_adr":          str(row["delivery_adr"]),
+                    "delivery_cont":          str(row["delivery_cont"]),
                     "loading":          str(row["loading"]),
                     "unloading":          str(row["unloading"]),
                     "pallets":          str(row["pallets"]),
@@ -1183,7 +1198,11 @@ def main_menu(login_validation, theme_name):
                     updated_values = {
                         "sap_po":          new_values["-SAP_PO-"],
                         "sender":          new_values["-SENDER-"],
+                        "sender_adr":          new_values["-SENDER-ADDRESS-"],
+                        "sender_cont":          new_values["-SENDER-CONTACT-"],
                         "delivery":          new_values["-DELIVERY-"],
+                        "delivery_adr":          new_values["-DELIVERY-ADDRESS-"],
+                        "delivery_cont":          new_values["-DELIVERY-CONTACT-"],
                         "loading":          new_values["-LOADING-"],
                         "unloading":          new_values["-UNLOADING-"],
                         "pallets":          int(new_values["-PALLETS-"]),
@@ -1200,6 +1219,7 @@ def main_menu(login_validation, theme_name):
                     refresh_table(current_df, "-TABLE-")
                     statuss(f"✅ Nr.{nr} updated!")
                     app_window["-SEARCH-"].update("")
+                                 
         # ── Action triggered when Edit User button is pressed - opens Entry modal for editing an existing record
         elif action == "-BTN-EDIT-USER-":
             if selected_row is None:
