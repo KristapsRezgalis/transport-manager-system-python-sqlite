@@ -458,8 +458,10 @@ def entry_modal(title, existing=None, nr=None):
             
             if forwarder_contact_list:
                 app_window["-FORWARDER-CONTACT-"].update(values=forwarder_contact_list, value=forwarder_contact_list[0])
+                app_window["-FORWARDER-CONTACT-"].Widget.configure(width=33)
             else:
                 app_window["-FORWARDER-CONTACT-"].update(values=['No contacts'], value='No contacts')
+                app_window["-FORWARDER-CONTACT-"].Widget.configure(width=33)
                 
         elif action == "-SENDER-":
             selected_sender_company_name = values['-SENDER-']
@@ -470,13 +472,17 @@ def entry_modal(title, existing=None, nr=None):
             
             if sender_address_list:
                 app_window["-SENDER-ADDRESS-"].update(values=sender_address_list, value=sender_address_list[0])
+                app_window["-SENDER-ADDRESS-"].Widget.configure(width=33)
             else:
                 app_window["-SENDER-ADDRESS-"].update(values=['No addresses'], value='No addresses')
+                app_window["-SENDER-ADDRESS-"].Widget.configure(width=33)
             
             if sender_contact_list:
                 app_window["-SENDER-CONTACT-"].update(values=sender_contact_list, value=sender_contact_list[0])
+                app_window["-SENDER-CONTACT-"].Widget.configure(width=33)
             else:
                 app_window["-SENDER-CONTACT-"].update(values=['No contacts'], value='No contacts')
+                app_window["-SENDER-CONTACT-"].Widget.configure(width=33)
         elif action == "-DELIVERY-":
             selected_delivery_company_name = values['-DELIVERY-']
             deliv_id = return_company(selected_delivery_company_name)
@@ -486,20 +492,17 @@ def entry_modal(title, existing=None, nr=None):
             
             if delivery_address_list:
                 app_window["-DELIVERY-ADDRESS-"].update(values=delivery_address_list, value=delivery_address_list[0])
+                app_window["-DELIVERY-ADDRESS-"].Widget.configure(width=33)
             else:
                 app_window["-DELIVERY-ADDRESS-"].update(values=['No addresses'], value='No addresses')
+                app_window["-DELIVERY-ADDRESS-"].Widget.configure(width=33)
             
             if delivery_contact_list:
                 app_window["-DELIVERY-CONTACT-"].update(values=delivery_contact_list, value=delivery_contact_list[0])
+                app_window["-DELIVERY-CONTACT-"].Widget.configure(width=33)
             else:
                 app_window["-DELIVERY-CONTACT-"].update(values=['No contacts'], value='No contacts')
-        """
-if selected_delivery_company_name:
-        deliv_id = return_company(selected_delivery_company_name)
-        if deliv_id:
-            delivery_address_list = return_company_addresses(deliv_id, 'list_required')
-            delivery_contact_list = return_company_contacts(deliv_id, 'list_required')
-"""
+                app_window["-DELIVERY-CONTACT-"].Widget.configure(width=33)
 
 def login_modal():  
     #Creates an error popup window. Accepts Enter as keypress to close the window
