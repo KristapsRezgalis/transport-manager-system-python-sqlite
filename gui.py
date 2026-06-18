@@ -350,6 +350,25 @@ def entry_modal(title, existing=None, nr=None):
             delivery_address_list = return_company_addresses(deliv_id, 'list_required')
             delivery_contact_list = return_company_contacts(deliv_id, 'list_required')
     
+    PALLET_COLUMNS = ["quantity", "length", "width", "height"]
+    
+    pallet_table = [
+        sg.Column([[sg.Table(
+            values=[],
+            headings=PALLET_COLUMNS,
+            key="-PALLET-TABLE-",
+            auto_size_columns=False,
+            col_widths=[5,5,5,5],
+            justification="left",
+            num_rows=1,
+            enable_events=True,
+            enable_click_events=True, # for sorting
+            select_mode=sg.TABLE_SELECT_MODE_BROWSE,
+            expand_x=True,
+            expand_y=True,
+            )]], expand_x=True)
+    ]
+    
     # fills order modal fields with existing data
     if existing:
         layout = [
@@ -370,8 +389,7 @@ def entry_modal(title, existing=None, nr=None):
             [sg.Text("Unloading from:", size=16),      sg.Input(e.get("unloading", ""), key="-UNLOADING-",size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-UNLOADING-",format="%Y-%m-%d"),
              sg.Text("Unloading until:", size=16),     sg.Input(e.get("unloading_to", ""), key="-UNLOADING-TO-",size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-UNLOADING-TO-",format="%Y-%m-%d")],
             [sg.HSeparator()],
-            [sg.Text("Pallet count:",size=16),         sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
-            [sg.Text("Gross weight:",size=16),         sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
+            [sg.Text("Pallet count:",size=16),         sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35), sg.Text("Gross weight:",size=16), sg.Input(e.get("weight", ""), key="-WEIGHT-", size=35)],
             [sg.HSeparator()],
             [sg.Text("Forwarder:", size=16),           sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True),
              sg.Text("Forwarder contact:", size=16),   sg.Combo(forwarder_contact_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder_contact", ""), readonly=True, size=33)],
@@ -410,8 +428,8 @@ def entry_modal(title, existing=None, nr=None):
             [sg.Text("Unloading from:", size=16),      sg.Input(e.get("unloading", ""), key="-UNLOADING-",size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-UNLOADING-",format="%Y-%m-%d"),
              sg.Text("Unloading until:", size=16),     sg.Input(e.get("unloading_to", ""), key="-UNLOADING-TO-",size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-UNLOADING-TO-",format="%Y-%m-%d")],
             [sg.HSeparator()],
-            [sg.Text("Pallet count:",size=16),         sg.Input(e.get("pallets", ""),          key="-PALLETS-",   size=35)],
-            [sg.Text("Gross weight:",size=16),         sg.Input(e.get("weight", ""),          key="-WEIGHT-",   size=35)],
+            [sg.Text("Pallet count:",size=16),         sg.Input(e.get("pallets", ""), key="-PALLETS-", size=35), sg.Text("Gross weight:",size=16), sg.Input(e.get("weight", ""), key="-WEIGHT-", size=35)],
+            pallet_table,
             [sg.HSeparator()],
             [sg.Text("Forwarder:", size=16),           sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True),
              sg.Text("Forwarder contact:", size=16),   sg.Combo(forwarder_contact_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder_contact", ""), readonly=True, size=33)],
