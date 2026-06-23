@@ -351,10 +351,14 @@ def entry_modal(title, existing=None, nr=None):
             delivery_contact_list = return_company_contacts(deliv_id, 'list_required')
     
     PALLET_COLUMNS = ["quantity", "length", "width", "height"]
-    
+    # Programmatically grab the current application background and text colors
+    bg_color = sg.theme_background_color()      # Matches the window backdrop
+    input_bg = sg.theme_input_background_color()# Alternatively, matches input box fill
+    text_color = sg.theme_text_color()          # Matches the standard text color
+    """
     pallet_table = [
         sg.Column([[sg.Table(
-            values=[],
+            values=[["", "", "", ""]],
             headings=PALLET_COLUMNS,
             key="-PALLET-TABLE-",
             auto_size_columns=False,
@@ -366,9 +370,15 @@ def entry_modal(title, existing=None, nr=None):
             select_mode=sg.TABLE_SELECT_MODE_BROWSE,
             expand_x=True,
             expand_y=True,
+            # Force the table body to use the application's theme colors
+            background_color=bg_color,
+            text_color=text_color,
+            # Force headers to seamlessly match
+            header_background_color=bg_color,
+            header_text_color=text_color,
             )]], expand_x=True)
     ]
-    
+    """
     # fills order modal fields with existing data
     if existing:
         layout = [
@@ -429,7 +439,7 @@ def entry_modal(title, existing=None, nr=None):
              sg.Text("Unloading until:", size=16),     sg.Input(e.get("unloading_to", ""), key="-UNLOADING-TO-",size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick",target="-UNLOADING-TO-",format="%Y-%m-%d")],
             [sg.HSeparator()],
             [sg.Text("Pallet count:",size=16),         sg.Input(e.get("pallets", ""), key="-PALLETS-", size=35), sg.Text("Gross weight:",size=16), sg.Input(e.get("weight", ""), key="-WEIGHT-", size=35)],
-            pallet_table,
+            #pallet_table,
             [sg.HSeparator()],
             [sg.Text("Forwarder:", size=16),           sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True),
              sg.Text("Forwarder contact:", size=16),   sg.Combo(forwarder_contact_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder_contact", ""), readonly=True, size=33)],
