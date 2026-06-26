@@ -390,3 +390,9 @@ def get_purchase_managers():
     purchase_manager_df.sort()
     
     return purchase_manager_df
+
+def get_pallet_details(order_id):
+    conn = sqlite3.connect(DB_FILE)
+    df = pd.read_sql("""SELECT * FROM t_pallet_details WHERE order_id = ? ORDER BY pallet_id """, conn, params=(order_id))
+    conn.close()
+    return df
