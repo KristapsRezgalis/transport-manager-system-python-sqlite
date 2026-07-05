@@ -1,7 +1,7 @@
 import FreeSimpleGUI as sg
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts, get_purchase_managers
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts, get_purchase_managers, get_pallet_details, insert_pallet
 from pdf import create_order_pdf
 from stats import generate_diagram
 from company import company_entry_modal, company_contacts_modal, create_company_contact_modal, create_company_address_modal, company_address_modal
@@ -314,6 +314,32 @@ def user_entry_modal(title, existing=None):
         
 # Entry modal window for creating new records and editing existin ones
 def entry_modal(title, existing=None, nr=None):
+    
+    # A helper function to  update pallet table and total pallet number
+    def refresh_pallet_table(nr = None):
+        nonlocal pallet_df
+        
+        if nr:
+            pallet_df = get_pallet_details(nr) # Get all pallet df from the opened tr.order nr
+            
+            pallet_table_values = df_to_table(pallet_df, PALLET_COLUMNS)
+            num_rows = max(1, min(len(pallet_table_values), 8))
+            
+            app_window["-PALLET-TABLE-"].update(values=pallet_table_values, num_rows=num_rows)
+
+            total_pallets = int(pallet_df["quantity"].fillna(0).sum())
+            app_window["-PALLETS-"].update(total_pallets)
+        else:
+            pallet_table_values = df_to_table(pallet_df, PALLET_COLUMNS)
+            num_rows = max(1, min(len(pallet_table_values), 8))
+            
+            app_window["-PALLET-TABLE-"].update(values=pallet_table_values, num_rows=num_rows)
+
+            total_pallets = int(pallet_df["quantity"].fillna(0).sum())
+            app_window["-PALLETS-"].update(total_pallets)
+        
+        return total_pallets
+        
     e = existing or {}
     
     purchase_manager_list = get_purchase_managers()
@@ -355,16 +381,28 @@ def entry_modal(title, existing=None, nr=None):
     bg_color = sg.theme_background_color()      # Matches the window backdrop
     input_bg = sg.theme_input_background_color()# Alternatively, matches input box fill
     text_color = sg.theme_text_color()          # Matches the standard text color
- 
+    
+    # Received pallet dataFrame and total number of pallets from t_pallet_details table
+    pallet_df = get_pallet_details(nr)
+    print(pallet_df)
+    total_pallets = int(pallet_df['quantity'].sum())
+    print(f'total_pallets = {total_pallets}')
+    
+    pallet_table_values = df_to_table(pallet_df, PALLET_COLUMNS)
+    print('pallet_table_values:')
+    print(pallet_table_values)
+    num_rows = max(1, min(len(pallet_table_values), 8))
+    
     pallet_table = [
         sg.Column([[sg.Table(
-            values=[["", "", "", ""]],
+            #values=[["", "", "", ""]],
+            values = pallet_table_values,
             headings=PALLET_COLUMNS,
             key="-PALLET-TABLE-",
             auto_size_columns=False,
             col_widths=[5,5,5,5],
-            justification="left",
-            num_rows=1,
+            justification="center",
+            num_rows=num_rows,
             enable_events=True,
             enable_click_events=True, # for sorting
             select_mode=sg.TABLE_SELECT_MODE_BROWSE,
@@ -373,6 +411,7 @@ def entry_modal(title, existing=None, nr=None):
             )]], expand_x=True)
     ]
     
+    ### [sg.Text("Total pallet count:", size=16),  sg.Input(e.get("pallets", ""), key="-PALLETS-", size=35),
     # fills order modal fields with existing data
     common_rows = [
         [sg.Text("SAP PO Nr:", size=16),           sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
@@ -394,9 +433,10 @@ def entry_modal(title, existing=None, nr=None):
         [sg.HSeparator()],
 
         # Pallet count + weight on one line, then the pallet detail table below
-        [sg.Text("Pallet count:", size=16),        sg.Input(e.get("pallets", ""), key="-PALLETS-", size=35),
+        [sg.Text("Total pallet count:", size=16),  sg.Text(total_pallets, key="-PALLETS-", size=35, font=("Segoe UI", 10, "bold")),
          sg.Text("Gross weight:", size=16),        sg.Input(e.get("weight", ""), key="-WEIGHT-", size=35)],
         pallet_table,
+        [sg.Push(), sg.Button("Add pallets", key="-BTN-ADD-PLL-", size=15), sg.Button("Edit pallets", key="-BTN-EDIT-PLL-", size=15), sg.Button("Delete pallets", key="-BTN-DELETE-PLL-", size=15), sg.Push()],
         [sg.HSeparator()],
 
         [sg.Text("Forwarder:", size=16),           sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True),
@@ -422,7 +462,7 @@ def entry_modal(title, existing=None, nr=None):
         ]
     else:
         layout = common_rows + [
-            [sg.Button("Save", key="-SAVE-"), sg.Button("Cancel")],
+            [sg.Push(), sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()],
         ]
         
     app_window = sg.Window(title, layout, modal=True)
@@ -435,7 +475,7 @@ def entry_modal(title, existing=None, nr=None):
             return None
         if action == "-SAVE-":
             app_window.close()
-            return values
+            return values, total_pallets
         
         # action triggered when "Create transport order in PDF" button is pressed in record Edit modal - it creates a PDF file/transport order
         if action == "-CREATE-PDF-":
@@ -497,6 +537,98 @@ def entry_modal(title, existing=None, nr=None):
             else:
                 app_window["-DELIVERY-CONTACT-"].update(values=['No contacts'], value='No contacts')
                 app_window["-DELIVERY-CONTACT-"].Widget.configure(width=33)
+        # Modal to add new pallet data is opened
+        elif action == "-BTN-ADD-PLL-":
+            values = pallet_modal()
+            # Case when a new tr. order is being created and it DOES NOT HAVE nr yet!!!
+            if nr == None:
+                print('Transport order number does not exist at this point!')
+                if values:
+                    pallet_df
+            # Case when an existing tr. order is edited and already has it's nr
+            else:
+                if values:
+                    insert_pallet(
+                        nr,
+                        values["-PLL-QTY-"],
+                        values["-PLL-LENGTH-"],
+                        values["-PLL-WIDTH-"],
+                        values["-PLL-HEIGHT-"]
+                    )
+                # updates pallet table and thetotal pallet number in order so it can be saved in db
+                total_pallets = refresh_pallet_table(nr)
+            
+        elif action == "-BTN-EDIT-PLL-":
+            selected = values["-PALLET-TABLE-"]
+
+            if not selected:
+                sg.popup("Please select a pallet.")
+                continue
+
+            row = selected[0]
+            existing = pallet_df.iloc[row].to_dict()
+            
+            edited_values = pallet_modal(existing) # gets new or edited values of qty, length, width, height
+
+            if edited_values:
+                updated_values = {
+                        "quantity": edited_values["-PLL-QTY-"],
+                        "length": edited_values["-PLL-LENGTH-"],
+                        "width": edited_values["-PLL-WIDTH-"],
+                        "height": edited_values["-PLL-HEIGHT-"]
+                }
+                
+                pallet_id = int(pallet_df.iloc[row]["pallet_id"])
+                
+                edit_db(pallet_id, updated_values, "t_pallet_details", id_name="pallet_id")
+                
+                # updates pallet table and thetotal pallet number in order so it can be saved in db
+                total_pallets = refresh_pallet_table(nr)
+        elif action == "-BTN-DELETE-PLL-":
+            selected = values["-PALLET-TABLE-"]
+
+            if not selected:
+                sg.popup("Please select a pallet.")
+                continue
+
+            row = selected[0]
+            pallet_id = int(pallet_df.iloc[row]["pallet_id"])
+            
+            existing = pallet_df.iloc[row].to_dict()
+            
+            confirm = sg.popup_yes_no(
+                    f"Do you really want to delete pallet data?\n",
+                    title="Confirm deleting a record"
+                )
+            if confirm == "Yes":
+                delete_db(pallet_id, 't_pallet_details', id_name="pallet_id")
+                total_pallets = refresh_pallet_table(nr)
+                selected_row = None
+
+# Function that opens a small modal to enter pallet detailsfor an order (can be used for create new or edit existin pallet details)
+def pallet_modal(existing=None):
+    e = existing or {}
+
+    layout = [
+        [sg.Text("Quantity", size=10), sg.Input(e.get("quantity", ""), key="-PLL-QTY-")],
+        [sg.Text("Length", size=10), sg.Input(e.get("length", ""), key="-PLL-LENGTH-")],
+        [sg.Text("Width",  size=10), sg.Input(e.get("width", ""), key="-PLL-WIDTH-")],
+        [sg.Text("Height", size=10), sg.Input(e.get("height", ""), key="-PLL-HEIGHT-")],
+        [sg.Push(), sg.Button("Save"), sg.Button("Cancel"), sg.Push()]
+    ]
+
+    window = sg.Window("Pallet details", layout, modal=True)
+
+    while True:
+        event, values = window.read()
+
+        if event in (sg.WIN_CLOSED, "Cancel"):
+            window.close()
+            return None
+
+        if event == "Save":
+            window.close()
+            return values
 
 def login_modal():  
     #Creates an error popup window. Accepts Enter as keypress to close the window
@@ -1216,8 +1348,10 @@ def main_menu(login_validation, theme_name):
                     "customs":          str(row["customs"]),
                     "ref":          str(row["ref"]),
                 }
-                new_values = entry_modal(f"Editing record Nr.{nr}", existing, nr)
-                if new_values:
+                result = entry_modal(f"Editing record Nr.{nr}", existing, nr)
+                if result is not None:
+                    new_values, total_pallets = result
+                    
                     updated_values = {
                         "sap_po":          new_values["-SAP_PO-"],
                         "sender":          new_values["-SENDER-"],
@@ -1228,7 +1362,7 @@ def main_menu(login_validation, theme_name):
                         "delivery_cont":          new_values["-DELIVERY-CONTACT-"],
                         "loading":          new_values["-LOADING-"],
                         "unloading":          new_values["-UNLOADING-"],
-                        "pallets":          int(new_values["-PALLETS-"]),
+                        "pallets":          total_pallets,
                         "weight":          float(new_values["-WEIGHT-"]),
                         "forwarder":          new_values["-FORWARDER-"],
                         "forwarder_contact":          new_values["-FORWARDER-CONTACT-"],

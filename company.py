@@ -35,7 +35,7 @@ def company_entry_modal(title, existing=None):
             app_window.close()
             return values
 
-# Function that opens a modal where all contaccts of selected company can be seen in a table / create / edit / delete buttons
+# Function that opens a modal where all contacts of selected company can be seen in a table / create / edit / delete buttons
 def company_contacts_modal(company_id, c_name):
     from gui import df_to_table
     

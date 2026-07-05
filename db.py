@@ -141,7 +141,7 @@ def edit_db(nr, updated_values, table_name, id_name = 'nr'):
     set_variables = ", ".join(f"{x} = ?" for x in updated_values)
     values = list(updated_values.values())
     values.append(nr)
-    
+
     cur.execute(f"UPDATE {table_name} SET {set_variables} WHERE {id_name} = ?", values)
     
     conn.commit()
@@ -393,6 +393,21 @@ def get_purchase_managers():
 
 def get_pallet_details(order_id):
     conn = sqlite3.connect(DB_FILE)
-    df = pd.read_sql("""SELECT * FROM t_pallet_details WHERE order_id = ? ORDER BY pallet_id """, conn, params=(order_id))
+    df = pd.read_sql("""SELECT * FROM t_pallet_details WHERE order_id = ? ORDER BY pallet_id """, conn, params=(order_id,))
     conn.close()
     return df
+
+def insert_pallet(nr, pll_quantity, pll_length, pll_width, pll_height):
+    """Adds new pallet details into database"""
+    new_row=pd.DataFrame([{
+        'order_id': nr,
+        'quantity': pll_quantity,
+        'length': pll_length,
+        'width': pll_width,
+        'height': pll_height
+    }])
+    conn = sqlite3.connect(DB_FILE)
+    new_row.to_sql("t_pallet_details", conn, if_exists="append", index=False)
+    #new_record = pd.read_sql("SELECT MAX(pallet_id) as nr FROM t_pallet_details", conn)["nr"].iloc[0]
+    conn.close()
+    
