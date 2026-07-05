@@ -1,4 +1,5 @@
 import FreeSimpleGUI as sg
+import pandas as pd
 
 from datetime import datetime
 from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts, get_purchase_managers, get_pallet_details, insert_pallet
@@ -321,25 +322,25 @@ def entry_modal(title, existing=None, nr=None):
         
         if nr:
             pallet_df = get_pallet_details(nr) # Get all pallet df from the opened tr.order nr
-            
             pallet_table_values = df_to_table(pallet_df, PALLET_COLUMNS)
             num_rows = max(1, min(len(pallet_table_values), 8))
-            
             app_window["-PALLET-TABLE-"].update(values=pallet_table_values, num_rows=num_rows)
-
-            total_pallets = int(pallet_df["quantity"].fillna(0).sum())
-            app_window["-PALLETS-"].update(total_pallets)
+            
         else:
             pallet_table_values = df_to_table(pallet_df, PALLET_COLUMNS)
             num_rows = max(1, min(len(pallet_table_values), 8))
-            
             app_window["-PALLET-TABLE-"].update(values=pallet_table_values, num_rows=num_rows)
-
-            total_pallets = int(pallet_df["quantity"].fillna(0).sum())
-            app_window["-PALLETS-"].update(total_pallets)
+        
+        numeric_cols = ["length", "width", "height", "quantity"]
+        for col in numeric_cols:
+            pallet_df[col] = pd.to_numeric(pallet_df[col], errors="coerce")
+        
+        total_pallets = int(pallet_df["quantity"].fillna(0).sum())
+        app_window["-PALLETS-"].update(total_pallets)
+        print(f'total_pallets = {total_pallets}')
         
         return total_pallets
-        
+            
     e = existing or {}
     
     purchase_manager_list = get_purchase_managers()
@@ -544,7 +545,17 @@ def entry_modal(title, existing=None, nr=None):
             if nr == None:
                 print('Transport order number does not exist at this point!')
                 if values:
-                    pallet_df
+                    updated_values = {
+                        "quantity": int(values["-PLL-QTY-"]),
+                        "length": int(values["-PLL-LENGTH-"]),
+                        "width": int(values["-PLL-WIDTH-"]),
+                        "height": int(values["-PLL-HEIGHT-"])
+                }
+                new_row_df = pd.DataFrame([updated_values])
+                pallet_df = pd.concat([pallet_df, new_row_df], ignore_index=True)
+                print('New pallet_df:')
+                print(pallet_df)
+                total_pallets = refresh_pallet_table(nr)
             # Case when an existing tr. order is edited and already has it's nr
             else:
                 if values:
