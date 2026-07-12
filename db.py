@@ -49,7 +49,7 @@ def read_all(table_name, id_header):
     conn.close()
     return df
 
-def add_db(sap_po, sender, sender_adr, sender_cont, delivery, delivery_adr, delivery_cont, loading, unloading, pallets, weight, forwarder, forwarder_contact, cost, customs, ref):
+def add_db(sap_po, sender, sender_adr, sender_cont, delivery, delivery_adr, delivery_cont, loading, loading_to, unloading, unloading_to, pallets, weight, forwarder, forwarder_contact, cost, customs, ref, info, add_info_to_order, purch_manager, cargo_type, transport_invoice):
     """Adds new transport order record into database"""
     new_row = pd.DataFrame([{
         "sap_po":	sap_po,
@@ -60,7 +60,9 @@ def add_db(sap_po, sender, sender_adr, sender_cont, delivery, delivery_adr, deli
         "delivery_adr": delivery_adr,
         "delivery_cont": delivery_cont,
         "loading":	loading,
+        "loading_to":	loading_to,
         "unloading":unloading,
+        "unloading_to":unloading_to,
         "pallets":	pallets,
         "weight":	weight,
         "forwarder":forwarder,
@@ -68,6 +70,11 @@ def add_db(sap_po, sender, sender_adr, sender_cont, delivery, delivery_adr, deli
         "cost":		cost,
         "customs":	customs,
         "ref":		ref,
+        "info": info,
+        "add_info_to_order": add_info_to_order,
+        "purch_manager": purch_manager,
+        "cargo_type": cargo_type,
+        "transport_invoice": transport_invoice
     }])
     conn = sqlite3.connect(DB_FILE)
     new_row.to_sql(TABLE_NAME, conn, if_exists="append", index=False)

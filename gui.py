@@ -448,7 +448,7 @@ def entry_modal(title, existing=None, nr=None):
         [sg.Text("Customs:", size=16),             sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33),
          sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
 
-        [sg.Text("Notes:", size=16),               sg.Multiline(e.get("info", ""), key="-IN-ORDER-DETAILS-", size=(33, 4)), sg.Checkbox('Add notes to transport order', default=False, key='-CB-ADD_TO_ORDER-')],
+        [sg.Text("Notes:", size=16),               sg.Multiline(e.get("info", ""), key="-IN-ORDER-DETAILS-", size=(33, 4)), sg.Checkbox('Add notes to transport order', default=e.get("add_info_to_order", ""), key='-CB-ADD_TO_ORDER-')],
         [sg.HSeparator()],
         [sg.Text("Purchase manager:", size=16),    sg.Combo(purchase_manager_list, key="-CMB-PURCHASE_MANAGER-", default_value=e.get("purch_manager", ""), readonly=True, size=33),
          sg.Text("Product type:", size=16),        sg.Combo(['Edible products', 'Non-edible products', 'Electric devices', 'Furniture'], key="-CMB-CARGO_TYPE-", default_value=e.get("cargo_type", ""), readonly=True, size=33)],
@@ -1200,12 +1200,14 @@ def main_menu(login_validation, theme_name):
         
         # ── Action triggered when CREATE button is pressed - opens Entry modal for creating new record
         elif action == "-BTN-CREATE-":
-            new_values = entry_modal("NEW TRANSPORT RECORD")
-            if new_values:
+            result = entry_modal("NEW TRANSPORT RECORD")
+            
+            if result:
+                new_values, total_pallets = result
                 new_record = add_db(
-                    new_values["-SAP_PO-"], new_values["-SENDER-"], new_values["-SENDER-ADDRESS-"], new_values["-SENDER-CONTACT-"], new_values["-DELIVERY-"], new_values["-DELIVERY-ADDRESS-"], new_values["-DELIVERY-CONTACT-"], new_values["-LOADING-"],
-                    new_values["-UNLOADING-"], new_values["-PALLETS-"], new_values["-WEIGHT-"], new_values["-FORWARDER-"], new_values["-FORWARDER-CONTACT-"],
-                    new_values["-COST-"], new_values["-CUSTOMS-"], new_values["-REF-"]
+                    new_values["-SAP_PO-"], new_values["-SENDER-"], new_values["-SENDER-ADDRESS-"], new_values["-SENDER-CONTACT-"], new_values["-DELIVERY-"], new_values["-DELIVERY-ADDRESS-"], new_values["-DELIVERY-CONTACT-"], new_values["-LOADING-"], new_values["-LOADING-TO-"],
+                    new_values["-UNLOADING-"], new_values["-UNLOADING-TO-"], total_pallets, new_values["-WEIGHT-"], new_values["-FORWARDER-"], new_values["-FORWARDER-CONTACT-"],
+                    new_values["-COST-"], new_values["-CUSTOMS-"], new_values["-REF-"], new_values["-IN-ORDER-DETAILS-"], new_values["-CB-ADD_TO_ORDER-"], new_values["-CMB-PURCHASE_MANAGER-"], new_values["-CMB-CARGO_TYPE-"], new_values["-IN-TRANSPORT-INVOICE-"]
                 )
                 current_df = read_all('transport', 'nr')
                 refresh_table(current_df, "-TABLE-")
@@ -1342,22 +1344,29 @@ def main_menu(login_validation, theme_name):
                 nr = int(row["nr"])
                 
                 existing = {
-                    "sap_po":          str(row["sap_po"]),
-                    "sender":          str(row["sender"]),
-                    "sender_adr":          str(row["sender_adr"]),
-                    "sender_cont":          str(row["sender_cont"]),
+                    "sap_po":            str(row["sap_po"]),
+                    "sender":            str(row["sender"]),
+                    "sender_adr":        str(row["sender_adr"]),
+                    "sender_cont":       str(row["sender_cont"]),
                     "delivery":          str(row["delivery"]),
-                    "delivery_adr":          str(row["delivery_adr"]),
-                    "delivery_cont":          str(row["delivery_cont"]),
-                    "loading":          str(row["loading"]),
-                    "unloading":          str(row["unloading"]),
-                    "pallets":          str(row["pallets"]),
-                    "weight":          str(row["weight"]),
-                    "forwarder":          str(row["forwarder"]),
-                    "forwarder_contact":          str(row["forwarder_contact"]),
-                    "cost":          str(row["cost"]),
-                    "customs":          str(row["customs"]),
-                    "ref":          str(row["ref"]),
+                    "delivery_adr":      str(row["delivery_adr"]),
+                    "delivery_cont":     str(row["delivery_cont"]),
+                    "loading":           str(row["loading"]),
+                    "loading_to":        str(row["loading_to"]),
+                    "unloading":         str(row["unloading"]),
+                    "unloading_to":      str(row["unloading_to"]),
+                    "pallets":           str(row["pallets"]),
+                    "weight":            str(row["weight"]),
+                    "forwarder":         str(row["forwarder"]),
+                    "forwarder_contact": str(row["forwarder_contact"]),
+                    "cost":              str(row["cost"]),
+                    "customs":           str(row["customs"]),
+                    "ref":               str(row["ref"]),
+                    "info":              str(row["info"]),
+                    "add_info_to_order": bool(int(row["add_info_to_order"])),
+                    "purch_manager":     str(row["purch_manager"]),
+                    "cargo_type":        str(row["cargo_type"]),
+                    "transport_invoice": str(row["transport_invoice"]),
                 }
                 result = entry_modal(f"Editing record Nr.{nr}", existing, nr)
                 if result is not None:
@@ -1372,7 +1381,9 @@ def main_menu(login_validation, theme_name):
                         "delivery_adr":          new_values["-DELIVERY-ADDRESS-"],
                         "delivery_cont":          new_values["-DELIVERY-CONTACT-"],
                         "loading":          new_values["-LOADING-"],
+                        "loading_to":          new_values["-LOADING-TO-"],
                         "unloading":          new_values["-UNLOADING-"],
+                        "unloading_to":          new_values["-UNLOADING-TO-"],
                         "pallets":          total_pallets,
                         "weight":          float(new_values["-WEIGHT-"]),
                         "forwarder":          new_values["-FORWARDER-"],
@@ -1380,7 +1391,13 @@ def main_menu(login_validation, theme_name):
                         "cost":          float(new_values["-COST-"]),
                         "customs":          new_values["-CUSTOMS-"],
                         "ref":          new_values["-REF-"],
+                        "info":          new_values["-IN-ORDER-DETAILS-"],
+                        "add_info_to_order":          new_values["-CB-ADD_TO_ORDER-"],
+                        "purch_manager":          new_values["-CMB-PURCHASE_MANAGER-"],
+                        "cargo_type":          new_values["-CMB-CARGO_TYPE-"],
+                        "transport_invoice":          new_values["-IN-TRANSPORT-INVOICE-"]
                     }
+
                     edit_db(nr, updated_values, 'transport')
                     
                     current_df = read_all('transport', 'nr')
