@@ -28,13 +28,23 @@ def df_to_table(df, columns_to_keep=None):
         df = df[existing_cols].copy()
     else:
         df = df.copy()
-
-    # Format columns to 2 decimal places
+    
+    # Helper function to safely format numbers to 2 decimal places
+    def safe_format(val):
+        # Handle cases where value is missing, empty string, or literal text "None"/"nan"
+        if pd.isna(val) or str(val).strip() in ('', 'None', 'nan'):
+            return ""
+        try:
+            return "{:.2f}".format(float(val))
+        except (ValueError, TypeError):
+            return str(val)  # Fallback to string if it cannot be converted
+    
+    # Apply the safe formatter to numeric columns
     if "weight" in df.columns:
-        df["weight"] = df["weight"].astype(float).map("{:.2f}".format)
+        df["weight"] = df["weight"].apply(safe_format)
 
     if "cost" in df.columns:
-        df["cost"] = df["cost"].astype(float).map("{:.2f}".format)
+        df["cost"] = df["cost"].apply(safe_format)
 
     return df.values.tolist()
 
@@ -456,12 +466,12 @@ def entry_modal(title, existing=None, nr=None):
         [sg.Text("Transport invoice:", size=16),   sg.Input(e.get("transport_invoice", ""), key="-IN-TRANSPORT-INVOICE-", size=35)],
     ]
 
-    if existing:
+    if existing: # if editing existin order
         layout = common_rows + [
             [sg.Push(), sg.Button("Create transport order in PDF", key="-CREATE-PDF-"), sg.Push()],
             [sg.Push(), sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()],
         ]
-    else:
+    else: # if creating a new order
         layout = common_rows + [
             [sg.Push(), sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()],
         ]
@@ -476,7 +486,7 @@ def entry_modal(title, existing=None, nr=None):
             return None
         if action == "-SAVE-":
             app_window.close()
-            return values, total_pallets
+            return values, total_pallets, pallet_df
         
         # action triggered when "Create transport order in PDF" button is pressed in record Edit modal - it creates a PDF file/transport order
         if action == "-CREATE-PDF-":
@@ -541,31 +551,32 @@ def entry_modal(title, existing=None, nr=None):
         # Modal to add new pallet data is opened
         elif action == "-BTN-ADD-PLL-":
             values = pallet_modal()
-            # Case when a new tr. order is being created and it DOES NOT HAVE nr yet!!!
-            if nr == None:
-                print('Transport order number does not exist at this point!')
-                if values:
+            print(f'values: {values}')
+            if values: # values received from pallet_modal()
+                # Case when a new tr. order is being created and it DOES NOT HAVE nr yet!!!
+                if nr == None:
+                    print('Transport order number does not exist at this point!')
                     updated_values = {
-                        "quantity": int(values["-PLL-QTY-"]),
-                        "length": int(values["-PLL-LENGTH-"]),
-                        "width": int(values["-PLL-WIDTH-"]),
-                        "height": int(values["-PLL-HEIGHT-"])
-                }
-                new_row_df = pd.DataFrame([updated_values])
-                pallet_df = pd.concat([pallet_df, new_row_df], ignore_index=True)
-                print('New pallet_df:')
-                print(pallet_df)
-                total_pallets = refresh_pallet_table(nr)
-            # Case when an existing tr. order is edited and already has it's nr
-            else:
-                if values:
+                            "quantity": int(values["-PLL-QTY-"]),
+                            "length": int(values["-PLL-LENGTH-"]),
+                            "width": int(values["-PLL-WIDTH-"]),
+                            "height": int(values["-PLL-HEIGHT-"])
+                    }
+                    new_row_df = pd.DataFrame([updated_values])
+                    pallet_df = pd.concat([pallet_df, new_row_df], ignore_index=True)
+                    print('New pallet_df:')
+                    print(pallet_df)
+                    total_pallets = refresh_pallet_table(nr)
+                # Case when an existing tr. order is edited and already has it's nr
+                else:
                     insert_pallet(
-                        nr,
-                        values["-PLL-QTY-"],
-                        values["-PLL-LENGTH-"],
-                        values["-PLL-WIDTH-"],
-                        values["-PLL-HEIGHT-"]
-                    )
+                            nr,
+                            values["-PLL-QTY-"],
+                            values["-PLL-LENGTH-"],
+                            values["-PLL-WIDTH-"],
+                            values["-PLL-HEIGHT-"]
+                        )
+                
                 # updates pallet table and thetotal pallet number in order so it can be saved in db
                 total_pallets = refresh_pallet_table(nr)
             
@@ -578,20 +589,26 @@ def entry_modal(title, existing=None, nr=None):
 
             row = selected[0]
             existing = pallet_df.iloc[row].to_dict()
+            print(f'row - {row}')
+            print(f'existing - {existing}')
             
             edited_values = pallet_modal(existing) # gets new or edited values of qty, length, width, height
 
-            if edited_values:
+            if edited_values: 
                 updated_values = {
                         "quantity": edited_values["-PLL-QTY-"],
                         "length": edited_values["-PLL-LENGTH-"],
                         "width": edited_values["-PLL-WIDTH-"],
                         "height": edited_values["-PLL-HEIGHT-"]
                 }
-                
-                pallet_id = int(pallet_df.iloc[row]["pallet_id"])
-                
-                edit_db(pallet_id, updated_values, "t_pallet_details", id_name="pallet_id")
+                # when new order created - pallet values are edited only in pallet_df
+                if nr == None:
+                    pallet_df.loc[row, ['quantity', 'length', 'width', 'height']] = [int(edited_values["-PLL-QTY-"]), int(edited_values["-PLL-LENGTH-"]), int(edited_values["-PLL-WIDTH-"]), int(edited_values["-PLL-HEIGHT-"])]
+                # when existing order is edited - pallet data are changed in the t_pallet_details db table
+                else:
+                    pallet_id = int(pallet_df.iloc[row]["pallet_id"])
+                    
+                    edit_db(pallet_id, updated_values, "t_pallet_details", id_name="pallet_id")
                 
                 # updates pallet table and thetotal pallet number in order so it can be saved in db
                 total_pallets = refresh_pallet_table(nr)
@@ -603,18 +620,25 @@ def entry_modal(title, existing=None, nr=None):
                 continue
 
             row = selected[0]
-            pallet_id = int(pallet_df.iloc[row]["pallet_id"])
-            
-            existing = pallet_df.iloc[row].to_dict()
-            
-            confirm = sg.popup_yes_no(
-                    f"Do you really want to delete pallet data?\n",
-                    title="Confirm deleting a record"
-                )
-            if confirm == "Yes":
-                delete_db(pallet_id, 't_pallet_details', id_name="pallet_id")
-                total_pallets = refresh_pallet_table(nr)
-                selected_row = None
+            if nr == None:
+                 # 1. Get the true index label of the row
+                true_index_label = pallet_df.index[row]
+                # 2. Drop the row and update the DataFrame
+                pallet_df = pallet_df.drop(index=true_index_label)
+            else:
+                pallet_id = int(pallet_df.iloc[row]["pallet_id"])
+                
+                existing = pallet_df.iloc[row].to_dict()
+                
+                confirm = sg.popup_yes_no(
+                        f"Do you really want to delete pallet data?\n",
+                        title="Confirm deleting a record"
+                    )
+                if confirm == "Yes":
+                    delete_db(pallet_id, 't_pallet_details', id_name="pallet_id")
+                    
+            total_pallets = refresh_pallet_table(nr)
+            selected_row = None
 
 # Function that opens a small modal to enter pallet detailsfor an order (can be used for create new or edit existin pallet details)
 def pallet_modal(existing=None):
@@ -1203,12 +1227,21 @@ def main_menu(login_validation, theme_name):
             result = entry_modal("NEW TRANSPORT RECORD")
             
             if result:
-                new_values, total_pallets = result
+                new_values, total_pallets, pallet_df = result
                 new_record = add_db(
                     new_values["-SAP_PO-"], new_values["-SENDER-"], new_values["-SENDER-ADDRESS-"], new_values["-SENDER-CONTACT-"], new_values["-DELIVERY-"], new_values["-DELIVERY-ADDRESS-"], new_values["-DELIVERY-CONTACT-"], new_values["-LOADING-"], new_values["-LOADING-TO-"],
                     new_values["-UNLOADING-"], new_values["-UNLOADING-TO-"], total_pallets, new_values["-WEIGHT-"], new_values["-FORWARDER-"], new_values["-FORWARDER-CONTACT-"],
                     new_values["-COST-"], new_values["-CUSTOMS-"], new_values["-REF-"], new_values["-IN-ORDER-DETAILS-"], new_values["-CB-ADD_TO_ORDER-"], new_values["-CMB-PURCHASE_MANAGER-"], new_values["-CMB-CARGO_TYPE-"], new_values["-IN-TRANSPORT-INVOICE-"]
                 )
+                for row in pallet_df.itertuples(): # loops through pallet_df and inserts new order's pallet data in db
+                    insert_pallet(
+                        new_record, 
+                        row.quantity, 
+                        row.length, 
+                        row.width, 
+                        row.height
+                    )
+                
                 current_df = read_all('transport', 'nr')
                 refresh_table(current_df, "-TABLE-")
                 statuss(f"✅ Record Nr.{new_record} added!")
@@ -1344,33 +1377,33 @@ def main_menu(login_validation, theme_name):
                 nr = int(row["nr"])
                 
                 existing = {
-                    "sap_po":            str(row["sap_po"]),
-                    "sender":            str(row["sender"]),
-                    "sender_adr":        str(row["sender_adr"]),
-                    "sender_cont":       str(row["sender_cont"]),
-                    "delivery":          str(row["delivery"]),
-                    "delivery_adr":      str(row["delivery_adr"]),
-                    "delivery_cont":     str(row["delivery_cont"]),
-                    "loading":           str(row["loading"]),
-                    "loading_to":        str(row["loading_to"]),
-                    "unloading":         str(row["unloading"]),
-                    "unloading_to":      str(row["unloading_to"]),
-                    "pallets":           str(row["pallets"]),
-                    "weight":            str(row["weight"]),
-                    "forwarder":         str(row["forwarder"]),
-                    "forwarder_contact": str(row["forwarder_contact"]),
-                    "cost":              str(row["cost"]),
-                    "customs":           str(row["customs"]),
-                    "ref":               str(row["ref"]),
-                    "info":              str(row["info"]),
-                    "add_info_to_order": bool(int(row["add_info_to_order"])),
-                    "purch_manager":     str(row["purch_manager"]),
-                    "cargo_type":        str(row["cargo_type"]),
-                    "transport_invoice": str(row["transport_invoice"]),
+                    "sap_po":            str(row["sap_po"]) if pd.notna(row["sap_po"]) else "",
+                    "sender":            str(row["sender"]) if pd.notna(row["sender"]) else "",
+                    "sender_adr":        str(row["sender_adr"]) if pd.notna(row["sender_adr"]) else "",
+                    "sender_cont":       str(row["sender_cont"]) if pd.notna(row["sender_cont"]) else "",
+                    "delivery":          str(row["delivery"]) if pd.notna(row["delivery"]) else "",
+                    "delivery_adr":      str(row["delivery_adr"]) if pd.notna(row["delivery_adr"]) else "",
+                    "delivery_cont":     str(row["delivery_cont"]) if pd.notna(row["delivery_cont"]) else "",
+                    "loading":           str(row["loading"]) if pd.notna(row["loading"]) else "",
+                    "loading_to":        str(row["loading_to"]) if pd.notna(row["loading_to"]) else "",
+                    "unloading":         str(row["unloading"]) if pd.notna(row["unloading"]) else "",
+                    "unloading_to":      str(row["unloading_to"]) if pd.notna(row["unloading_to"]) else "",
+                    "pallets":           str(row["pallets"]) if pd.notna(row["pallets"]) else "",
+                    "weight":            str(row["weight"]) if pd.notna(row["weight"]) else "",
+                    "forwarder":         str(row["forwarder"]) if pd.notna(row["forwarder"]) else "",
+                    "forwarder_contact": str(row["forwarder_contact"]) if pd.notna(row["forwarder_contact"]) else "",
+                    "cost":              str(row["cost"]) if pd.notna(row["cost"]) else "",
+                    "customs":           str(row["customs"]) if pd.notna(row["customs"]) else "",
+                    "ref":               str(row["ref"]) if pd.notna(row["ref"]) else "",
+                    "info":              str(row["info"]) if pd.notna(row["info"]) else "",
+                    "add_info_to_order": bool(int(row["add_info_to_order"])) if pd.notna(row["add_info_to_order"]) else False,
+                    "purch_manager":     str(row["purch_manager"]) if pd.notna(row["purch_manager"]) else "",
+                    "cargo_type":        str(row["cargo_type"]) if pd.notna(row["cargo_type"]) else "",
+                    "transport_invoice": str(row["transport_invoice"]) if pd.notna(row["transport_invoice"]) else ""
                 }
                 result = entry_modal(f"Editing record Nr.{nr}", existing, nr)
                 if result is not None:
-                    new_values, total_pallets = result
+                    new_values, total_pallets, pallet_df = result
                     
                     updated_values = {
                         "sap_po":          new_values["-SAP_PO-"],
