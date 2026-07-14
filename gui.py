@@ -9,6 +9,8 @@ from company import company_entry_modal, company_contacts_modal, create_company_
 from forwarder import forwarder_entry_modal
 from config import *
 
+login_validation = ''
+
 TABLE_KEYS = [
     "-TABLE-",
     "-USER-TABLE-",
@@ -324,8 +326,8 @@ def user_entry_modal(title, existing=None):
             return values
         
 # Entry modal window for creating new records and editing existin ones
-def entry_modal(title, existing=None, nr=None):
-    
+def entry_modal(title, existing=None, nr=None, login_validation=login_validation):
+    print(f'login_validation: {login_validation}')
     # A helper function to  update pallet table and total pallet number
     def refresh_pallet_table(nr = None):
         nonlocal pallet_df
@@ -437,9 +439,9 @@ def entry_modal(title, existing=None, nr=None):
          sg.Text("Delivery contact:", size=16),    sg.Combo(delivery_contact_list, key="-DELIVERY-CONTACT-", default_value=e.get("delivery_cont", ""), readonly=True, size=33)],
         [sg.HSeparator()],
         [sg.Text("Loading from:", size=16),        sg.Input(e.get("loading", ""), key="-LOADING-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-LOADING-", format="%Y-%m-%d"),
-         sg.Text("Loading until:", size=16),       sg.Input(e.get("loading_to", ""), key="-LOADING-TO-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-LOADING-TO-", format="%Y-%m-%d")],
-
-        [sg.Text("Unloading from:", size=16),      sg.Input(e.get("unloading", ""), key="-UNLOADING-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-UNLOADING-", format="%Y-%m-%d"),
+         sg.Text("Unloading from:", size=16),      sg.Input(e.get("unloading", ""), key="-UNLOADING-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-UNLOADING-", format="%Y-%m-%d")],
+         
+        [sg.Text("Loading until:", size=16),       sg.Input(e.get("loading_to", ""), key="-LOADING-TO-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-LOADING-TO-", format="%Y-%m-%d"),         
          sg.Text("Unloading until:", size=16),     sg.Input(e.get("unloading_to", ""), key="-UNLOADING-TO-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-UNLOADING-TO-", format="%Y-%m-%d")],
         [sg.HSeparator()],
 
@@ -490,7 +492,7 @@ def entry_modal(title, existing=None, nr=None):
         
         # action triggered when "Create transport order in PDF" button is pressed in record Edit modal - it creates a PDF file/transport order
         if action == "-CREATE-PDF-":
-            create_order_pdf(existing, nr)
+            create_order_pdf(existing, nr, login_validation)
             print('Create transport order in PDF button pressed!')
         elif action == "-FORWARDER-":
             selected_forwarder_name = values['-FORWARDER-']
@@ -729,6 +731,7 @@ def login_modal():
 
 # --- Main menu ---
 def main_menu(login_validation, theme_name):
+    print(f'login_validation: {login_validation}')
     create_table()
     
     def show_view(view_key):
@@ -1224,7 +1227,7 @@ def main_menu(login_validation, theme_name):
         
         # ── Action triggered when CREATE button is pressed - opens Entry modal for creating new record
         elif action == "-BTN-CREATE-":
-            result = entry_modal("NEW TRANSPORT RECORD")
+            result = entry_modal("NEW TRANSPORT RECORD", login_validation=login_validation)
             
             if result:
                 new_values, total_pallets, pallet_df = result
@@ -1401,7 +1404,7 @@ def main_menu(login_validation, theme_name):
                     "cargo_type":        str(row["cargo_type"]) if pd.notna(row["cargo_type"]) else "",
                     "transport_invoice": str(row["transport_invoice"]) if pd.notna(row["transport_invoice"]) else ""
                 }
-                result = entry_modal(f"Editing record Nr.{nr}", existing, nr)
+                result = entry_modal(f"Editing record Nr.{nr}", existing, nr, login_validation=login_validation)
                 if result is not None:
                     new_values, total_pallets, pallet_df = result
                     

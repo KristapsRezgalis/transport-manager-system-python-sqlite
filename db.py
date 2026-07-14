@@ -270,6 +270,23 @@ def return_forwarders(selected_forwarder_name = None):
         forw_list = df['fw_name'].tolist()
         forw_list.sort()
         return forw_list
+    
+def return_fw_data(forwarder_name):
+    """ Get all data of a specific forwarder (returned in dataframe) - used in pdf.py to display forwarder details """
+    if forwarder_name:
+        conn = sqlite3.connect(DB_FILE)
+        df = pd.read_sql("""SELECT * FROM t_forwarder WHERE fw_name = ?""", conn, params=(forwarder_name,))
+        conn.close()
+        return df
+
+def return_fw_contact_df(contact_name, forwarder_id):
+    """ Get all data of a specific forwarder contact (returned in dataframe) - used in pdf.py to display contact details """
+    if contact_name:
+        conn = sqlite3.connect(DB_FILE)
+        df = pd.read_sql("SELECT * FROM t_fw_contact WHERE (fw_c_name || ' ' || fw_c_surname) = ? AND forwarder_id = ?", conn, params=(contact_name, int(forwarder_id)))
+        conn.close()
+        return df
+    return pd.DataFrame() # returns empty df
 
 def return_fw_contacts(forwarder_id, list_required = None):
     conn = sqlite3.connect(DB_FILE)
