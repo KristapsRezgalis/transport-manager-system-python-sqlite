@@ -1,7 +1,7 @@
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 
-from db import return_fw_data, return_fw_contact_df
+from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact
 
 record_number = 100
 
@@ -47,10 +47,35 @@ def create_order_pdf (data, nr, login_validation):
     #print(data.get('sap_po'))
     #print(f'login_validation: {login_validation}')
     #print(f'return_fw_data() :::: {return_fw_data(data.get('forwarder'))}')
-    df_fw = return_fw_data(data.get('forwarder')) #gets full forwarder company data
-    df_fw_contact = return_fw_contact_df(data.get('forwarder_contact'), df_fw['forwarder_id'].iloc[0])
-    print('df_fw_contact:')
+    df_fw = return_fw_data(data.get('forwarder')) # gets full forwarder company data from DB
+    df_fw_contact = return_fw_contact_df(data.get('forwarder_contact'), df_fw['forwarder_id'].iloc[0]) # gets forwarder contacts data from DB
+    print('FORWARDER CONTACT:')
     print(df_fw_contact)
+    
+    df_sender_company = return_company_data(data.get('sender'))
+    print('SENDER COMPANY DATA:')
+    print(df_sender_company)
+    
+    df_sender_company_address = return_company_address(data.get('sender_adr'), df_sender_company['company_id'].iloc[0])
+    print('SENDER COMPANY ADDRESS DATA:')
+    print(df_sender_company_address)
+    
+    df_sender_company_contact = return_company_contact(data.get('sender_cont'), df_sender_company['company_id'].iloc[0])
+    print('SENDER COMPANY CONTACT DATA:')
+    print(df_sender_company_contact)
+    
+    df_delivery_company = return_company_data(data.get('delivery'))
+    print('DELIVERY COMPANY DATA:')
+    print(df_delivery_company)
+    
+    df_delivery_company_address = return_company_address(data.get('delivery_adr'), df_delivery_company['company_id'].iloc[0])
+    print('DELIVERY COMPANY ADDRESS DATA:')
+    print(df_delivery_company_address)
+    
+    df_delivery_company_contact = return_company_contact(data.get('delivery_cont'), df_delivery_company['company_id'].iloc[0])
+    print('DELIVERY COMPANY COMPANY DATA:')
+    print(df_delivery_company_contact)
+    
     #print(df_fw)
     #print(f'reg nr: {df_fw.get('fw_reg_nr')}')
     pdf = canvas.Canvas(f"Gemoss order Nr {nr}.pdf")
@@ -81,66 +106,79 @@ def create_order_pdf (data, nr, login_validation):
         tx_field_2.textLine(line)
     pdf.drawText(tx_field_2)
 
-    pdf.line(30, 720, 565, 720) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-    pdf.setFont("Times-Roman", 14)
-    pdf.drawCentredString(300, 700, 'SHIPMENT INFORMATION')
-    pdf.line(30, 690, 565, 690) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    pdf.line(30, 700, 565, 700) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    pdf.setFont("Times-Roman", 11)
+    pdf.drawCentredString(300, 690, 'SHIPMENT INFORMATION')
+    pdf.line(30, 686, 565, 686) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
 
-    pdf.setFont("Times-Roman", 12)
+    pdf.setFont("Times-Roman", 11)
     pdf.drawString(100, 670, 'LOADING DETAILS')
-    pdf.drawString(30, 640, f"Loading from: {data.get('loading')}")
+    pdf.setFont("Times-Roman", 10)
+    pdf.drawString(30, 650, f"Loading available from: {data.get('loading')}")
+    pdf.drawString(30, 635, f"Sender: {data.get('sender')}")
     pdf.drawString(30, 620, f"Loading address: {data.get('sender_adr')}")
 
-    tx_field_address_1 = pdf.beginText(115, 620)
+    loading_address = [f"{df_sender_company_address['adr_street'].iloc[0]}", f"{df_sender_company_address['adr_city'].iloc[0]}, {df_sender_company_address['adr_post_code'].iloc[0]}", f"{df_sender_company_address['adr_country'].iloc[0]}"]
+    
+    tx_field_address_1 = pdf.beginText(101, 608)
     for line in loading_address:
         tx_field_address_1.textLine(line)
     pdf.drawText(tx_field_address_1)
 
-    pdf.drawString(30, 570, f"Sender: {data.get('sender')}")
-
-    pdf.line(295, 690, 295, 550) # line(x1, y1, x2, y2): Draws a vertical line on the PDF.
-
-    pdf.drawString(370, 670, 'UNLOADING DETAILS')
-    pdf.drawString(310, 640, f"Unloading until: {data.get('unloading')}")
-    pdf.drawString(310, 620, f"Unloading address: {data.get('delivery_adr')}")
-    unloading_address = []
+    pdf.drawString(30, 568, f"Loading hours: {df_sender_company_address['adr_hours'].iloc[0]}")
+    pdf.drawString(30, 553, f"Slot booking: {df_sender_company_address['adr_book_slot'].iloc[0]}")
+    pdf.drawString(30, 538, f"Loading reference: {df_sender_company_address['adr_reference'].iloc[0]}")
     
-    tx_field_address_2 = pdf.beginText(405, 620)
+    pdf.line(295, 686, 295, 530) # line(x1, y1, x2, y2): Draws a vertical line on the PDF.
+    
+    pdf.setFont("Times-Roman", 11)
+    pdf.drawString(370, 670, 'UNLOADING DETAILS')
+    pdf.setFont("Times-Roman", 10)
+    pdf.drawString(310, 650, f"Unloading until: {data.get('unloading')}")
+    pdf.drawString(310, 635, f"Receiver: {data.get('delivery')}")
+    pdf.drawString(310, 620, f"Unloading address: {data.get('delivery_adr')}")
+
+    unloading_address = [f"{df_delivery_company_address['adr_street'].iloc[0]}", f"{df_delivery_company_address['adr_city'].iloc[0]}, {df_delivery_company_address['adr_post_code'].iloc[0]}", f"{df_delivery_company_address['adr_country'].iloc[0]}"]
+
+    tx_field_address_2 = pdf.beginText(390, 608)
     for line in unloading_address:
         tx_field_address_2.textLine(line)
     pdf.drawText(tx_field_address_2)
 
-    pdf.drawString(310, 570, f"Receiver: {data.get('delivery')}")
+    pdf.drawString(310, 568, f"Loading hours: {df_delivery_company_address['adr_hours'].iloc[0]}")
+    pdf.drawString(310, 553, f"Slot booking: {df_delivery_company_address['adr_book_slot'].iloc[0]}")
+    pdf.drawString(310, 538, f"Loading reference: {df_delivery_company_address['adr_reference'].iloc[0]}")
 
-    pdf.line(30, 550, 565, 550) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-    pdf.setFont("Times-Roman", 14)
-    pdf.drawCentredString(300, 530, 'CARGO DETAILS')
-    pdf.line(30, 520, 565, 520) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    pdf.line(30, 530, 565, 530) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    pdf.setFont("Times-Roman", 11)
+    pdf.drawCentredString(300, 519, 'CARGO DETAILS')
+    pdf.line(30, 516, 565, 516) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
 
-    pdf.setFont("Times-Roman", 12)
+    pdf.setFont("Times-Roman", 10)
     pdf.drawCentredString(300, 500, f"Number of pallets: {data.get('pallets')}")
     pdf.drawCentredString(300, 480, f'Dimensions of pallets: 80x120x240 cm')
     pdf.drawCentredString(300, 460, f"Gross weight: {data.get('weight')} kg")
 
     pdf.line(30, 440, 565, 440) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-    pdf.setFont("Times-Roman", 14)
+    pdf.setFont("Times-Roman", 11)
     pdf.drawCentredString(300, 420, 'OTHER INFORMATION')
     pdf.line(30, 410, 565, 410) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
 
-    pdf.setFont("Times-Roman", 12)
+    pdf.setFont("Times-Roman", 10)
     pdf.drawCentredString(300, 390, f'Customs clearance: {data.get('customs')}')
     pdf.drawCentredString(300, 370, f'Temperature control: {data.get('ref')}')
 
     pdf.line(30, 350, 565, 350) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-    pdf.setFont("Times-Roman", 14)
+    pdf.setFont("Times-Roman", 11)
     pdf.drawCentredString(300, 330, 'FREIGHT COST')
     pdf.line(30, 320, 565, 320) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-
+    
+    pdf.setFont("Times-Roman", 10)
     pdf.drawCentredString(300, 300, f"Agreed sum: {data.get('cost')} EUR excl. VAT")
     pdf.drawCentredString(300, 280, f"Payment terms: {df_fw['fw_payment_terms'].iloc[0]} days after receiving invoice and CMR")
 
     pdf.line(30, 270, 565, 270) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-    pdf.setFont("Times-Roman", 14)
+    pdf.setFont("Times-Roman", 11)
     pdf.drawCentredString(300, 250, 'TRANSPORT TERMS AND CONDITIONS')
     pdf.line(30, 240, 565, 240) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
 
@@ -152,23 +190,25 @@ def create_order_pdf (data, nr, login_validation):
     pdf.drawText(tr_rules_var) # Renders the text object onto the PDF.
 
 
-    pdf.setFont("Times-Bold", 14)
+    pdf.setFont("Times-Bold", 12)
     pdf.drawString(30, 100, 'CLIENT')
     pdf.line(30, 98, 200, 98) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-    pdf.setFont("Times-Roman", 14)
+    pdf.setFont("Times-Roman", 12)
     pdf.drawString(30, 80, 'GEMOSS SIA')
     pdf.drawString(30, 65, f'{login_validation.get('name')} {login_validation.get('surname')}')
     pdf.drawString(30, 50, f'{login_validation.get('phone')}')
     pdf.drawString(30, 35, f'{login_validation.get('email')}')
 
-    pdf.setFont("Times-Bold", 14)
+    pdf.setFont("Times-Bold", 12)
     pdf.drawString(380, 100, 'CARRIER')
     pdf.line(380, 98, 550, 98) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-    pdf.setFont("Times-Roman", 14)
+    pdf.setFont("Times-Roman", 12)
     pdf.drawString(380, 80, f"{data.get('forwarder')}")
-    pdf.drawString(380, 65, 'Janis Berzins')
-    pdf.drawString(380, 50, '+371 22221111')
-    pdf.drawString(380, 35, 'janis.berzins@forwarder.lv')
+    
+    if not df_fw_contact.empty:
+        pdf.drawString(380, 65, f"{data.get('forwarder_contact')}")  
+        pdf.drawString(380, 50, f"{df_fw_contact['fw_c_phone'].iloc[0]}")
+        pdf.drawString(380, 35, f"{df_fw_contact['fw_c_email'].iloc[0]}")
 
     pdf.save()
     print('PDF file created!')

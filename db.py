@@ -404,6 +404,32 @@ def return_company(selected_company_name = None):
         company_list = df['c_name'].tolist()
         company_list.sort()
         return company_list
+
+def return_company_data(company_name):
+    """ Get all data of a specific company (returned in dataframe) - used in pdf.py to display company details """
+    if company_name:
+        conn = sqlite3.connect(DB_FILE)
+        df = pd.read_sql("""SELECT * FROM t_company WHERE c_name = ?""", conn, params=(company_name,))
+        conn.close()
+        return df
+
+def return_company_address(company_name, company_id):
+    """ Get all data of a specific company (returned in a dataframe) - used in pdf.py to display contact details """
+    if company_name:
+        conn = sqlite3.connect(DB_FILE)
+        df = pd.read_sql("""SELECT * FROM t_company_address WHERE company_id = ? AND adr_name = ?""", conn, params=(int(company_id), company_name))
+        conn.close()
+        return df
+    return pd.DataFrame() # returns empty df
+
+def return_company_contact(contact_name, company_id):
+    """ Get all data of a specific company contact (returned in dataframe) - used in pdf.py to display contact details """
+    if contact_name:
+        conn = sqlite3.connect(DB_FILE)
+        df = pd.read_sql("""SELECT * FROM t_company_contact WHERE (c_con_name || ' ' || c_con_surname) = ? AND company_id = ?""", conn, params=(contact_name, int(company_id)))
+        conn.close()
+        return df
+    return pd.DataFrame() # returns empty df
     
 def get_purchase_managers():
     conn = sqlite3.connect(DB_FILE)
