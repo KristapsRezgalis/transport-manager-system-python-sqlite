@@ -41,8 +41,34 @@ gemoss_letterhead = [
     'Address: Mûkusalas street 73, Riga, LV-1004',
 ]
 
+def draw_header(pdf, data, nr, df_fw):
+    pdf.drawImage("gemoss_logo.png", x=30, y=800, width=126, height=32) # c.drawImage("image.png", x=100, y=500, width=200, height=150)
+    pdf.setFont("Times-Bold", 15) # Sets the font style and size.
+    pdf.drawCentredString(430, 810, f"Transport order Nr: {nr}") # Draws text centered at the specified (x, y) position.
+    pdf.line(30, 790, 565, 790) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    
+    tx_field_1 = pdf.beginText(30, 770)
+    tx_field_1.setFont("Times-Roman", 10)
+    for line in gemoss_letterhead:
+        tx_field_1.textLine(line)
+    pdf.drawText(tx_field_1)
+    
+    pdf.setFont("Times-Roman", 10)
+    pdf.drawString(380, 770, f"{data.get('forwarder')}")
+    pdf.drawString(380, 757, f"Reg. Nr: {df_fw['fw_reg_nr'].iloc[0]}")
+    pdf.drawString(380, 744, f"VAT Nr: {df_fw['fw_vat_nr'].iloc[0]}")
+    pdf.drawString(380, 731, "Address:")
+    
+    forwarder_address = [f"{df_fw['fw_street'].iloc[0]}", f"{df_fw['fw_city'].iloc[0]}, {df_fw['fw_post_code'].iloc[0]}", f"{df_fw['fw_country'].iloc[0]}"]
+    tx_field_2 = pdf.beginText(418, 731)
+    tx_field_2.setFont("Times-Roman", 10)
+    for line in forwarder_address:
+        tx_field_2.textLine(line)
+    pdf.drawText(tx_field_2)
+
 # data variable content -> sap_po, sender, delivery, loading,unloading, pallets, weight, forwarder, cost, customs, ref
 def create_order_pdf (data, nr, login_validation):
+    y = 700
     #print(f'data: {data}')
     #print(data.get('sap_po'))
     #print(f'login_validation: {login_validation}')
@@ -80,43 +106,27 @@ def create_order_pdf (data, nr, login_validation):
     #print(f'reg nr: {df_fw.get('fw_reg_nr')}')
     pdf = canvas.Canvas(f"Gemoss order Nr {nr}.pdf")
     pdf.setTitle(documentTitle)
-
-    pdf.drawImage("gemoss_logo.png", x=30, y=800, width=126, height=32) # c.drawImage("image.png", x=100, y=500, width=200, height=150)
-
-    pdf.setFont("Times-Bold", 15) # Sets the font style and size.
-    pdf.drawCentredString(430, 810, f"Transport order Nr: {nr}") # Draws text centered at the specified (x, y) position.
-    pdf.line(30, 790, 565, 790) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-
-    tx_field_1 = pdf.beginText(30, 770)
-    tx_field_1.setFont("Times-Roman", 10)
-    for line in gemoss_letterhead:
-        tx_field_1.textLine(line)
-    pdf.drawText(tx_field_1)
     
-    pdf.setFont("Times-Roman", 10)
-    pdf.drawString(380, 770, f"{data.get('forwarder')}")
-    pdf.drawString(380, 757, f"Reg. Nr: {df_fw['fw_reg_nr'].iloc[0]}")
-    pdf.drawString(380, 744, f"VAT Nr: {df_fw['fw_vat_nr'].iloc[0]}")
-    pdf.drawString(380, 731, "Address:")
+    draw_header(pdf, data, nr, df_fw)
     
-    forwarder_address = [f'{df_fw['fw_street'].iloc[0]}', f'{df_fw['fw_city'].iloc[0]}, {df_fw['fw_post_code'].iloc[0]}', f'{df_fw['fw_country'].iloc[0]}']
-    tx_field_2 = pdf.beginText(418, 731)
-    tx_field_2.setFont("Times-Roman", 10)
-    for line in forwarder_address:
-        tx_field_2.textLine(line)
-    pdf.drawText(tx_field_2)
-
-    pdf.line(30, 700, 565, 700) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    y -= 10
     pdf.setFont("Times-Roman", 11)
-    pdf.drawCentredString(300, 690, 'SHIPMENT INFORMATION')
-    pdf.line(30, 686, 565, 686) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-
+    pdf.drawCentredString(300, y, 'SHIPMENT INFORMATION')
+    y -= 4
+    pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    y -= 16
+    
     pdf.setFont("Times-Roman", 11)
-    pdf.drawString(100, 670, 'LOADING DETAILS')
+    pdf.drawString(100, y, 'LOADING DETAILS')
+    y -= 20
     pdf.setFont("Times-Roman", 10)
-    pdf.drawString(30, 650, f"Loading available from: {data.get('loading')}")
-    pdf.drawString(30, 635, f"Sender: {data.get('sender')}")
-    pdf.drawString(30, 620, f"Loading address: {data.get('sender_adr')}")
+    pdf.drawString(30, y, f"Loading available from: {data.get('loading')}")
+    y -= 15
+    pdf.drawString(30, y, f"Sender: {data.get('sender')}")
+    y -= 15
+    pdf.drawString(30, y, f"Loading address: {data.get('sender_adr')}")
+    y -= 12
 
     loading_address = [f"{df_sender_company_address['adr_street'].iloc[0]}", f"{df_sender_company_address['adr_city'].iloc[0]}, {df_sender_company_address['adr_post_code'].iloc[0]}", f"{df_sender_company_address['adr_country'].iloc[0]}"]
     
@@ -124,7 +134,7 @@ def create_order_pdf (data, nr, login_validation):
     for line in loading_address:
         tx_field_address_1.textLine(line)
     pdf.drawText(tx_field_address_1)
-
+    y -= 12
     pdf.drawString(30, 568, f"Loading hours: {df_sender_company_address['adr_hours'].iloc[0]}")
     pdf.drawString(30, 553, f"Slot booking: {df_sender_company_address['adr_book_slot'].iloc[0]}")
     pdf.drawString(30, 538, f"Loading reference: {df_sender_company_address['adr_reference'].iloc[0]}")
@@ -165,8 +175,8 @@ def create_order_pdf (data, nr, login_validation):
     pdf.line(30, 410, 565, 410) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
 
     pdf.setFont("Times-Roman", 10)
-    pdf.drawCentredString(300, 390, f'Customs clearance: {data.get('customs')}')
-    pdf.drawCentredString(300, 370, f'Temperature control: {data.get('ref')}')
+    pdf.drawCentredString(300, 390, f"Customs clearance: {data.get('customs')}")
+    pdf.drawCentredString(300, 370, f"Temperature control: {data.get('ref')}")
 
     pdf.line(30, 350, 565, 350) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
     pdf.setFont("Times-Roman", 11)
@@ -195,9 +205,9 @@ def create_order_pdf (data, nr, login_validation):
     pdf.line(30, 98, 200, 98) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
     pdf.setFont("Times-Roman", 12)
     pdf.drawString(30, 80, 'GEMOSS SIA')
-    pdf.drawString(30, 65, f'{login_validation.get('name')} {login_validation.get('surname')}')
-    pdf.drawString(30, 50, f'{login_validation.get('phone')}')
-    pdf.drawString(30, 35, f'{login_validation.get('email')}')
+    pdf.drawString(30, 65, f"{login_validation.get('name')} {login_validation.get('surname')}")
+    pdf.drawString(30, 50, f"{login_validation.get('phone')}")
+    pdf.drawString(30, 35, f"{login_validation.get('email')}")
 
     pdf.setFont("Times-Bold", 12)
     pdf.drawString(380, 100, 'CARRIER')
