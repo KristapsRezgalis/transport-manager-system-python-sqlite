@@ -149,15 +149,20 @@ def create_order_pdf (data, nr, login_validation):
         table_data.append([ row["quantity"], row["length"], row["width"], row["height"] ])
     
     # creates the actual ReportLab table
-    table = Table(table_data, colWidths=[55,70,70,70])
+    table = Table(table_data, colWidths=[55,70,70,70], rowHeights=14)
     
     # set style for the table
     table.setStyle(TableStyle([
         ("GRID",(0,0),(-1,-1),0.5,colors.black),
         ("BACKGROUND",(0,0),(-1,0),colors.lightgrey),
         ("FONTNAME",(0,0),(-1,0),"Times-Bold"),
+        ("FONTSIZE", (0,0), (-1,-1), 8),
         ("ALIGN",(0,0),(-1,-1),"CENTER"),
         ("BOTTOMPADDING",(0,0),(-1,0),6),
+        ("TOPPADDING", (0,0), (-1,-1), 2),
+        ("BOTTOMPADDING", (0,0), (-1,-1), 2),
+        ("LEFTPADDING", (0,0), (-1,-1), 3),
+        ("RIGHTPADDING", (0,0), (-1,-1), 3),
     ]))
     
     # stores the size of the table to calculate the y later
@@ -180,29 +185,30 @@ def create_order_pdf (data, nr, login_validation):
     pdf.drawCentredString(300, y, 'CARGO DETAILS')
     y -= 3
     pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-    y -= 16
+    y -= 15
+    
+    pdf.setFont("Times-Roman", 10)
+    pdf.drawString(100, y, f"Total number of pallets: {data.get('pallets')}")
+    pdf.drawString(370, y, f"Total gross weight: {data.get('weight')} kg")
+    y -= 10
     
     table.drawOn(pdf, 170, y-table_height)
     y -= table_height
     y -= 15
 
-    pdf.setFont("Times-Roman", 10)
-    pdf.drawCentredString(300, y, f"Number of pallets: {data.get('pallets')}")
-    y -= 15
-    pdf.drawCentredString(300, y, f'Dimensions of pallets: 80x120x240 cm')
-    y -= 15
-    pdf.drawCentredString(300, y, f"Gross weight: {data.get('weight')} kg")
-    y -= 15
-
-    pdf.line(30, 431, 565, 431) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    y -= 11
     pdf.setFont("Times-Roman", 11)
-    pdf.drawCentredString(300, 420, 'OTHER INFORMATION')
-    pdf.line(30, 417, 565, 417) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    pdf.drawCentredString(300, y, 'OTHER INFORMATION')
+    y -= 3
+    pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    y -= 10
 
     pdf.setFont("Times-Roman", 10)
-    pdf.drawCentredString(300, 390, f"Customs clearance: {data.get('customs')}")
-    pdf.drawCentredString(300, 370, f"Temperature control: {data.get('ref')}")
-
+    pdf.drawCentredString(300, y, f"Customs clearance: {data.get('customs')}")
+    y -= 15
+    pdf.drawCentredString(300, y, f"Temperature control: {data.get('ref')}")
+    y -= 10
     pdf.line(30, 341, 565, 341) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
     pdf.setFont("Times-Roman", 11)
     pdf.drawCentredString(300, 330, 'FREIGHT COST')
