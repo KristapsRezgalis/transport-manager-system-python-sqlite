@@ -327,9 +327,9 @@ def user_entry_modal(title, existing=None):
         
 # Entry modal window for creating new records and editing existin ones
 def entry_modal(title, existing=None, nr=None, login_validation=login_validation):
-    print(f'login_validation: {login_validation}')
+    
     # A helper function to  update pallet table and total pallet number
-    def refresh_pallet_table(nr = None):
+    def refresh_pallet_table(ldm, nr = None):
         nonlocal pallet_df
         
         if nr:
@@ -349,10 +349,18 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
         
         total_pallets = int(pallet_df["quantity"].fillna(0).sum())
         app_window["-PALLETS-"].update(total_pallets)
+        app_window["-LDM-"].update(ldm)
+        print(f"LDM: {ldm}")
         print(f'total_pallets = {total_pallets}')
         
         return total_pallets
-            
+    
+    # helper function to return LDM of the current pallet df_pallets -> is being used when existing order is opened or when new pallet data is added, edited or deleted
+    def calculate_ldm(df_pallets):
+        ldm_per_row = ( (df_pallets["length"] / 100) * (df_pallets["width"] / 100) / 2.4 * df_pallets["quantity"] )
+        return round(ldm_per_row.sum(), 2)
+    
+    # stores already existion transport order values or is empty in case new order is being created
     e = existing or {}
     
     purchase_manager_list = get_purchase_managers()
@@ -406,6 +414,8 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
     print(pallet_table_values)
     num_rows = max(1, min(len(pallet_table_values), 8))
     
+    ldm = calculate_ldm(pallet_df)
+    
     pallet_table = [
         sg.Column([[sg.Table(
             #values=[["", "", "", ""]],
@@ -427,45 +437,46 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
     ### [sg.Text("Total pallet count:", size=16),  sg.Input(e.get("pallets", ""), key="-PALLETS-", size=35),
     # fills order modal fields with existing data
     common_rows = [
-        [sg.Text("SAP PO Nr:", size=16),           sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
+        [sg.Text("SAP PO Nr:", size=15),           sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
         [sg.HSeparator()],
-        [sg.Text("Sender:", size=16),              sg.Combo(company_list, key="-SENDER-", default_value=e.get("sender", ""), readonly=True, size=33, enable_events=True),
-         sg.Text("Delivery:", size=16),            sg.Combo(company_list, key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33, enable_events=True)],
+        [sg.Text("Sender:", size=15),              sg.Combo(company_list, key="-SENDER-", default_value=e.get("sender", ""), readonly=True, size=33, enable_events=True),
+         sg.Text("Delivery:", size=15),            sg.Combo(company_list, key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33, enable_events=True)],
 
-        [sg.Text("Sender address:", size=16),      sg.Combo(sender_address_list, key="-SENDER-ADDRESS-", default_value=e.get("sender_adr", ""), readonly=True, size=33),
-         sg.Text("Delivery address:", size=16),    sg.Combo(delivery_address_list, key="-DELIVERY-ADDRESS-", default_value=e.get("delivery_adr", ""), readonly=True, size=33)],
+        [sg.Text("Sender address:", size=15),      sg.Combo(sender_address_list, key="-SENDER-ADDRESS-", default_value=e.get("sender_adr", ""), readonly=True, size=33),
+         sg.Text("Delivery address:", size=15),    sg.Combo(delivery_address_list, key="-DELIVERY-ADDRESS-", default_value=e.get("delivery_adr", ""), readonly=True, size=33)],
 
-        [sg.Text("Sender contact:", size=16),      sg.Combo(sender_contact_list, key="-SENDER-CONTACT-", default_value=e.get("sender_cont", ""), readonly=True, size=33),
-         sg.Text("Delivery contact:", size=16),    sg.Combo(delivery_contact_list, key="-DELIVERY-CONTACT-", default_value=e.get("delivery_cont", ""), readonly=True, size=33)],
+        [sg.Text("Sender contact:", size=15),      sg.Combo(sender_contact_list, key="-SENDER-CONTACT-", default_value=e.get("sender_cont", ""), readonly=True, size=33),
+         sg.Text("Delivery contact:", size=15),    sg.Combo(delivery_contact_list, key="-DELIVERY-CONTACT-", default_value=e.get("delivery_cont", ""), readonly=True, size=33)],
         [sg.HSeparator()],
-        [sg.Text("Loading from:", size=16),        sg.Input(e.get("loading", ""), key="-LOADING-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-LOADING-", format="%Y-%m-%d"),
-         sg.Text("Unloading from:", size=16),      sg.Input(e.get("unloading", ""), key="-UNLOADING-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-UNLOADING-", format="%Y-%m-%d")],
+        [sg.Text("Loading from:", size=15),        sg.Input(e.get("loading", ""), key="-LOADING-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-LOADING-", format="%Y-%m-%d"),
+         sg.Text("Unloading from:", size=15),      sg.Input(e.get("unloading", ""), key="-UNLOADING-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-UNLOADING-", format="%Y-%m-%d")],
          
-        [sg.Text("Loading until:", size=16),       sg.Input(e.get("loading_to", ""), key="-LOADING-TO-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-LOADING-TO-", format="%Y-%m-%d"),         
-         sg.Text("Unloading until:", size=16),     sg.Input(e.get("unloading_to", ""), key="-UNLOADING-TO-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-UNLOADING-TO-", format="%Y-%m-%d")],
+        [sg.Text("Loading until:", size=15),       sg.Input(e.get("loading_to", ""), key="-LOADING-TO-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-LOADING-TO-", format="%Y-%m-%d"),         
+         sg.Text("Unloading until:", size=15),     sg.Input(e.get("unloading_to", ""), key="-UNLOADING-TO-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-UNLOADING-TO-", format="%Y-%m-%d")],
         [sg.HSeparator()],
 
         # Pallet count + weight on one line, then the pallet detail table below
-        [sg.Text("Total pallet count:", size=16),  sg.Text(total_pallets, key="-PALLETS-", size=35, font=("Segoe UI", 10, "bold")),
-         sg.Text("Gross weight:", size=16),        sg.Input(e.get("weight", ""), key="-WEIGHT-", size=35)],
+        [sg.Text("Total pallet count:", size=15), sg.Text(total_pallets, key="-PALLETS-", size=23, font=("Segoe UI", 10, "bold")),
+         sg.Text("LDM:", size=7),                sg.Text(ldm, key="-LDM-", size=22, font=("Segoe UI", 10, "bold")),
+         sg.Text("Gross weight:", size=9),       sg.Input(e.get("weight", ""), key="-WEIGHT-", size=23, font=("Segoe UI", 10, "bold"))],
         pallet_table,
         [sg.Push(), sg.Button("Add pallets", key="-BTN-ADD-PLL-", size=15), sg.Button("Edit pallets", key="-BTN-EDIT-PLL-", size=15), sg.Button("Delete pallets", key="-BTN-DELETE-PLL-", size=15), sg.Push()],
         [sg.HSeparator()],
 
-        [sg.Text("Forwarder:", size=16),           sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True),
-         sg.Text("Forwarder contact:", size=16),   sg.Combo(forwarder_contact_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder_contact", ""), readonly=True, size=33)],
+        [sg.Text("Forwarder:", size=15),           sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True),
+         sg.Text("Forwarder contact:", size=15),   sg.Combo(forwarder_contact_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder_contact", ""), readonly=True, size=33)],
 
-        [sg.Text("Cost:", size=16),                sg.Input(e.get("cost", ""), key="-COST-", size=35)],
+        [sg.Text("Cost:", size=15),                sg.Input(e.get("cost", ""), key="-COST-", size=35)],
 
-        [sg.Text("Customs:", size=16),             sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33),
-         sg.Text("Temperature control:", size=16), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
+        [sg.Text("Customs:", size=15),             sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33),
+         sg.Text("Temperature control:", size=15), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
 
-        [sg.Text("Notes:", size=16),               sg.Multiline(e.get("info", ""), key="-IN-ORDER-DETAILS-", size=(33, 4)), sg.Checkbox('Add notes to transport order', default=e.get("add_info_to_order", ""), key='-CB-ADD_TO_ORDER-')],
+        [sg.Text("Notes:", size=15),               sg.Multiline(e.get("info", ""), key="-IN-ORDER-DETAILS-", size=(60, 3)), sg.Checkbox('Add notes to transport order', default=e.get("add_info_to_order", ""), key='-CB-ADD_TO_ORDER-')],
         [sg.HSeparator()],
-        [sg.Text("Purchase manager:", size=16),    sg.Combo(purchase_manager_list, key="-CMB-PURCHASE_MANAGER-", default_value=e.get("purch_manager", ""), readonly=True, size=33),
-         sg.Text("Product type:", size=16),        sg.Combo(['Edible products', 'Non-edible products', 'Electric devices', 'Furniture'], key="-CMB-CARGO_TYPE-", default_value=e.get("cargo_type", ""), readonly=True, size=33)],
+        [sg.Text("Purchase manager:", size=15),    sg.Combo(purchase_manager_list, key="-CMB-PURCHASE_MANAGER-", default_value=e.get("purch_manager", ""), readonly=True, size=33),
+         sg.Text("Product type:", size=15),        sg.Combo(['Edible products', 'Non-edible products', 'Electric devices', 'Furniture'], key="-CMB-CARGO_TYPE-", default_value=e.get("cargo_type", ""), readonly=True, size=33)],
 
-        [sg.Text("Transport invoice:", size=16),   sg.Input(e.get("transport_invoice", ""), key="-IN-TRANSPORT-INVOICE-", size=35)],
+        [sg.Text("Transport invoice:", size=15),   sg.Input(e.get("transport_invoice", ""), key="-IN-TRANSPORT-INVOICE-", size=35)],
     ]
 
     if existing: # if editing existin order
@@ -488,7 +499,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
             return None
         if action == "-SAVE-":
             app_window.close()
-            return values, total_pallets, pallet_df
+            return values, total_pallets, ldm, pallet_df
         
         # action triggered when "Create transport order in PDF" button is pressed in record Edit modal - it creates a PDF file/transport order
         if action == "-CREATE-PDF-":
@@ -498,11 +509,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
             selected_forwarder_name = values['-FORWARDER-']
             fw_id = return_forwarders(selected_forwarder_name)
             forwarder_contact_list = return_fw_contacts(fw_id, 'list_required')
-            #app_window["-FORWARDER-CONTACT-"].update(values=forwarder_contact_list)
-            #app_window["-FORWARDER-CONTACT-"].Widget.config(width=33)
-            #app_window.refresh()
-            print(forwarder_contact_list)
-            
+
             if forwarder_contact_list:
                 app_window["-FORWARDER-CONTACT-"].update(values=forwarder_contact_list, value=forwarder_contact_list[0])
                 app_window["-FORWARDER-CONTACT-"].Widget.configure(width=33)
@@ -566,9 +573,10 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                     }
                     new_row_df = pd.DataFrame([updated_values])
                     pallet_df = pd.concat([pallet_df, new_row_df], ignore_index=True)
+                    ldm = calculate_ldm(pallet_df)
                     print('New pallet_df:')
                     print(pallet_df)
-                    total_pallets = refresh_pallet_table(nr)
+                    total_pallets = refresh_pallet_table(ldm, nr)
                 # Case when an existing tr. order is edited and already has it's nr
                 else:
                     insert_pallet(
@@ -580,7 +588,8 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                         )
                 
                 # updates pallet table and thetotal pallet number in order so it can be saved in db
-                total_pallets = refresh_pallet_table(nr)
+                ldm = calculate_ldm(pallet_df)
+                total_pallets = refresh_pallet_table(ldm, nr)
             
         elif action == "-BTN-EDIT-PLL-":
             selected = values["-PALLET-TABLE-"]
@@ -613,7 +622,9 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                     edit_db(pallet_id, updated_values, "t_pallet_details", id_name="pallet_id")
                 
                 # updates pallet table and thetotal pallet number in order so it can be saved in db
-                total_pallets = refresh_pallet_table(nr)
+                ldm = calculate_ldm(pallet_df)
+                total_pallets = refresh_pallet_table(ldm, nr)
+                
         elif action == "-BTN-DELETE-PLL-":
             selected = values["-PALLET-TABLE-"]
 
@@ -638,8 +649,9 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                     )
                 if confirm == "Yes":
                     delete_db(pallet_id, 't_pallet_details', id_name="pallet_id")
-                    
-            total_pallets = refresh_pallet_table(nr)
+            
+            ldm = calculate_ldm(pallet_df)
+            total_pallets = refresh_pallet_table(ldm, nr)
             selected_row = None
 
 # Function that opens a small modal to enter pallet detailsfor an order (can be used for create new or edit existin pallet details)
@@ -1230,10 +1242,10 @@ def main_menu(login_validation, theme_name):
             result = entry_modal("NEW TRANSPORT RECORD", login_validation=login_validation)
             
             if result:
-                new_values, total_pallets, pallet_df = result
+                new_values, total_pallets, ldm, pallet_df = result
                 new_record = add_db(
                     new_values["-SAP_PO-"], new_values["-SENDER-"], new_values["-SENDER-ADDRESS-"], new_values["-SENDER-CONTACT-"], new_values["-DELIVERY-"], new_values["-DELIVERY-ADDRESS-"], new_values["-DELIVERY-CONTACT-"], new_values["-LOADING-"], new_values["-LOADING-TO-"],
-                    new_values["-UNLOADING-"], new_values["-UNLOADING-TO-"], total_pallets, new_values["-WEIGHT-"], new_values["-FORWARDER-"], new_values["-FORWARDER-CONTACT-"],
+                    new_values["-UNLOADING-"], new_values["-UNLOADING-TO-"], total_pallets, ldm, new_values["-WEIGHT-"], new_values["-FORWARDER-"], new_values["-FORWARDER-CONTACT-"],
                     new_values["-COST-"], new_values["-CUSTOMS-"], new_values["-REF-"], new_values["-IN-ORDER-DETAILS-"], new_values["-CB-ADD_TO_ORDER-"], new_values["-CMB-PURCHASE_MANAGER-"], new_values["-CMB-CARGO_TYPE-"], new_values["-IN-TRANSPORT-INVOICE-"]
                 )
                 for row in pallet_df.itertuples(): # loops through pallet_df and inserts new order's pallet data in db
@@ -1392,6 +1404,7 @@ def main_menu(login_validation, theme_name):
                     "unloading":         str(row["unloading"]) if pd.notna(row["unloading"]) else "",
                     "unloading_to":      str(row["unloading_to"]) if pd.notna(row["unloading_to"]) else "",
                     "pallets":           str(row["pallets"]) if pd.notna(row["pallets"]) else "",
+                    "ldm":               str(row["ldm"]) if pd.notna(row["ldm"]) else "",
                     "weight":            str(row["weight"]) if pd.notna(row["weight"]) else "",
                     "forwarder":         str(row["forwarder"]) if pd.notna(row["forwarder"]) else "",
                     "forwarder_contact": str(row["forwarder_contact"]) if pd.notna(row["forwarder_contact"]) else "",
@@ -1406,7 +1419,7 @@ def main_menu(login_validation, theme_name):
                 }
                 result = entry_modal(f"Editing record Nr.{nr}", existing, nr, login_validation=login_validation)
                 if result is not None:
-                    new_values, total_pallets, pallet_df = result
+                    new_values, total_pallets, ldm, pallet_df = result
                     
                     updated_values = {
                         "sap_po":          new_values["-SAP_PO-"],
@@ -1421,6 +1434,7 @@ def main_menu(login_validation, theme_name):
                         "unloading":          new_values["-UNLOADING-"],
                         "unloading_to":          new_values["-UNLOADING-TO-"],
                         "pallets":          total_pallets,
+                        "ldm":          ldm,
                         "weight":          float(new_values["-WEIGHT-"]),
                         "forwarder":          new_values["-FORWARDER-"],
                         "forwarder_contact":          new_values["-FORWARDER-CONTACT-"],

@@ -46,7 +46,7 @@ gemoss_letterhead = [
 def draw_header(pdf, data, nr, df_fw):
     pdf.drawImage("gemoss_logo.png", x=30, y=800, width=126, height=32) # c.drawImage("image.png", x=100, y=500, width=200, height=150)
     pdf.setFont("Times-Bold", 15) # Sets the font style and size.
-    pdf.drawCentredString(430, 810, f"Transport order Nr: {nr}") # Draws text centered at the specified (x, y) position.
+    pdf.drawCentredString(425, 810, f"Transport agreement Nr: {10000 + nr}") # Draws text centered at the specified (x, y) position.
     pdf.line(30, 790, 565, 790) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
     
     tx_field_1 = pdf.beginText(30, 770)
@@ -127,21 +127,7 @@ def draw_loading_unloading(pdf, data, y, df_sender_company_address, df_sender_co
     
     return y
 
-# data variable content -> sap_po, sender, delivery, loading,unloading, pallets, weight, forwarder, cost, customs, ref
-def create_order_pdf (data, nr, login_validation):
-    y = 700
-
-    df_fw = return_fw_data(data.get('forwarder')) # gets full forwarder company data from DB
-    df_fw_contact = return_fw_contact_df(data.get('forwarder_contact'), df_fw['forwarder_id'].iloc[0]) # gets forwarder contacts data from DB
-    
-    df_sender_company = return_company_data(data.get('sender'))
-    df_sender_company_address = return_company_address(data.get('sender_adr'), df_sender_company['company_id'].iloc[0])
-    df_sender_company_contact = return_company_contact(data.get('sender_cont'), df_sender_company['company_id'].iloc[0])
-    
-    df_delivery_company = return_company_data(data.get('delivery'))
-    df_delivery_company_address = return_company_address(data.get('delivery_adr'), df_delivery_company['company_id'].iloc[0])
-    df_delivery_company_contact = return_company_contact(data.get('delivery_cont'), df_delivery_company['company_id'].iloc[0])
-    
+def draw_pallet_data(pdf, data, y, nr):
     # gets order's pallet dataframe -> creates table_data with columns -> coverts dataframe data into ReportLab table data
     pallet_df = get_pallet_details(nr)
     table_data = [["Qty", "Length", "Width", "Height"]]
@@ -149,7 +135,7 @@ def create_order_pdf (data, nr, login_validation):
         table_data.append([ row["quantity"], row["length"], row["width"], row["height"] ])
     
     # creates the actual ReportLab table
-    table = Table(table_data, colWidths=[55,70,70,70], rowHeights=14)
+    table = Table(table_data, colWidths=[70,70,70,70], rowHeights=14)
     
     # set style for the table
     table.setStyle(TableStyle([
@@ -167,15 +153,6 @@ def create_order_pdf (data, nr, login_validation):
     
     # stores the size of the table to calculate the y later
     table_width, table_height = table.wrap(0,0)
-    
-    ### CREATES THE ACTUAL PDF FILE ###
-    pdf = canvas.Canvas(f"Gemoss order Nr {nr}.pdf")
-    pdf.setTitle(documentTitle)
-    
-    ### CALLING ALL PDF CREATION FUNCTION ###
-    draw_header(pdf, data, nr, df_fw) # function to draw a header part in PDF
-    y = draw_loading_unloading(pdf, data, y, df_sender_company_address, df_sender_company_contact, df_delivery_company_address, df_delivery_company_contact)
-    print(f'y = {y}') #493
     
     pdf.line(295, 686, 295, y) # line(x1, y1, x2, y2): Draws a vertical line on the PDF.
     
@@ -195,44 +172,44 @@ def create_order_pdf (data, nr, login_validation):
     table.drawOn(pdf, 170, y-table_height)
     y -= table_height
     y -= 15
+    
+    return y
 
-    pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+def draw_info_and_cost(pdf, data, y, df_fw):
+    pdf.line(30, y, 565, y)
     y -= 11
     pdf.setFont("Times-Roman", 11)
     pdf.drawCentredString(300, y, 'OTHER INFORMATION')
     y -= 3
-    pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-    y -= 10
-
-    pdf.setFont("Times-Roman", 10)
-    pdf.drawCentredString(300, y, f"Customs clearance: {data.get('customs')}")
+    pdf.line(30, y, 565, y)
     y -= 15
-    pdf.drawCentredString(300, y, f"Temperature control: {data.get('ref')}")
-    y -= 10
-    pdf.line(30, 341, 565, 341) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    pdf.setFont("Times-Roman", 10)
+    pdf.drawString(100, y, f"Temperature control: {data.get('ref')}")
+    pdf.drawString(370, y, f"Customs clearance: {data.get('customs')}")
+    y -= 15
+    pdf.drawCentredString(300, y, f"Instructions: {data.get('info') if int(data.get('add_info_to_order')) == 1 else ''}")
+    y -= 15
+    print(f"{data.get('info')}")
+    
+    pdf.line(30, y, 565, y)
+    y -= 11
     pdf.setFont("Times-Roman", 11)
-    pdf.drawCentredString(300, 330, 'FREIGHT COST')
-    pdf.line(30, 327, 565, 327) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    pdf.drawCentredString(300, y, 'FREIGHT COST')
+    y -= 3
+    pdf.line(30, y, 565, y)
+    y -= 15
     
     pdf.setFont("Times-Roman", 10)
-    pdf.drawCentredString(300, 300, f"Agreed sum: {data.get('cost')} EUR excl. VAT")
-    pdf.drawCentredString(300, 280, f"Payment terms: {df_fw['fw_payment_terms'].iloc[0]} days after receiving invoice and CMR")
+    pdf.drawCentredString(300, y, f"Agreed sum: {data.get('cost')}0 EUR excl. VAT")
+    y -= 15
+    pdf.drawCentredString(300, y, f"Payment terms: {df_fw['fw_payment_terms'].iloc[0]} days after receiving invoice and CMR")
+    y -= 15
 
-    pdf.line(30, 270, 565, 270) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-    pdf.setFont("Times-Roman", 11)
-    pdf.drawCentredString(300, 250, 'TRANSPORT TERMS AND CONDITIONS')
-    pdf.line(30, 240, 565, 240) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    return y
 
-    tr_rules_var = pdf.beginText(30, 220) # Starts a text object at the given position.
-    tr_rules_var.setFont("Times-Roman", 10)
-    for line in tr_rules:
-        tr_rules_var.textLine(line) # Adds one line of text at a time.
-
-    pdf.drawText(tr_rules_var) # Renders the text object onto the PDF.
-
-
+def draw_footer_signature(pdf, data, y, login_validation, df_fw_contact):
     pdf.setFont("Times-Bold", 12)
-    pdf.drawString(30, 100, 'CLIENT')
+    pdf.drawString(30, 101, 'CLIENT')
     pdf.line(30, 98, 200, 98) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
     pdf.setFont("Times-Roman", 12)
     pdf.drawString(30, 80, 'GEMOSS SIA')
@@ -250,6 +227,52 @@ def create_order_pdf (data, nr, login_validation):
         pdf.drawString(380, 65, f"{data.get('forwarder_contact')}")  
         pdf.drawString(380, 50, f"{df_fw_contact['fw_c_phone'].iloc[0]}")
         pdf.drawString(380, 35, f"{df_fw_contact['fw_c_email'].iloc[0]}")
+
+# data variable content -> sap_po, sender, delivery, loading,unloading, pallets, weight, forwarder, cost, customs, ref
+def create_order_pdf (data, nr, login_validation):
+    y = 700
+    
+        ### CREATES THE ACTUAL PDF FILE ###
+    pdf = canvas.Canvas(f"Gemoss order Nr {nr}.pdf")
+    pdf.setTitle(documentTitle)
+    
+
+    df_fw = return_fw_data(data.get('forwarder')) # gets full forwarder company data from DB
+    df_fw_contact = return_fw_contact_df(data.get('forwarder_contact'), df_fw['forwarder_id'].iloc[0]) # gets forwarder contacts data from DB
+    
+    df_sender_company = return_company_data(data.get('sender'))
+    df_sender_company_address = return_company_address(data.get('sender_adr'), df_sender_company['company_id'].iloc[0])
+    df_sender_company_contact = return_company_contact(data.get('sender_cont'), df_sender_company['company_id'].iloc[0])
+    
+    df_delivery_company = return_company_data(data.get('delivery'))
+    df_delivery_company_address = return_company_address(data.get('delivery_adr'), df_delivery_company['company_id'].iloc[0])
+    df_delivery_company_contact = return_company_contact(data.get('delivery_cont'), df_delivery_company['company_id'].iloc[0])
+    
+    ### CALLING ALL PDF CREATION FUNCTION ###
+    draw_header(pdf, data, nr, df_fw) # function to draw a header part in PDF - has static place in PDF
+    y = draw_loading_unloading(pdf, data, y, df_sender_company_address, df_sender_company_contact, df_delivery_company_address, df_delivery_company_contact)
+    y = draw_pallet_data(pdf, data, y, nr)
+    y = draw_info_and_cost(pdf, data, y, df_fw)
+    draw_footer_signature(pdf, data, y, login_validation, df_fw_contact)
+    
+    '''
+    pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    y -= 15
+    pdf.setFont("Times-Roman", 11)
+    pdf.drawCentredString(300, y, 'TRANSPORT TERMS AND CONDITIONS')
+    y -= 15
+    pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    y -= 15
+
+    
+    tr_rules_var = pdf.beginText(30, 220) # Starts a text object at the given position.
+    tr_rules_var.setFont("Times-Roman", 10)
+    for line in tr_rules:
+        tr_rules_var.textLine(line) # Adds one line of text at a time.
+    
+    pdf.drawText(tr_rules_var) # Renders the text object onto the PDF.
+    '''
+
 
     pdf.save()
     print('PDF file created!')
