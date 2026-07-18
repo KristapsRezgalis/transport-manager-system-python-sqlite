@@ -329,31 +329,27 @@ def user_entry_modal(title, existing=None):
 def entry_modal(title, existing=None, nr=None, login_validation=login_validation):
     
     # A helper function to  update pallet table and total pallet number
-    def refresh_pallet_table(ldm, nr = None):
+    def refresh_pallet_table(nr=None):
         nonlocal pallet_df
-        
+
         if nr:
-            pallet_df = get_pallet_details(nr) # Get all pallet df from the opened tr.order nr
-            pallet_table_values = df_to_table(pallet_df, PALLET_COLUMNS)
-            num_rows = max(1, min(len(pallet_table_values), 8))
-            app_window["-PALLET-TABLE-"].update(values=pallet_table_values, num_rows=num_rows)
-            
-        else:
-            pallet_table_values = df_to_table(pallet_df, PALLET_COLUMNS)
-            num_rows = max(1, min(len(pallet_table_values), 8))
-            app_window["-PALLET-TABLE-"].update(values=pallet_table_values, num_rows=num_rows)
-        
+            pallet_df = get_pallet_details(nr)
+
         numeric_cols = ["length", "width", "height", "quantity"]
         for col in numeric_cols:
             pallet_df[col] = pd.to_numeric(pallet_df[col], errors="coerce")
-        
+
+        pallet_table_values = df_to_table(pallet_df, PALLET_COLUMNS)
+        num_rows = max(1, min(len(pallet_table_values), 8))
+        app_window["-PALLET-TABLE-"].update(values=pallet_table_values, num_rows=num_rows)
+
         total_pallets = int(pallet_df["quantity"].fillna(0).sum())
+        ldm = calculate_ldm(pallet_df)   # now computed AFTER the DB refresh + coercion
+
         app_window["-PALLETS-"].update(total_pallets)
         app_window["-LDM-"].update(ldm)
-        print(f"LDM: {ldm}")
-        print(f'total_pallets = {total_pallets}')
-        
-        return total_pallets
+
+        return total_pallets, ldm
     
     # helper function to return LDM of the current pallet df_pallets -> is being used when existing order is opened or when new pallet data is added, edited or deleted
     def calculate_ldm(df_pallets):
@@ -405,15 +401,14 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
     
     # Received pallet dataFrame and total number of pallets from t_pallet_details table
     pallet_df = get_pallet_details(nr)
-    print(pallet_df)
-    total_pallets = int(pallet_df['quantity'].sum())
-    print(f'total_pallets = {total_pallets}')
     
+    numeric_cols = ["length", "width", "height", "quantity"]
+    for col in numeric_cols:
+        pallet_df[col] = pd.to_numeric(pallet_df[col], errors="coerce")
+    
+    total_pallets = int(pallet_df['quantity'].fillna(0).sum())
     pallet_table_values = df_to_table(pallet_df, PALLET_COLUMNS)
-    print('pallet_table_values:')
-    print(pallet_table_values)
     num_rows = max(1, min(len(pallet_table_values), 8))
-    
     ldm = calculate_ldm(pallet_df)
     
     pallet_table = [
@@ -571,12 +566,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                             "width": int(values["-PLL-WIDTH-"]),
                             "height": int(values["-PLL-HEIGHT-"])
                     }
-                    new_row_df = pd.DataFrame([updated_values])
-                    pallet_df = pd.concat([pallet_df, new_row_df], ignore_index=True)
-                    ldm = calculate_ldm(pallet_df)
-                    print('New pallet_df:')
-                    print(pallet_df)
-                    total_pallets = refresh_pallet_table(ldm, nr)
+                    pallet_df = pd.concat([pallet_df, pd.DataFrame([updated_values])], ignore_index=True)
                 # Case when an existing tr. order is edited and already has it's nr
                 else:
                     insert_pallet(
@@ -588,8 +578,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                         )
                 
                 # updates pallet table and thetotal pallet number in order so it can be saved in db
-                ldm = calculate_ldm(pallet_df)
-                total_pallets = refresh_pallet_table(ldm, nr)
+                total_pallets, ldm = refresh_pallet_table(nr)
             
         elif action == "-BTN-EDIT-PLL-":
             selected = values["-PALLET-TABLE-"]
@@ -618,12 +607,10 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                 # when existing order is edited - pallet data are changed in the t_pallet_details db table
                 else:
                     pallet_id = int(pallet_df.iloc[row]["pallet_id"])
-                    
                     edit_db(pallet_id, updated_values, "t_pallet_details", id_name="pallet_id")
                 
                 # updates pallet table and thetotal pallet number in order so it can be saved in db
-                ldm = calculate_ldm(pallet_df)
-                total_pallets = refresh_pallet_table(ldm, nr)
+                total_pallets, ldm = refresh_pallet_table(nr)
                 
         elif action == "-BTN-DELETE-PLL-":
             selected = values["-PALLET-TABLE-"]
@@ -638,20 +625,18 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                 true_index_label = pallet_df.index[row]
                 # 2. Drop the row and update the DataFrame
                 pallet_df = pallet_df.drop(index=true_index_label)
+                total_pallets, ldm = refresh_pallet_table(nr)
             else:
                 pallet_id = int(pallet_df.iloc[row]["pallet_id"])
-                
                 existing = pallet_df.iloc[row].to_dict()
-                
                 confirm = sg.popup_yes_no(
                         f"Do you really want to delete pallet data?\n",
                         title="Confirm deleting a record"
                     )
                 if confirm == "Yes":
                     delete_db(pallet_id, 't_pallet_details', id_name="pallet_id")
+                    total_pallets, ldm = refresh_pallet_table(nr)
             
-            ldm = calculate_ldm(pallet_df)
-            total_pallets = refresh_pallet_table(ldm, nr)
             selected_row = None
 
 # Function that opens a small modal to enter pallet detailsfor an order (can be used for create new or edit existin pallet details)

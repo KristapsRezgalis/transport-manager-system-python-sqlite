@@ -2,6 +2,9 @@ from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.platypus import Table
 from reportlab.platypus import TableStyle
+from reportlab.platypus import Paragraph
+from reportlab.lib.styles import ParagraphStyle
+from reportlab.lib.enums import TA_JUSTIFY
 
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details
 
@@ -26,15 +29,17 @@ cost = 850
 customs = 'NO'
 ref = 'NO'
 
-tr_rules = [
-    'This transport order is governed by the Convention on the Contract for the International Carriage of Goods by Road (CMR 1956)',
-    'and applicable EU and national legislation.',
-    'Acceptance of this transport order or commencement of its execution constitutes full acceptance of these terms and conditions.',
-    'The Carrier undertakes to perform the transport with due care, using suitable equipment and in compliance with all applicable regulations.',
-    'The Carrier’s liability is governed by the CMR Convention and begins at loading and ends upon delivery.',
-    'Delivery dates are indicative unless otherwise agreed. The Carrier shall not be liable for delays caused by force majeure events including',
-    'but not limited to weather conditions, traffic restrictions, strikes, or border delays.'
-]
+terms_text = """
+By accepting this Transport Order, the Carrier confirms acceptance of these Terms and Conditions and undertakes to perform the transport in accordance with the Convention on the Contract for the International Carriage of Goods by Road (CMR), all applicable national and international legislation, and recognised industry standards.
+
+The Carrier shall provide a roadworthy, clean, dry, odour-free and technically suitable vehicle appropriate for the nature of the cargo. The loading compartment shall be free from contamination, pests, residues of previous cargoes and any other condition that may adversely affect the transported goods.
+
+The Carrier shall ensure the safe transportation of all cargo entrusted by GEMOSS SIA, including, but not limited to, food products, beverages, edible goods, non-food products, consumer goods, kitchen equipment, household appliances, electronic devices, medical products, furniture, oversized or non-standard cargo, palletised freight and temperature-controlled shipments.
+
+Acceptance of this Transport Order constitutes full acceptance of these Terms and Conditions.
+
+Carrier's acceptance of this Transport Order by e-mail, EDI, transport platform or commencement of loading shall constitute full acceptance of these Terms and Conditions.
+"""
 
 gemoss_letterhead = [
     'GEMOSS SIA',
@@ -165,8 +170,9 @@ def draw_pallet_data(pdf, data, y, nr):
     y -= 15
     
     pdf.setFont("Times-Roman", 10)
-    pdf.drawString(100, y, f"Total number of pallets: {data.get('pallets')}")
-    pdf.drawString(370, y, f"Total gross weight: {data.get('weight')} kg")
+    pdf.drawString(70, y, f"Total number of pallets: {data.get('pallets')}")
+    pdf.drawString(257, y, f"Estimated LDM: {data.get('ldm')}")
+    pdf.drawString(400, y, f"Total gross weight: {data.get('weight')} kg")
     y -= 10
     
     table.drawOn(pdf, 170, y-table_height)
@@ -183,14 +189,36 @@ def draw_info_and_cost(pdf, data, y, df_fw):
     y -= 3
     pdf.line(30, y, 565, y)
     y -= 15
+
+    # Temperature control / Customs clearance — show a dash instead of blank
+    def display_val(val):
+        val = str(val).strip() if val is not None else ""
+        return val if val and val.upper() != "NONE" else "-"
+
     pdf.setFont("Times-Roman", 10)
-    pdf.drawString(100, y, f"Temperature control: {data.get('ref')}")
-    pdf.drawString(370, y, f"Customs clearance: {data.get('customs')}")
-    y -= 15
-    pdf.drawCentredString(300, y, f"Instructions: {data.get('info') if int(data.get('add_info_to_order')) == 1 else ''}")
-    y -= 15
-    print(f"{data.get('info')}")
-    
+    pdf.drawString(100, y, f"Temperature control: {display_val(data.get('ref'))}")
+    pdf.drawString(370, y, f"Customs clearance: {display_val(data.get('customs'))}")
+    y -= 20
+
+    # Instructions — label on its own line, content indented below it
+    info_text = data.get('info') if int(data.get('add_info_to_order')) == 1 else ''
+    if info_text:
+        pdf.setFont("Times-Bold", 10)
+        pdf.drawString(30, y, "Instructions:")
+        y -= 14
+
+        tx_field_info = pdf.beginText(45, y)
+        tx_field_info.setFont("Times-Roman", 10)
+        tx_field_info.setLeading(13)
+        for line in info_text.splitlines():
+            tx_field_info.textLine(line)
+        pdf.drawText(tx_field_info)
+
+        y -= 13 * len(info_text.splitlines())
+        y -= 5
+    else:
+        y -= 5
+
     pdf.line(30, y, 565, y)
     y -= 11
     pdf.setFont("Times-Roman", 11)
@@ -198,13 +226,15 @@ def draw_info_and_cost(pdf, data, y, df_fw):
     y -= 3
     pdf.line(30, y, 565, y)
     y -= 15
-    
+
     pdf.setFont("Times-Roman", 10)
     pdf.drawCentredString(300, y, f"Agreed sum: {data.get('cost')}0 EUR excl. VAT")
     y -= 15
     pdf.drawCentredString(300, y, f"Payment terms: {df_fw['fw_payment_terms'].iloc[0]} days after receiving invoice and CMR")
     y -= 15
-
+    pdf.drawCentredString(300, y, "Invoice and CMR must be sent only to this e-mail: transports@gemoss.lv")
+    y -= 15
+    
     return y
 
 def draw_footer_signature(pdf, data, y, login_validation, df_fw_contact):
@@ -230,6 +260,10 @@ def draw_footer_signature(pdf, data, y, login_validation, df_fw_contact):
 
 # data variable content -> sap_po, sender, delivery, loading,unloading, pallets, weight, forwarder, cost, customs, ref
 def create_order_pdf (data, nr, login_validation):
+    ##########################
+    ### PAGE NR 1 starting ###
+    ##########################
+    
     y = 700
     
         ### CREATES THE ACTUAL PDF FILE ###
@@ -255,24 +289,49 @@ def create_order_pdf (data, nr, login_validation):
     y = draw_info_and_cost(pdf, data, y, df_fw)
     draw_footer_signature(pdf, data, y, login_validation, df_fw_contact)
     
-    '''
+    pdf.showPage()
+    
+    ##############################################
+    ### PAGE NR 1 ENDED AND PAGE NR 2 STARTING ###
+    ##############################################
+    
+    y = 700
+    
+    draw_header(pdf, data, nr, df_fw)
+    
     pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-    y -= 15
+    y -= 11
     pdf.setFont("Times-Roman", 11)
     pdf.drawCentredString(300, y, 'TRANSPORT TERMS AND CONDITIONS')
-    y -= 15
+    y -= 3
     pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
     y -= 15
-
     
-    tr_rules_var = pdf.beginText(30, 220) # Starts a text object at the given position.
+    '''
+    tr_rules_var = pdf.beginText(30, y) # Starts a text object at the given position.
     tr_rules_var.setFont("Times-Roman", 10)
-    for line in tr_rules:
+    for line in terms_text:
         tr_rules_var.textLine(line) # Adds one line of text at a time.
     
     pdf.drawText(tr_rules_var) # Renders the text object onto the PDF.
     '''
+    terms_style = ParagraphStyle(
+        "TermsStyle",
+        fontName="Times-Roman",
+        fontSize=13,
+        leading=15,
+        alignment=TA_JUSTIFY,
+        firstLineIndent=12,
+    )
 
+    paragraph_text = terms_text.strip().replace("\n\n", "<br/><br/>")
 
+    paragraph = Paragraph(paragraph_text, terms_style)
+
+    w, h = paragraph.wrap(535, 1000)
+
+    paragraph.drawOn(pdf, 30, y - h)
+        
+    draw_footer_signature(pdf, data, y, login_validation, df_fw_contact)
+    
     pdf.save()
-    print('PDF file created!')
