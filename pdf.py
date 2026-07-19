@@ -5,29 +5,19 @@ from reportlab.platypus import TableStyle
 from reportlab.platypus import Paragraph
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.enums import TA_JUSTIFY
+from reportlab.pdfbase import pdfmetrics
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase.pdfmetrics import registerFontFamily
 
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details
+
+pdfmetrics.registerFont(TTFont('LVSerif', 'fonts\LiberationSerif-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('LVSerif-Bold', 'fonts\LiberationSerif-Bold.ttf'))
+registerFontFamily('LVSerif', normal='LVSerif', bold='LVSerif-Bold')
 
 record_number = 100
 
 documentTitle = 'GEMOSS'
-
-sender = 'Delinuts BV'
-delivery = 'Gemoss SIA'
-loading_address = ['SomeTest street 99,',
-                   'Tilsburg, 6985',
-                   'Netherlands']
-unloading_address = ['Mukusalas street 75A,',
-                     'Riga, LV-1004',
-                     'Latvia']
-loading_date = '2026-04-24'
-unloading_date = '2026-04-30'
-pallets = 10
-weight = 5000
-forwarder = 'FORWARDER SIA'
-cost = 850
-customs = 'NO'
-ref = 'NO'
 
 terms_text = """
 By accepting this Transport Order, the Carrier confirms acceptance of these Terms and Conditions and undertakes to perform the transport in accordance with the Convention on the Contract for the International Carriage of Goods by Road (CMR), all applicable national and international legislation, and recognised industry standards.
@@ -50,17 +40,17 @@ gemoss_letterhead = [
 
 def draw_header(pdf, data, nr, df_fw):
     pdf.drawImage("gemoss_logo.png", x=30, y=800, width=126, height=32) # c.drawImage("image.png", x=100, y=500, width=200, height=150)
-    pdf.setFont("Times-Bold", 15) # Sets the font style and size.
+    pdf.setFont("LVSerif-Bold", 15) # Sets the font style and size.
     pdf.drawCentredString(425, 810, f"Transport agreement Nr: {10000 + nr}") # Draws text centered at the specified (x, y) position.
     pdf.line(30, 790, 565, 790) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
     
     tx_field_1 = pdf.beginText(30, 770)
-    tx_field_1.setFont("Times-Roman", 10)
+    tx_field_1.setFont("LVSerif", 10)
     for line in gemoss_letterhead:
         tx_field_1.textLine(line)
     pdf.drawText(tx_field_1)
     
-    pdf.setFont("Times-Roman", 10)
+    pdf.setFont("LVSerif", 10)
     pdf.drawString(380, 770, f"{data.get('forwarder')}")
     pdf.drawString(380, 757, f"Reg. Nr: {df_fw['fw_reg_nr'].iloc[0]}")
     pdf.drawString(380, 744, f"VAT Nr: {df_fw['fw_vat_nr'].iloc[0]}")
@@ -68,7 +58,7 @@ def draw_header(pdf, data, nr, df_fw):
     
     forwarder_address = [f"{df_fw['fw_street'].iloc[0]}", f"{df_fw['fw_city'].iloc[0]}, {df_fw['fw_post_code'].iloc[0]}", f"{df_fw['fw_country'].iloc[0]}"]
     tx_field_2 = pdf.beginText(418, 731)
-    tx_field_2.setFont("Times-Roman", 10)
+    tx_field_2.setFont("LVSerif", 10)
     for line in forwarder_address:
         tx_field_2.textLine(line)
     pdf.drawText(tx_field_2)
@@ -76,17 +66,17 @@ def draw_header(pdf, data, nr, df_fw):
 def draw_loading_unloading(pdf, data, y, df_sender_company_address, df_sender_company_contact, df_delivery_company_address, df_delivery_company_contact):
     pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
     y -= 10
-    pdf.setFont("Times-Roman", 11)
+    pdf.setFont("LVSerif", 11)
     pdf.drawCentredString(300, y, 'SHIPMENT INFORMATION')
     y -= 4
     pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
     y -= 16
     
-    pdf.setFont("Times-Roman", 11)
+    pdf.setFont("LVSerif", 11)
     pdf.drawString(100, y, 'LOADING DETAILS')
     pdf.drawString(370, y, 'UNLOADING DETAILS')
     y -= 20
-    pdf.setFont("Times-Roman", 10)
+    pdf.setFont("LVSerif", 10)
     pdf.drawString(30, y, f"Loading available from: {data.get('loading')}")
     pdf.drawString(310, y, f"Unloading until: {data.get('unloading')}")
     y -= 15
@@ -146,7 +136,7 @@ def draw_pallet_data(pdf, data, y, nr):
     table.setStyle(TableStyle([
         ("GRID",(0,0),(-1,-1),0.5,colors.black),
         ("BACKGROUND",(0,0),(-1,0),colors.lightgrey),
-        ("FONTNAME",(0,0),(-1,0),"Times-Bold"),
+        ("FONTNAME",(0,0),(-1,0),"LVSerif-Bold"),
         ("FONTSIZE", (0,0), (-1,-1), 8),
         ("ALIGN",(0,0),(-1,-1),"CENTER"),
         ("BOTTOMPADDING",(0,0),(-1,0),6),
@@ -163,13 +153,13 @@ def draw_pallet_data(pdf, data, y, nr):
     
     pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
     y -= 11
-    pdf.setFont("Times-Roman", 11)
+    pdf.setFont("LVSerif", 11)
     pdf.drawCentredString(300, y, 'CARGO DETAILS')
     y -= 3
     pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
     y -= 15
     
-    pdf.setFont("Times-Roman", 10)
+    pdf.setFont("LVSerif", 10)
     pdf.drawString(70, y, f"Total number of pallets: {data.get('pallets')}")
     pdf.drawString(257, y, f"Estimated LDM: {data.get('ldm')}")
     pdf.drawString(400, y, f"Total gross weight: {data.get('weight')} kg")
@@ -184,7 +174,7 @@ def draw_pallet_data(pdf, data, y, nr):
 def draw_info_and_cost(pdf, data, y, df_fw):
     pdf.line(30, y, 565, y)
     y -= 11
-    pdf.setFont("Times-Roman", 11)
+    pdf.setFont("LVSerif", 11)
     pdf.drawCentredString(300, y, 'OTHER INFORMATION')
     y -= 3
     pdf.line(30, y, 565, y)
@@ -195,7 +185,7 @@ def draw_info_and_cost(pdf, data, y, df_fw):
         val = str(val).strip() if val is not None else ""
         return val if val and val.upper() != "NONE" else "-"
 
-    pdf.setFont("Times-Roman", 10)
+    pdf.setFont("LVSerif", 10)
     pdf.drawString(100, y, f"Temperature control: {display_val(data.get('ref'))}")
     pdf.drawString(370, y, f"Customs clearance: {display_val(data.get('customs'))}")
     y -= 20
@@ -203,12 +193,12 @@ def draw_info_and_cost(pdf, data, y, df_fw):
     # Instructions — label on its own line, content indented below it
     info_text = data.get('info') if int(data.get('add_info_to_order')) == 1 else ''
     if info_text:
-        pdf.setFont("Times-Bold", 10)
+        pdf.setFont("LVSerif-Bold", 10)
         pdf.drawString(30, y, "Instructions:")
         y -= 14
 
         tx_field_info = pdf.beginText(45, y)
-        tx_field_info.setFont("Times-Roman", 10)
+        tx_field_info.setFont("LVSerif", 10)
         tx_field_info.setLeading(13)
         for line in info_text.splitlines():
             tx_field_info.textLine(line)
@@ -221,13 +211,13 @@ def draw_info_and_cost(pdf, data, y, df_fw):
 
     pdf.line(30, y, 565, y)
     y -= 11
-    pdf.setFont("Times-Roman", 11)
+    pdf.setFont("LVSerif", 11)
     pdf.drawCentredString(300, y, 'FREIGHT COST')
     y -= 3
     pdf.line(30, y, 565, y)
     y -= 15
 
-    pdf.setFont("Times-Roman", 10)
+    pdf.setFont("LVSerif", 10)
     pdf.drawCentredString(300, y, f"Agreed sum: {data.get('cost')}0 EUR excl. VAT")
     y -= 15
     pdf.drawCentredString(300, y, f"Payment terms: {df_fw['fw_payment_terms'].iloc[0]} days after receiving invoice and CMR")
@@ -238,19 +228,19 @@ def draw_info_and_cost(pdf, data, y, df_fw):
     return y
 
 def draw_footer_signature(pdf, data, y, login_validation, df_fw_contact):
-    pdf.setFont("Times-Bold", 12)
+    pdf.setFont("LVSerif-Bold", 12)
     pdf.drawString(30, 101, 'CLIENT')
     pdf.line(30, 98, 200, 98) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-    pdf.setFont("Times-Roman", 12)
+    pdf.setFont("LVSerif", 12)
     pdf.drawString(30, 80, 'GEMOSS SIA')
     pdf.drawString(30, 65, f"{login_validation.get('name')} {login_validation.get('surname')}")
     pdf.drawString(30, 50, f"{login_validation.get('phone')}")
     pdf.drawString(30, 35, f"{login_validation.get('email')}")
 
-    pdf.setFont("Times-Bold", 12)
+    pdf.setFont("LVSerif-Bold", 12)
     pdf.drawString(380, 100, 'CARRIER')
     pdf.line(380, 98, 550, 98) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
-    pdf.setFont("Times-Roman", 12)
+    pdf.setFont("LVSerif", 12)
     pdf.drawString(380, 80, f"{data.get('forwarder')}")
     
     if not df_fw_contact.empty:
@@ -301,35 +291,23 @@ def create_order_pdf (data, nr, login_validation):
     
     pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
     y -= 11
-    pdf.setFont("Times-Roman", 11)
+    pdf.setFont("LVSerif", 11)
     pdf.drawCentredString(300, y, 'TRANSPORT TERMS AND CONDITIONS')
     y -= 3
     pdf.line(30, y, 565, y) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
     y -= 15
     
-    '''
-    tr_rules_var = pdf.beginText(30, y) # Starts a text object at the given position.
-    tr_rules_var.setFont("Times-Roman", 10)
-    for line in terms_text:
-        tr_rules_var.textLine(line) # Adds one line of text at a time.
-    
-    pdf.drawText(tr_rules_var) # Renders the text object onto the PDF.
-    '''
     terms_style = ParagraphStyle(
         "TermsStyle",
-        fontName="Times-Roman",
+        fontName="LVSerif",
         fontSize=13,
         leading=15,
         alignment=TA_JUSTIFY,
         firstLineIndent=12,
     )
-
     paragraph_text = terms_text.strip().replace("\n\n", "<br/><br/>")
-
     paragraph = Paragraph(paragraph_text, terms_style)
-
     w, h = paragraph.wrap(535, 1000)
-
     paragraph.drawOn(pdf, 30, y - h)
         
     draw_footer_signature(pdf, data, y, login_validation, df_fw_contact)
