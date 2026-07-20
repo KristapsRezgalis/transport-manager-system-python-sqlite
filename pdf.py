@@ -8,12 +8,17 @@ from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
+import os
 
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details
 
-pdfmetrics.registerFont(TTFont('LVSerif', 'fonts\LiberationSerif-Regular.ttf'))
-pdfmetrics.registerFont(TTFont('LVSerif-Bold', 'fonts\LiberationSerif-Bold.ttf'))
+pdfmetrics.registerFont(TTFont('LVSerif', r'fonts\LiberationSerif-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('LVSerif-Bold', r'fonts\LiberationSerif-Bold.ttf'))
 registerFontFamily('LVSerif', normal='LVSerif', bold='LVSerif-Bold')
+
+pdfmetrics.registerFont(TTFont('LVCarlito', r'fonts\Carlito\Carlito-Regular.ttf'))
+pdfmetrics.registerFont(TTFont('LVCarlito-Bold', r'fonts\Carlito\Carlito-Bold.ttf'))
+registerFontFamily('LVCarlito', normal='LVCarlito', bold='LVCarlito-Bold')
 
 record_number = 100
 
@@ -313,3 +318,112 @@ def create_order_pdf (data, nr, login_validation):
     draw_footer_signature(pdf, data, y, login_validation, df_fw_contact)
     
     pdf.save()
+
+def create_gemoss_specification_PDF(nr):
+    ##########################
+    ### PAGE NR 1 starting ###
+    ##########################
+    
+    y = 700
+    
+    filename = f"Gemoss order Nr {nr}.pdf"
+        ### CREATES THE PDF FILE ###
+    pdf = canvas.Canvas(filename)
+    pdf.setTitle(documentTitle)
+    
+    pdf.setLineWidth(0.6)
+    pdf.setStrokeColorRGB(0.0, 0.0, 0.0)
+    pdf.drawImage("gemoss_logo.png", x=80, y=768, width=153, height=39) # c.drawImage("image.png", x=100, y=500, width=200, height=150)
+    pdf.setFont("LVCarlito-Bold", 13) # Sets the font style and size.
+    pdf.drawString(400, 790, "VL-NL-6") # Draws text centered at the specified (x, y) position.
+    pdf.drawString(330, 760, "TRANSPORTA PIETEIKUMS (4.16)") # Draws text centered at the specified (x, y) position.
+    pdf.setFont("LVCarlito", 7.7) # Sets the font style and size.
+    pdf.drawString(83, 755, "SIA GEMOSS, Mūkusalas iela 73, Rīga,  LV-1004, Latvija") # Draws text centered at the specified (x, y) position.
+    pdf.drawString(83, 745, "www.gemoss.lv, Tālrunis: +371 67702777, F ax.+371 67860103 ") # Draws text centered at the specified (x, y) position.
+    
+    # Horizontal lines - HEADER
+    pdf.line(80, 805, 540, 805) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
+    pdf.line(300, 774, 540, 774)
+    pdf.line(80, 742, 540, 742)
+    # Vertical lines - HEADER
+    pdf.line(80, 742, 80, 805)
+    pdf.line(300, 742, 300, 805)
+    pdf.line(540, 742, 540, 805)
+    
+    pdf.setFont("LVCarlito-Bold", 10)
+    pdf.drawString(83, 710, "Iekraušanas datums un , ja tas")
+    pdf.drawString(273, 710, f"From 20.07.2026")
+    
+    pdf.drawString(83, 698, "nepieciešams, uzkraušanas laiks :")
+    pdf.drawString(273, 685, f"No 08:00 līdz 17:00")
+    
+    pdf.setFont("LVCarlito", 10)
+    pdf.drawString(83, 670, "Iekraušanas adrese:")
+    pdf.drawString(273, 670, f"GRANORO")
+    pdf.drawString(273, 658, f"SP 231 km 35, 100")
+    pdf.drawString(273, 646, f"70033 Corato (BA), Italy")
+    
+    pdf.drawString(83, 618, "Kontaktpersona:")
+    pdf.drawString(273, 618, f"Agostino Nanula")
+    pdf.drawString(273, 606, f" +390 808 721 821 ext.4211")
+    pdf.drawString(273, 594, f"a.nanula@granoro.it")
+    
+    pdf.drawString(83, 575, "References numurs:")
+    pdf.drawString(273, 575, f"PO2640000:")
+    
+    pdf.drawString(83, 556, "Piegādes datums un laiks:")
+    pdf.drawString(273, 556, f"Līdz 29.07.2026")
+    pdf.drawString(273, 544, f"09:00-17:00")
+    
+    pdf.drawString(83, 527, "Piegādes adrese:")
+    pdf.drawString(273, 527, f"GEMOSS SIA")
+    pdf.drawString(273, 515, f"Mūkusalas iela 75A")
+    pdf.drawString(273, 503, f"Rīga, LV-1004, Latvia")
+    
+    pdf.drawString(83, 479, "Kontaktpersona:")
+    pdf.drawString(273, 479, f"Kristaps Rezgalis")
+    pdf.drawString(273, 467, f"+371 27888014")
+    pdf.drawString(273, 455, f"kristaps.rezgalis@gemoss.lv")
+    
+    # Horizontal lines - CARGO DATA
+    pdf.line(80, 721, 540, 721)
+    pdf.line(80, 680, 540, 680)
+    pdf.line(80, 589, 540, 589)
+    pdf.line(80, 569, 540, 569)
+    pdf.line(80, 539, 540, 539)
+    pdf.line(80, 412, 540, 412)
+    pdf.line(80, 372, 540, 372)
+    pdf.line(80, 352, 540, 352)
+    pdf.line(80, 312, 540, 312)
+    # Vertical lines - CARGO DATA
+    pdf.line(80, 721, 80, 312)
+    pdf.line(270, 721, 270, 312)
+    pdf.line(540, 721, 540, 312)
+    
+    # Horizontal lines - SIGNATURE
+    pdf.line(80, 288, 540, 288)
+    pdf.line(80, 270, 540, 270)
+    pdf.line(80, 180, 540, 180)
+
+    # Vertical lines - SIGNATURE
+    pdf.line(80, 288, 80, 180)
+    pdf.line(270, 288, 270, 180)
+    pdf.line(540, 288, 540, 180)
+    
+    # Horizontal lines - FOOTER
+    pdf.line(80, 142, 540, 142)
+    pdf.line(80, 132, 540, 132)
+    pdf.line(80, 122, 540, 122)
+    pdf.line(80, 112, 540, 112)
+    pdf.line(80, 102, 540, 102)
+
+    # Vertical lines - FOOTER
+    pdf.line(80, 142, 80, 102)
+    pdf.line(270, 142, 270, 102)
+    pdf.line(540, 142, 540, 102)
+    
+    pdf.save()
+    os.startfile(filename)
+    
+    
+create_gemoss_specification_PDF(100)
