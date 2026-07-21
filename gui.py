@@ -4,6 +4,7 @@ import pandas as pd
 from datetime import datetime
 from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts, get_purchase_managers, get_pallet_details, insert_pallet
 from pdf import create_order_pdf
+from pdf_order import create_gemoss_specification_PDF
 from stats import generate_diagram
 from company import company_entry_modal, company_contacts_modal, create_company_contact_modal, create_company_address_modal, company_address_modal
 from forwarder import forwarder_entry_modal
@@ -476,7 +477,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
 
     if existing: # if editing existin order
         layout = common_rows + [
-            [sg.Push(), sg.Button("Create transport order in PDF", key="-CREATE-PDF-"), sg.Push()],
+            [sg.Push(), sg.Button("Create transport order in PDF", key="-CREATE-PDF-"), sg.Button("Create internal transport order in PDF", key="-CREATE-COMPANY-PDF-"), sg.Push()],
             [sg.Push(), sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()],
         ]
     else: # if creating a new order
@@ -500,6 +501,9 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
         if action == "-CREATE-PDF-":
             create_order_pdf(existing, nr, login_validation)
             print('Create transport order in PDF button pressed!')
+        elif action == "-CREATE-COMPANY-PDF-":
+            create_gemoss_specification_PDF(existing, nr, login_validation)
+            print('Create GEMOSS internal transport order in PDF button pressed!')
         elif action == "-FORWARDER-":
             selected_forwarder_name = values['-FORWARDER-']
             fw_id = return_forwarders(selected_forwarder_name)
