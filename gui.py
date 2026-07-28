@@ -9,6 +9,7 @@ from stats import generate_diagram
 from company import company_entry_modal, company_contacts_modal, create_company_contact_modal, create_company_address_modal, company_address_modal
 from forwarder import forwarder_entry_modal
 from config import *
+from emails import send_order_modal, send_email, send_email_purchase_manager
 
 login_validation = ''
 
@@ -477,7 +478,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
 
     if existing: # if editing existin order
         layout = common_rows + [
-            [sg.Push(), sg.Button("Create transport order in PDF", key="-CREATE-PDF-"), sg.Button("Create internal transport order in PDF", key="-CREATE-COMPANY-PDF-"), sg.Push()],
+            [sg.Push(), sg.Button("Send orders", key="-BTN-SEND-ORDERS-", size=25), sg.Button("Create transport order in PDF", key="-CREATE-PDF-", size=25), sg.Button("Create internal transport order in PDF", key="-CREATE-COMPANY-PDF-", size=25), sg.Push()],
             [sg.Push(), sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()],
         ]
     else: # if creating a new order
@@ -504,6 +505,8 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
         elif action == "-CREATE-COMPANY-PDF-":
             create_gemoss_specification_PDF(existing, nr, login_validation)
             print('Create GEMOSS internal transport order in PDF button pressed!')
+        elif action == "-BTN-SEND-ORDERS-":
+            send_order_modal(existing, nr)
         elif action == "-FORWARDER-":
             selected_forwarder_name = values['-FORWARDER-']
             fw_id = return_forwarders(selected_forwarder_name)
