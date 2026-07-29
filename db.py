@@ -461,6 +461,16 @@ def insert_pallet(nr, pll_quantity, pll_length, pll_width, pll_height):
     new_row.to_sql("t_pallet_details", conn, if_exists="append", index=False)
     #new_record = pd.read_sql("SELECT MAX(pallet_id) as nr FROM t_pallet_details", conn)["nr"].iloc[0]
     conn.close()
+    
+def get_purchase_manager_df(name_surname):
+    conn = sqlite3.connect(DB_FILE)
+    
+    if name_surname:
+        purchase_manager_df = pd.read_sql(f"SELECT * FROM t_purchase_manager WHERE manager_name || ' ' || manager_surname == ?", conn, params=(name_surname,))
+        return purchase_manager_df
+    return pd.DataFrame() # returns empty df
+
+
 '''
 def get_pallet_details(order_id):
     conn = sqlite3.connect(DB_FILE)
@@ -468,4 +478,3 @@ def get_pallet_details(order_id):
     conn.close()
     return df
 '''
-    

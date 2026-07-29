@@ -506,7 +506,13 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
             create_gemoss_specification_PDF(existing, nr, login_validation)
             print('Create GEMOSS internal transport order in PDF button pressed!')
         elif action == "-BTN-SEND-ORDERS-":
-            send_order_modal(existing, nr)
+            emails_list = send_order_modal(existing, nr, values['-CMB-PURCHASE_MANAGER-'])
+            if emails_list:
+                #print(emails_list['-TXT-FORWARDER-EMAIL-'])
+                if emails_list['-CB-SEND-FORWARDER-']:
+                    #print(f"emails_list['-CB-SEND-FORWARDER-'] is TRUE: {emails_list['-CB-SEND-FORWARDER-']}")
+                    pdf_path  = create_order_pdf(existing, nr, login_validation)
+                    send_email(f"{emails_list['-TXT-FORWARDER-EMAIL-']}", existing, nr, attachments=[pdf_path])
         elif action == "-FORWARDER-":
             selected_forwarder_name = values['-FORWARDER-']
             fw_id = return_forwarders(selected_forwarder_name)

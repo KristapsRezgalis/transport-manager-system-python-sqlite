@@ -261,8 +261,15 @@ def create_order_pdf (data, nr, login_validation):
     
     y = 700
     
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, "orders")
+    os.makedirs(output_dir, exist_ok=True)  # create "orders" folder if it doesn't exist yet
+    
         ### CREATES THE ACTUAL PDF FILE ###
-    pdf = canvas.Canvas(f"Gemoss order Nr {nr}.pdf")
+    filename = f"Gemoss order Nr {nr}.pdf"
+    pdf_path = os.path.join(output_dir, filename)
+    pdf = canvas.Canvas(pdf_path)
+    #pdf = canvas.Canvas(filename)
     pdf.setTitle(documentTitle)
     
 
@@ -318,3 +325,6 @@ def create_order_pdf (data, nr, login_validation):
     draw_footer_signature(pdf, data, y, login_validation, df_fw_contact)
     
     pdf.save()
+    os.startfile(filename)
+    
+    return pdf_path
