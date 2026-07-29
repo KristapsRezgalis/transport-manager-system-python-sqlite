@@ -325,6 +325,6 @@ def create_order_pdf (data, nr, login_validation):
     draw_footer_signature(pdf, data, y, login_validation, df_fw_contact)
     
     pdf.save()
-    os.startfile(filename)
+    #os.startfile(filename)
     
     return pdf_path

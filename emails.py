@@ -7,9 +7,94 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
     outlook = win32.Dispatch('outlook.application')
     mail = outlook.CreateItem(0)  # 0 = olMailItem
     
-    subject = "Noorganizēts transport {nosutītājs} kravai"
+    subject = f"Transporta līgums Nr {nr} | {data.get('sender')} → {data.get('delivery')} kravai"
     
-    body = """Labdien,
+    mail.To = to
+    mail.Subject = subject
+    
+    # Open the email first so Outlook inserts your default signature
+    mail.Display()
+
+    # Save the automatically inserted signature
+    signature = mail.HTMLBody
+
+    # Create your email body
+    html_body = f"""
+    <html>
+    <body style="font-family:Calibri;font-size:11pt;">
+
+    <p>Labdien,</p>
+
+    <p>Nosūtu transporta pasūtījumu sekojošai kravai:</p>
+
+    <table style="border-collapse:collapse;">
+        <tr>
+            <td style="padding-right:20px;"><b>Nosūtītājs:</b></td>
+            <td>{data.get('sender')}</td>
+        </tr>
+
+        <tr>
+            <td><b>Iekraušanas datums:</b></td>
+            <td>no {data.get('loading')}</td>
+        </tr>
+        <br>
+        <tr>
+            <td><b>Piegāde:</b></td>
+            <td>{data.get('delivery')}</td>
+        </tr>
+
+        <tr>
+            <td><b>Piegādes datums:</b></td>
+            <td>līdz {data.get('unloading')}</td>
+        </tr>
+
+        <tr>
+            <td><b>Krava:</b></td>
+            <td>6 paletes, 6000 kg</td>
+        </tr>
+
+        <tr>
+            <td><b>Pārvadātājs:</b></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td><b>Transporta izmaksas:</b></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td><b>Temperatūras režīms:</b></td>
+            <td></td>
+        </tr>
+
+        <tr>
+            <td><b>Atmuitošana:</b></td>
+            <td></td>
+        </tr>
+    </table>
+
+    <br>
+
+    {signature}
+
+    </body>
+    </html>
+    """
+
+    mail.HTMLBody = html_body
+
+    if attachments:
+        for path in attachments:
+            mail.Attachments.Add(path)
+    
+    mail.Display() # opens e-mail for editing - good for debugging
+    #mail.Send()  # or mail.Display() to open it for review first
+    
+def send_email_purchase_manager(to, data, nr, attachments=None):
+    subject = f"Noorganizēts transport {data.get('sender')} - {data.get('delivery')} kravai"
+    
+    body = f"""Labdien,
 
 Ir noorganizēts transports sekojošajai kravai:
 
@@ -32,45 +117,13 @@ Transport izdevumi bez PVN:
 Temperatūras režīms:
 Atmuitošana: 
 
-    """
-    
-    mail.To = to
-    mail.Subject = subject
-    mail.Body = body  # plain text; use mail.HTMLBody for HTML
+Kind regards,
 
-    if attachments:
-        for path in attachments:
-            mail.Attachments.Add(path)
-    
-    #mail.Display() # opens e-mail for editing - good for debugging
-    mail.Send()  # or mail.Display() to open it for review first
-    
-def send_email_purchase_manager(to, data, nr):
-    subject = "Noorganizēts transport {nosutītājs} kravai"
-    
-    body = """Labdien,
-
-    Ir noorganizēts transports sekojošajai kravai:
-    
-    PO: 
-    Nosutītājs:
-    Iekraušanas adrese:
-    Iekraušanas datums: no 
-
-    Piegade:
-    Piegades adrese: 
-    Piegādes datums: līdz
-
-    Kravas informācija:
-    6 paletes
-    6000 kg
-
-    Pārvadātājs: 
-    Transport izdevumi bez PVN:
-
-    Temperatūras režīms:
-    Atmuitošana: 
-
+Kristaps Rezgalis
+Transport coordinator
+GEMOSS SIA
+kristaps.rezgalis@gemoss.lv
++371 27888014
     """
     
     mail.To = to
