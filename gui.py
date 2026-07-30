@@ -478,7 +478,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
 
     if existing: # if editing existin order
         layout = common_rows + [
-            [sg.Push(), sg.Button("Send orders", key="-BTN-SEND-ORDERS-", size=25), sg.Button("Create transport order in PDF", key="-CREATE-PDF-", size=25), sg.Button("Create internal transport order in PDF", key="-CREATE-COMPANY-PDF-", size=25), sg.Push()],
+            [sg.Push(), sg.Button("Send orders", key="-BTN-SEND-ORDERS-", size=20), sg.Button("Forwarder order PDF", key="-CREATE-PDF-", size=20), sg.Button("Internal order PDF", key="-CREATE-COMPANY-PDF-", size=20), sg.Button("Send cargo offer", key="-BTN-SEND-OFFER-", size=20), sg.Push()],
             [sg.Push(), sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()],
         ]
     else: # if creating a new order
@@ -508,11 +508,18 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
         elif action == "-BTN-SEND-ORDERS-":
             emails_list = send_order_modal(existing, nr, values['-CMB-PURCHASE_MANAGER-'])
             if emails_list:
+                pdf_path_forwarder_order  = create_order_pdf(existing, nr, login_validation)
+                pdf_path_internal_order  = create_gemoss_specification_PDF(existing, nr, login_validation)
                 #print(emails_list['-TXT-FORWARDER-EMAIL-'])
                 if emails_list['-CB-SEND-FORWARDER-']:
-                    #print(f"emails_list['-CB-SEND-FORWARDER-'] is TRUE: {emails_list['-CB-SEND-FORWARDER-']}")
-                    pdf_path  = create_order_pdf(existing, nr, login_validation)
-                    send_email(f"{emails_list['-TXT-FORWARDER-EMAIL-']}", existing, nr, attachments=[pdf_path])
+                    send_email(f"{emails_list['-TXT-FORWARDER-EMAIL-']}", existing, nr, attachments=[pdf_path_forwarder_order])
+                if emails_list['-CB-SEND-INNER-']:
+                    send_email_purchase_manager(f"{emails_list['-TXT-INTERNAL-EMAIL-']}", existing, nr, attachments=[pdf_path_internal_order])
+                if emails_list['-CB-SEND-MANAGER-']:
+                    send_email_purchase_manager(f"{emails_list['-TXT-PURCH-MAN-EMAIL-']}", existing, nr, attachments=[pdf_path_internal_order])
+                if emails_list['-CB-SEND-OTHER-']:
+                    send_email_purchase_manager(f"{emails_list['-IN-EXTRA-EMAIL-']}", existing, nr, attachments=[pdf_path_internal_order])
+                    
         elif action == "-FORWARDER-":
             selected_forwarder_name = values['-FORWARDER-']
             fw_id = return_forwarders(selected_forwarder_name)

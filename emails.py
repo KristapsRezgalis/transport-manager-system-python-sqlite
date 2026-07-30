@@ -1,13 +1,24 @@
 import win32com.client as win32
 import FreeSimpleGUI as sg
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details, get_purchase_manager_df
+from pdf import get_forwarder_sender_delivery_data
 
 
 def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
     outlook = win32.Dispatch('outlook.application')
     mail = outlook.CreateItem(0)  # 0 = olMailItem
     
-    subject = f"Transporta līgums Nr {nr} | {data.get('sender')} → {data.get('delivery')} kravai"
+    df_fw, df_fw_contact, df_sender_company, df_sender_company_address, df_sender_company_contact, df_delivery_company, df_delivery_company_address, df_delivery_company_contact = get_forwarder_sender_delivery_data(data)
+    
+    loading_address = f"{df_sender_company_address['adr_street'].iloc[0]}, {df_sender_company_address['adr_city'].iloc[0]}, {df_sender_company_address['adr_post_code'].iloc[0]}, {df_sender_company_address['adr_country'].iloc[0]}"
+    unloading_address = f"{df_delivery_company_address['adr_street'].iloc[0]}, {df_delivery_company_address['adr_city'].iloc[0]}, {df_delivery_company_address['adr_post_code'].iloc[0]}, {df_delivery_company_address['adr_country'].iloc[0]}"
+    
+    # Temperature control / Customs clearance — show a dash instead of blank
+    def display_val(val):
+        val = str(val).strip() if val is not None else ""
+        return val if val and val.upper() != "NONE" else "-"
+    
+    subject = f"Transporta līgums Nr {nr} | {data.get('sender')} → {data.get('delivery')}"
     
     mail.To = to
     mail.Subject = subject
@@ -32,50 +43,50 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
             <td style="padding-right:20px;"><b>Nosūtītājs:</b></td>
             <td>{data.get('sender')}</td>
         </tr>
-
         <tr>
-            <td><b>Iekraušanas datums:</b></td>
-            <td>no {data.get('loading')}</td>
+            <td><b>Iekraušanas adrese:</b></td>
+            <td>{loading_address}</td>
         </tr>
-        <br>
+        <tr>
+            <td style="padding-bottom:15px;"><b>Iekraušanas datums:</b></td>
+            <td style="padding-bottom:15px;">no {data.get('loading')}</td>
+        </tr>
+        
         <tr>
             <td><b>Piegāde:</b></td>
             <td>{data.get('delivery')}</td>
         </tr>
-
         <tr>
-            <td><b>Piegādes datums:</b></td>
-            <td>līdz {data.get('unloading')}</td>
+            <td><b>Piegades adrese:</b></td>
+            <td>{unloading_address}</td>
         </tr>
-
+        <tr>
+            <td style="padding-bottom:15px;"><b>Piegādes datums:</b></td>
+            <td style="padding-bottom:15px;">līdz {data.get('unloading')}</td>
+        </tr>
+        
         <tr>
             <td><b>Krava:</b></td>
-            <td>6 paletes, 6000 kg</td>
+            <td>{data.get('pallets')} pallets, {data.get('weight')} kg</td>
         </tr>
-
         <tr>
             <td><b>Pārvadātājs:</b></td>
-            <td></td>
+            <td>{data.get('forwarder')}</td>
         </tr>
-
         <tr>
-            <td><b>Transporta izmaksas:</b></td>
-            <td></td>
+            <td style="padding-bottom:15px;"><b>Transporta izmaksas:</b></td>
+            <td style="padding-bottom:15px;">{data.get('cost')}0 EUR excl. VAT</td>
         </tr>
 
         <tr>
             <td><b>Temperatūras režīms:</b></td>
-            <td></td>
+            <td>{display_val(data.get('ref'))}</td>
         </tr>
-
         <tr>
             <td><b>Atmuitošana:</b></td>
-            <td></td>
+            <td>{display_val(data.get('customs'))}</td>
         </tr>
     </table>
-
-    <br>
-
     {signature}
 
     </body>
@@ -88,56 +99,106 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
         for path in attachments:
             mail.Attachments.Add(path)
     
-    mail.Display() # opens e-mail for editing - good for debugging
-    #mail.Send()  # or mail.Display() to open it for review first
+    #mail.Display() # opens e-mail for editing - good for debugging
+    mail.Send()  # or mail.Display() to open it for review first
     
 def send_email_purchase_manager(to, data, nr, attachments=None):
-    subject = f"Noorganizēts transport {data.get('sender')} - {data.get('delivery')} kravai"
+    outlook = win32.Dispatch('outlook.application')
+    mail = outlook.CreateItem(0)  # 0 = olMailItem
     
-    body = f"""Labdien,
-
-Ir noorganizēts transports sekojošajai kravai:
-
-PO: 
-Nosutītājs:
-Iekraušanas adrese:
-Iekraušanas datums: no 
-
-Piegade:
-Piegades adrese: 
-Piegādes datums: līdz
-
-Kravas informācija:
-6 paletes
-6000 kg
-
-Pārvadātājs: 
-Transport izdevumi bez PVN:
-
-Temperatūras režīms:
-Atmuitošana: 
-
-Kind regards,
-
-Kristaps Rezgalis
-Transport coordinator
-GEMOSS SIA
-kristaps.rezgalis@gemoss.lv
-+371 27888014
-    """
+    df_fw, df_fw_contact, df_sender_company, df_sender_company_address, df_sender_company_contact, df_delivery_company, df_delivery_company_address, df_delivery_company_contact = get_forwarder_sender_delivery_data(data)
+    
+    loading_address = f"{df_sender_company_address['adr_street'].iloc[0]}, {df_sender_company_address['adr_city'].iloc[0]}, {df_sender_company_address['adr_post_code'].iloc[0]}, {df_sender_company_address['adr_country'].iloc[0]}"
+    unloading_address = f"{df_delivery_company_address['adr_street'].iloc[0]}, {df_delivery_company_address['adr_city'].iloc[0]}, {df_delivery_company_address['adr_post_code'].iloc[0]}, {df_delivery_company_address['adr_country'].iloc[0]}"
+    
+    # Temperature control / Customs clearance — show a dash instead of blank
+    def display_val(val):
+        val = str(val).strip() if val is not None else ""
+        return val if val and val.upper() != "NONE" else "-"
+    
+    subject = f"Transporta līgums Nr {nr} | {data.get('sender')} → {data.get('delivery')}"
     
     mail.To = to
-    if cc:
-        mail.CC = cc
     mail.Subject = subject
-    mail.Body = body  # plain text; use mail.HTMLBody for HTML
+    
+    # Open the email first so Outlook inserts your default signature
+    mail.Display()
+
+    # Save the automatically inserted signature
+    signature = mail.HTMLBody
+
+    # Create your email body
+    html_body = f"""
+    <html>
+    <body style="font-family:Calibri;font-size:11pt;">
+
+    <p>Sveiki,</p>
+
+    <p>Ir noorganizēts transport šādai kravai:</p>
+
+    <table style="border-collapse:collapse;">
+        <tr>
+            <td style="padding-right:20px;"><b>Nosūtītājs:</b></td>
+            <td>{data.get('sender')}</td>
+        </tr>
+        <tr>
+            <td><b>Iekraušanas adrese:</b></td>
+            <td>{loading_address}</td>
+        </tr>
+        <tr>
+            <td style="padding-bottom:15px;"><b>Iekraušanas datums:</b></td>
+            <td style="padding-bottom:15px;">no {data.get('loading')}</td>
+        </tr>
+        
+        <tr>
+            <td><b>Piegāde:</b></td>
+            <td>{data.get('delivery')}</td>
+        </tr>
+        <tr>
+            <td><b>Piegades adrese:</b></td>
+            <td>{unloading_address}</td>
+        </tr>
+        <tr>
+            <td style="padding-bottom:15px;"><b>Piegādes datums:</b></td>
+            <td style="padding-bottom:15px;">līdz {data.get('unloading')}</td>
+        </tr>
+        
+        <tr>
+            <td><b>Krava:</b></td>
+            <td>{data.get('pallets')} pallets, {data.get('weight')} kg</td>
+        </tr>
+        <tr>
+            <td><b>Pārvadātājs:</b></td>
+            <td>{data.get('forwarder')}</td>
+        </tr>
+        <tr>
+            <td style="padding-bottom:15px;"><b>Transporta izmaksas:</b></td>
+            <td style="padding-bottom:15px;">{data.get('cost')}0 EUR excl. VAT</td>
+        </tr>
+
+        <tr>
+            <td><b>Temperatūras režīms:</b></td>
+            <td>{display_val(data.get('ref'))}</td>
+        </tr>
+        <tr>
+            <td><b>Atmuitošana:</b></td>
+            <td>{display_val(data.get('customs'))}</td>
+        </tr>
+    </table>
+    {signature}
+
+    </body>
+    </html>
+    """
+
+    mail.HTMLBody = html_body
 
     if attachments:
         for path in attachments:
             mail.Attachments.Add(path)
     
-    mail.Display() # opens e-mail for editing - good for debugging
-    #mail.Send()  # or mail.Display() to open it for review first
+    #mail.Display() # opens e-mail for editing - good for debugging
+    mail.Send()  # or mail.Display() to open it for review first
 
 # Send e-mail function - send an e-mmail with a transport order to a forwarder
 def send_order_modal(data, nr, purchase_manager_name):

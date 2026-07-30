@@ -43,6 +43,20 @@ gemoss_letterhead = [
     'Address: Mûkusalas street 73, Riga, LV-1004',
 ]
 
+def get_forwarder_sender_delivery_data(data):
+    df_fw = return_fw_data(data.get('forwarder')) # gets full forwarder company data from DB
+    df_fw_contact = return_fw_contact_df(data.get('forwarder_contact'), df_fw['forwarder_id'].iloc[0]) # gets forwarder contacts data from DB
+    
+    df_sender_company = return_company_data(data.get('sender'))
+    df_sender_company_address = return_company_address(data.get('sender_adr'), df_sender_company['company_id'].iloc[0])
+    df_sender_company_contact = return_company_contact(data.get('sender_cont'), df_sender_company['company_id'].iloc[0])
+    
+    df_delivery_company = return_company_data(data.get('delivery'))
+    df_delivery_company_address = return_company_address(data.get('delivery_adr'), df_delivery_company['company_id'].iloc[0])
+    df_delivery_company_contact = return_company_contact(data.get('delivery_cont'), df_delivery_company['company_id'].iloc[0])
+    
+    return df_fw, df_fw_contact, df_sender_company, df_sender_company_address, df_sender_company_contact, df_delivery_company, df_delivery_company_address, df_delivery_company_contact
+
 def draw_header(pdf, data, nr, df_fw):
     pdf.drawImage("gemoss_logo.png", x=30, y=800, width=126, height=32) # c.drawImage("image.png", x=100, y=500, width=200, height=150)
     pdf.setFont("LVSerif-Bold", 15) # Sets the font style and size.
@@ -272,17 +286,7 @@ def create_order_pdf (data, nr, login_validation):
     #pdf = canvas.Canvas(filename)
     pdf.setTitle(documentTitle)
     
-
-    df_fw = return_fw_data(data.get('forwarder')) # gets full forwarder company data from DB
-    df_fw_contact = return_fw_contact_df(data.get('forwarder_contact'), df_fw['forwarder_id'].iloc[0]) # gets forwarder contacts data from DB
-    
-    df_sender_company = return_company_data(data.get('sender'))
-    df_sender_company_address = return_company_address(data.get('sender_adr'), df_sender_company['company_id'].iloc[0])
-    df_sender_company_contact = return_company_contact(data.get('sender_cont'), df_sender_company['company_id'].iloc[0])
-    
-    df_delivery_company = return_company_data(data.get('delivery'))
-    df_delivery_company_address = return_company_address(data.get('delivery_adr'), df_delivery_company['company_id'].iloc[0])
-    df_delivery_company_contact = return_company_contact(data.get('delivery_cont'), df_delivery_company['company_id'].iloc[0])
+    df_fw, df_fw_contact, df_sender_company, df_sender_company_address, df_sender_company_contact, df_delivery_company, df_delivery_company_address, df_delivery_company_contact = get_forwarder_sender_delivery_data(data)
     
     ### CALLING ALL PDF CREATION FUNCTION ###
     draw_header(pdf, data, nr, df_fw) # function to draw a header part in PDF - has static place in PDF

@@ -11,6 +11,7 @@ from reportlab.pdfbase.pdfmetrics import registerFontFamily
 import os
 
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details
+from pdf import get_forwarder_sender_delivery_data
 
 documentTitle = 'GEMOSS transport order'
 
@@ -58,81 +59,88 @@ def draw_cargo_data(pdf, data, y, df_sender_company_address, df_sender_company_c
     y -= 11
     pdf.setFont("LVCarlito-Bold", 10)
     pdf.drawString(83, y, "Iekraušanas datums un , ja tas")
-    pdf.drawString(273, y, f"From {data.get('loading')}")
+    pdf.drawString(273, y, f"No {data.get('loading')}")
     y -= 12
     pdf.drawString(83, y, "nepieciešams, uzkraušanas laiks :")
-    y -= 13
     pdf.drawString(273, y, f"{df_sender_company_address['adr_hours'].iloc[0]}")
     y -= 5
     pdf.line(80, y, 540, y)
     y -= 10
     pdf.setFont("LVCarlito", 10)
     pdf.drawString(83, y, "Iekraušanas adrese:")
-    pdf.drawString(273, y, f"GRANORO")
+    pdf.drawString(273, y, f"{data.get('sender')}")
     y -= 12
-    pdf.drawString(273, y, f"SP 231 km 35, 100")
+    pdf.drawString(273, y, f"{df_sender_company_address['adr_street'].iloc[0]}")
     y -= 12
-    pdf.drawString(273, y, f"70033, Corato (BA)")
+    pdf.drawString(273, y, f"{df_sender_company_address['adr_city'].iloc[0]}, ")
     y -= 12
-    pdf.drawString(273, y, f"Italy")
+    pdf.drawString(273, y, f"{df_sender_company_address['adr_post_code'].iloc[0]}")
+    y -= 12
+    pdf.drawString(273, y, f"{df_sender_company_address['adr_country'].iloc[0]}")
     y -= 28
     pdf.drawString(83, y, "Kontaktpersona:")
-    pdf.drawString(273, y, f"Agostino Nanula")
+    pdf.drawString(273, y, f"{data.get('sender_cont')}")
     y -= 12
-    pdf.drawString(273, y, f" +390 808 721 821 ext.4211")
+    pdf.drawString(273, y, f"{df_sender_company_contact['c_con_phone'].iloc[0]}")
     y -= 12
-    pdf.drawString(273, y, f"a.nanula@granoro.it")
+    pdf.drawString(273, y, f"{df_sender_company_contact['c_con_email'].iloc[0]}")
     y -= 5
     pdf.line(80, y, 540, y)
     y -= 15
     pdf.drawString(83, y, "References numurs:")
-    pdf.drawString(273, y, f"PO2640000")
+    pdf.drawString(273, y, f"{data.get('sap_po')}")
     y -= 6
     pdf.line(80, y, 540, y)
     y -= 13
     pdf.drawString(83, y, "Piegādes datums un laiks:")
-    pdf.drawString(273, y, f"Līdz 29.07.2026")
+    pdf.drawString(273, y, f"Līdz {data.get('unloading_to')}")
     y -= 12
-    pdf.drawString(273, y, f"09:00-17:00")
-    y -= 15
+    pdf.drawString(273, y, f"{df_delivery_company_address['adr_hours'].iloc[0]}")
+    y -= 5
     pdf.line(80, y, 540, y)
     y -= 12
     pdf.drawString(83, y, "Piegādes adrese:")
-    pdf.drawString(273, y, f"GEMOSS SIA")
+    pdf.drawString(273, y, f"{data.get('delivery')}")
     y -= 12
-    pdf.drawString(273, y, f"Mūkusalas iela 75A")
+    pdf.drawString(273, y, f"{df_delivery_company_address['adr_street'].iloc[0]}")
     y -= 12
-    pdf.drawString(273, y, f"Rīga, LV-1004, Latvia")
+    pdf.drawString(273, y, f"{df_delivery_company_address['adr_city'].iloc[0]}")
+    y -= 12
+    pdf.drawString(273, y, f"{df_delivery_company_address['adr_post_code'].iloc[0]}")
+    y -= 12
+    pdf.drawString(273, y, f"{df_delivery_company_address['adr_country'].iloc[0]}")
     y -= 24
     
     pdf.drawString(83, y, "Kontaktpersona:")
-    pdf.drawString(273, y, f"Kristaps Rezgalis")
+    pdf.drawString(273, y, f"{data.get('delivery_cont')}")
     y -= 12
-    pdf.drawString(273, y, f"+371 27888014")
+    pdf.drawString(273, y, f"{df_delivery_company_contact['c_con_phone'].iloc[0]}")
     y -= 12
-    pdf.drawString(273, y, f"kristaps.rezgalis@gemoss.lv")
+    pdf.drawString(273, y, f"{df_delivery_company_contact['c_con_email'].iloc[0]}")
     y -= 5
     pdf.line(80, y, 540, y)
     y -= 12
     pdf.drawString(83, y, "Kravas apraksts:")
-    pdf.drawString(273, y, f"10 paletes")
+    pdf.drawString(273, y, f"{data.get('pallets')} {'palete' if int(data.get('pallets')) == 1 else 'paletes'}")
     y -= 12
     pdf.drawString(83, y, " (apjoms, svars,")
-    pdf.drawString(273, y, f"10 000 kg")
+    pdf.drawString(273, y, f"{data.get('weight')}0 kg")
     y -= 12
     pdf.drawString(83, y, "iepakojumu skaits)")
     y -= 5
     pdf.line(80, y, 540, y)
     y -= 12
     pdf.drawString(83, y, "Pārvadājuma temperatūras režīms:")
-    pdf.drawString(273, y, f"     NAV NEPIECIEŠAMS")
+    pdf.setFont("LVCarlito-Bold", 10)
+    pdf.drawString(273, y, f"     {data.get('ref') if data.get('ref') else 'NAV NEPIECIEŠAMS'}")
     y -= 5
     pdf.line(80, y, 540, y)
     y -= 12
+    pdf.setFont("LVCarlito", 10)
     pdf.drawString(83, y, "Transporta")
     y -= 12
     pdf.drawString(83, y, "pakalpojuma cena,")
-    pdf.drawString(273, y, f"1000 EUR")
+    pdf.drawString(273, y, f"{data.get('cost')}0 EUR")
     y -= 12
     pdf.drawString(83, y, "EUR bez PVN")
     y -= 5
@@ -146,7 +154,7 @@ def draw_cargo_data(pdf, data, y, df_sender_company_address, df_sender_company_c
     
     return y
 
-def draw_signature(pdf, y, middle=None):
+def draw_signature(pdf, data, y, login_validation, df_fw_contact, middle=None):
     if not middle:
         middle = 270
     y_signature_start = y
@@ -155,12 +163,26 @@ def draw_signature(pdf, y, middle=None):
     pdf.rect(80, y, 540-80, -17, fill=1, stroke=1)
     pdf.line(80, y, 540, y)
     y -= 12
+    pdf.setFont("LVCarlito-Bold", 10)
     pdf.setFillColor(colors.black) 
     pdf.drawString(158, y, "Pasūtītājs")
     pdf.drawString(390, y, "Izpildītājs")
     y -= 5
     pdf.line(80, y, 540, y)
-    y -= 90
+    y -= 12
+    pdf.setFont("LVCarlito", 10)
+    pdf.drawString(83, y, 'GEMOSS SIA')
+    pdf.drawString(middle+3, y, f"{data.get('forwarder')}")
+    y -= 12
+    pdf.drawString(83, y, f"{login_validation.get('name')} {login_validation.get('surname')}")
+    pdf.drawString(middle+3, y, f"{data.get('forwarder_contact')}")  
+    y -= 12
+    pdf.drawString(83, y, f"{login_validation.get('phone')}")
+    pdf.drawString(middle+3, y, f"{df_fw_contact['fw_c_phone'].iloc[0]}")
+    y -= 12
+    pdf.drawString(83, y, f"{login_validation.get('email')}")
+    pdf.drawString(middle+3, y, f"{df_fw_contact['fw_c_email'].iloc[0]}")
+    y -= 45
     pdf.line(80, y, 540, y)
     
     # Vertical lines - SIGNATURE
@@ -318,21 +340,16 @@ def draw_conditions(pdf, y):
 def create_gemoss_specification_PDF(data, nr, login_validation):
     y = 805
     
-    filename = f"Gemoss order Nr {nr}.pdf"
-        ### CREATES THE PDF FILE ###
-    pdf = canvas.Canvas(filename)
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    output_dir = os.path.join(script_dir, "internal orders")
+    os.makedirs(output_dir, exist_ok=True)  # create "orders" folder if it doesn't exist yet
+    
+    filename = f"Gemoss pārvadājums Nr {nr}.pdf"
+    pdf_path = os.path.join(output_dir, filename)
+    pdf = canvas.Canvas(pdf_path)
     pdf.setTitle(documentTitle)
     
-    df_fw = return_fw_data(data.get('forwarder')) # gets full forwarder company data from DB
-    df_fw_contact = return_fw_contact_df(data.get('forwarder_contact'), df_fw['forwarder_id'].iloc[0]) # gets forwarder contacts data from DB
-    
-    df_sender_company = return_company_data(data.get('sender'))
-    df_sender_company_address = return_company_address(data.get('sender_adr'), df_sender_company['company_id'].iloc[0])
-    df_sender_company_contact = return_company_contact(data.get('sender_cont'), df_sender_company['company_id'].iloc[0])
-    
-    df_delivery_company = return_company_data(data.get('delivery'))
-    df_delivery_company_address = return_company_address(data.get('delivery_adr'), df_delivery_company['company_id'].iloc[0])
-    df_delivery_company_contact = return_company_contact(data.get('delivery_cont'), df_delivery_company['company_id'].iloc[0])
+    df_fw, df_fw_contact, df_sender_company, df_sender_company_address, df_sender_company_contact, df_delivery_company, df_delivery_company_address, df_delivery_company_contact = get_forwarder_sender_delivery_data(data)
     
     
     ##########################
@@ -340,7 +357,7 @@ def create_gemoss_specification_PDF(data, nr, login_validation):
     ##########################
     y = draw_heading(pdf, y)
     y = draw_cargo_data(pdf, data, y, df_sender_company_address, df_sender_company_contact, df_delivery_company_address, df_delivery_company_contact)
-    y = draw_signature(pdf, y)
+    y = draw_signature(pdf, data, y, login_validation, df_fw_contact)
     draw_footer(pdf)
 
     pdf.showPage()
@@ -351,10 +368,11 @@ def create_gemoss_specification_PDF(data, nr, login_validation):
     y = 805
     y = draw_heading(pdf, y)
     y = draw_conditions(pdf, y)
-    y = draw_signature(pdf, y, 310)
+    y = draw_signature(pdf, data, y, login_validation, df_fw_contact, 310)
     draw_footer(pdf)
     
     pdf.save()
-    os.startfile(filename)
+    
+    return pdf_path
     
 #create_gemoss_specification_PDF(100)
