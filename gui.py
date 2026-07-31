@@ -486,7 +486,16 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
             [sg.Push(), sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()],
         ]
         
-    app_window = sg.Window(title, layout, modal=True)
+    app_window = sg.Window(title, layout, modal=True, finalize=True)
+    
+    # 2. Get the screen width and the actual window width (in pixels)
+    screen_width, screen_height = sg.Window.get_screen_size()
+    window_width = app_window.size[0]
+    # 3. Calculate the exact horizontal center
+    center_x = (screen_width // 2) - (window_width // 2)
+    # 4. Keep the current vertical position (or set your own Y) and move it
+    current_y = app_window.current_location()[1]
+    app_window.move(center_x, current_y)
 
     while True:
         action, values = app_window.read()
@@ -599,6 +608,9 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                 
                 # updates pallet table and thetotal pallet number in order so it can be saved in db
                 total_pallets, ldm = refresh_pallet_table(nr)
+                
+                current_y -= 10
+                app_window.move(center_x, current_y)
             
         elif action == "-BTN-EDIT-PLL-":
             selected = values["-PALLET-TABLE-"]
