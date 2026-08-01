@@ -3,6 +3,8 @@ import FreeSimpleGUI as sg
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details, get_purchase_manager_df
 from pdf import get_forwarder_sender_delivery_data
 
+def send_transport_offer():
+    pass
 
 def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
     outlook = win32.Dispatch('outlook.application')
