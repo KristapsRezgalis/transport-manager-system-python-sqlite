@@ -467,14 +467,21 @@ def get_purchase_manager_df(name_surname):
     
     if name_surname:
         purchase_manager_df = pd.read_sql(f"SELECT * FROM t_purchase_manager WHERE manager_name || ' ' || manager_surname == ?", conn, params=(name_surname,))
+        conn.close()
         return purchase_manager_df
+    conn.close()
     return pd.DataFrame() # returns empty df
 
-
-'''
-def get_pallet_details(order_id):
+def get_tender_emails(country):
     conn = sqlite3.connect(DB_FILE)
-    df = pd.read_sql("""SELECT quantity, length, width, height FROM t_pallet_details WHERE order_id = ? ORDER BY pallet_id """, conn, params=(order_id,))
+    
+    if country:
+        email_string = ''
+        emails_df = pd.read_sql(f"SELECT email FROM t_tender_contacts WHERE country LIKE ?", conn, params=(country,))
+        for contact in range(len(emails_df)):
+            emails = emails_df['email'].dropna().tolist()
+            email_string = ', '.join(emails)
     conn.close()
-    return df
-'''
+    return email_string
+
+print(get_tender_emails('netherlands'))

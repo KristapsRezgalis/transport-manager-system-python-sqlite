@@ -1,10 +1,19 @@
 import win32com.client as win32
 import FreeSimpleGUI as sg
-from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details, get_purchase_manager_df
+from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details, get_purchase_manager_df, get_tender_emails
 from pdf import get_forwarder_sender_delivery_data
 
-def send_transport_offer():
-    pass
+def send_transport_offer(country):
+    outlook = win32.Dispatch('outlook.application')
+    mail = outlook.CreateItem(0)
+    
+    subject = f"NEW CARGO | from - to | 1 pallet | from today"
+    
+    mail.to = get_tender_emails(country)
+    mail.Subject = subject
+    print(mail.to)
+    
+    mail.Display()
 
 def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
     outlook = win32.Dispatch('outlook.application')
@@ -230,5 +239,4 @@ def send_order_modal(data, nr, purchase_manager_name):
             window.close()
             return values
 
-#send_order_modal(100001)
-#send_email('transports@gemoss.lv', 'NEW TRANSPORT ORDER NR 10001', 'Labdien! Nosūtu transporta pasutījumu!')
+send_transport_offer('Germany')
