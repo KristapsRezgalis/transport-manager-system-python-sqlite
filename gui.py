@@ -9,7 +9,7 @@ from stats import generate_diagram
 from company import company_entry_modal, company_contacts_modal, create_company_contact_modal, create_company_address_modal, company_address_modal
 from forwarder import forwarder_entry_modal
 from config import *
-from emails import send_order_modal, send_email, send_email_purchase_manager
+from emails import send_order_modal, send_email, send_email_purchase_manager, send_transport_offer
 
 login_validation = ''
 
@@ -528,7 +528,9 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                     send_email_purchase_manager(f"{emails_list['-TXT-PURCH-MAN-EMAIL-']}", existing, nr, attachments=[pdf_path_internal_order])
                 if emails_list['-CB-SEND-OTHER-']:
                     send_email_purchase_manager(f"{emails_list['-IN-EXTRA-EMAIL-']}", existing, nr, attachments=[pdf_path_internal_order])
-                    
+        elif action == "-BTN-SEND-OFFER-":
+            send_transport_offer(nr, existing)
+            
         elif action == "-FORWARDER-":
             selected_forwarder_name = values['-FORWARDER-']
             fw_id = return_forwarders(selected_forwarder_name)

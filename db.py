@@ -474,14 +474,9 @@ def get_purchase_manager_df(name_surname):
 
 def get_tender_emails(country):
     conn = sqlite3.connect(DB_FILE)
-    
     if country:
         email_string = ''
         emails_df = pd.read_sql(f"SELECT email FROM t_tender_contacts WHERE country LIKE ?", conn, params=(country,))
-        for contact in range(len(emails_df)):
-            emails = emails_df['email'].dropna().tolist()
-            email_string = ', '.join(emails)
-    conn.close()
-    return email_string
 
-print(get_tender_emails('netherlands'))
+    conn.close()
+    return "; ".join(emails_df["email"].dropna())

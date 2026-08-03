@@ -3,16 +3,93 @@ import FreeSimpleGUI as sg
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details, get_purchase_manager_df, get_tender_emails
 from pdf import get_forwarder_sender_delivery_data
 
-def send_transport_offer(country):
+def send_transport_offer(nr, data):
     outlook = win32.Dispatch('outlook.application')
     mail = outlook.CreateItem(0)
     
-    subject = f"NEW CARGO | from - to | 1 pallet | from today"
+    df_fw, df_fw_contact, df_sender_company, df_sender_company_address, df_sender_company_contact, df_delivery_company, df_delivery_company_address, df_delivery_company_contact = get_forwarder_sender_delivery_data(data)
     
-    mail.to = get_tender_emails(country)
+    loading_address = f"{df_sender_company_address['adr_street'].iloc[0]}, {df_sender_company_address['adr_city'].iloc[0]}, {df_sender_company_address['adr_post_code'].iloc[0]}, {df_sender_company_address['adr_country'].iloc[0]}"
+    unloading_address = f"{df_delivery_company_address['adr_street'].iloc[0]}, {df_delivery_company_address['adr_city'].iloc[0]}, {df_delivery_company_address['adr_post_code'].iloc[0]}, {df_delivery_company_address['adr_country'].iloc[0]}"
+    
+    subject = f"NEW CARGO | {data.get('sender')}, {df_sender_company_address['adr_post_code'].iloc[0]}, {df_sender_company_address['adr_country'].iloc[0]} → {data.get('delivery')}, {df_delivery_company_address['adr_country'].iloc[0]} | {data.get('pallets')} {'pallets' if int(data.get('pallets')) > 1 else 'pallet'} | from {data.get('loading')}"
+    
+    mail.To = 'kristaps.rezgalis@gemoss.lv'
+    bcc = get_tender_emails(str(df_sender_company_address['adr_country'].iloc[0]).strip().lower())
     mail.Subject = subject
-    print(mail.to)
     
+    print(repr(bcc))
+    print(type(bcc))
+    
+    mail.BCC = bcc
+    
+    mail.Display()
+    signature = mail.HTMLBody
+    
+    #Gets pallet dimensions data from database and sorts it in a pallet_table variable which is used in html text afterwards.
+    pallet_df = get_pallet_details(nr)
+    pallet_table = """
+    <table style="
+        border-collapse:collapse;
+        font-family:Calibri, Arial, sans-serif;
+        font-size:11px;
+        border:1px solid #c0c0c0;
+        margin:4px 0;
+    ">
+    <tr style="background:#f2f2f2;">
+        <th style="border:1px solid #c0c0c0;padding:1px 5px;">Qty</th>
+        <th style="border:1px solid #c0c0c0;padding:1px 5px;">Length</th>
+        <th style="border:1px solid #c0c0c0;padding:1px 5px;">Width</th>
+        <th style="border:1px solid #c0c0c0;padding:1px 5px;">Height</th>
+    </tr>
+    """
+
+    for _, row in pallet_df.iterrows():
+        pallet_table += f"""
+        <tr>
+            <td style="border:1px solid #c0c0c0;padding:1px 5px;text-align:center;">
+                {int(row['quantity'])}
+            </td>
+            <td style="border:1px solid #c0c0c0;padding:1px 5px;text-align:center;">
+                {int(row['length'])}
+            </td>
+            <td style="border:1px solid #c0c0c0;padding:1px 5px;text-align:center;">
+                {int(row['width'])}
+            </td>
+            <td style="border:1px solid #c0c0c0;padding:1px 5px;text-align:center;">
+                {int(row['height'])}
+            </td>
+        </tr>
+        """
+
+    pallet_table += "</table>"
+    
+    html_body = f"""
+    <html>
+        <body>
+            <p>Sveiki,</p>
+            
+            <p>Lūdzu paskatīties iespējas paņemt šo:</p>
+            
+            <p style="margin:0;">Loading date: from {data.get('loading')}</p>
+            <p style="margin:0;">Shipper (Consignor): {data.get('sender')}</p>
+            <p style="margin:0 0 8px 0;">Loading address: {loading_address}</p>
+            
+            <p style="margin:0;">Consignee: {data.get('delivery')}</p>
+            <p style="margin:0 0 8px 0;">Delivery address: {unloading_address}</p>
+            
+            <p style="margin:0;">Pallets total: {data.get('pallets')}</p>
+            {pallet_table}
+            <p style="margin:0;">Estimated LDM: {data.get('ldm')}</p>
+            <p style="margin:0 0 8px 0;">Gross weight: {data.get('weight')}0 kg</p>
+            
+            <p>Paldies.</p>
+        </body>
+    </html>
+    """
+    
+    mail.HTMLBody = html_body + signature
+
     mail.Display()
 
 def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
@@ -238,5 +315,3 @@ def send_order_modal(data, nr, purchase_manager_name):
         if event == "-BTN-SEND-EMAIL-":
             window.close()
             return values
-
-send_transport_offer('Germany')
