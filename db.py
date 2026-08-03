@@ -2,7 +2,7 @@ import sqlite3
 import pandas as pd
 from datetime import datetime    
 
-DB_FILE = "transport.db"
+DB_FILE = "transport_db.sqlite"
 TABLE_NAME = "transport"
 
 # checks if entered login and password matches user table records in DB

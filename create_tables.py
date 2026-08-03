@@ -22,6 +22,11 @@ from datetime import datetime
 
 DB_PATH = "transport_db.sqlite"
 
+# The transport table's "nr" column doubles as the customer-facing
+# order number (e.g. "Transport agreement Nr 10001"). We start it at
+# 10001 instead of 1 so order numbers look more established/serious.
+TRANSPORT_ORDER_START = 10001
+
 
 def create_t_company(conn: sqlite3.Connection) -> None:
     conn.execute("""
@@ -198,6 +203,35 @@ def create_user(conn: sqlite3.Connection) -> None:
     """)
 
 
+def seed_transport_order_start(conn: sqlite3.Connection, start_at: int = TRANSPORT_ORDER_START) -> None:
+    """
+    Make the next row inserted into "transport" get id = start_at,
+    instead of 1, by seeding SQLite's internal autoincrement tracker.
+
+    Safe to call multiple times: if a starting value has already been
+    seeded (or real orders already exist with a higher id), this will
+    NOT move the counter backwards -- it only raises it, never lowers
+    it, so you can't accidentally create duplicate order numbers.
+    """
+    seed_value = start_at - 1  # AUTOINCREMENT's next id = seq + 1
+
+    row = conn.execute(
+        "SELECT seq FROM sqlite_sequence WHERE name = 'transport'"
+    ).fetchone()
+
+    if row is None:
+        conn.execute(
+            "INSERT INTO sqlite_sequence (name, seq) VALUES ('transport', ?)",
+            (seed_value,),
+        )
+    elif row[0] < seed_value:
+        conn.execute(
+            "UPDATE sqlite_sequence SET seq = ? WHERE name = 'transport'",
+            (seed_value,),
+        )
+    # else: current seq is already >= seed_value, leave it alone
+
+
 def create_all_tables(conn: sqlite3.Connection) -> None:
     """Create every table in the schema, in dependency order."""
     create_t_company(conn)
@@ -210,6 +244,64 @@ def create_all_tables(conn: sqlite3.Connection) -> None:
     create_t_tender_contacts(conn)
     create_transport(conn)
     create_user(conn)
+    seed_transport_order_start(conn)   # transport.nr starts at 10001, not 1
+
+
+def reset_transport_table(
+    db_path: str = DB_PATH,
+    start_at: int = TRANSPORT_ORDER_START,
+    backup: bool = True,
+    confirm: bool = True,
+) -> None:
+    """
+    Delete all rows from ONLY the "transport" table and restart its
+    order numbering at start_at. All other tables are left untouched.
+
+    Args:
+        db_path:  Path to the SQLite database file.
+        start_at: The id/order number the next inserted transport
+                   row should get (default: TRANSPORT_ORDER_START).
+        backup:   If True, saves the current transport rows to a
+                   timestamped CSV file before deleting them.
+        confirm:  If True, asks for typed confirmation first.
+    """
+    if confirm:
+        answer = input(
+            'This will permanently delete ALL rows in the "transport" '
+            f'table (other tables are untouched) and restart numbering '
+            f"at {start_at}. Type YES to continue: "
+        )
+        if answer.strip() != "YES":
+            print("Reset cancelled. No changes made.")
+            return
+
+    conn = sqlite3.connect(db_path)
+    try:
+        if backup:
+            rows = conn.execute("SELECT * FROM transport").fetchall()
+            col_names = [d[0] for d in conn.execute("SELECT * FROM transport").description]
+            if rows:
+                timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                backup_path = f"transport_backup_{timestamp}.csv"
+                import csv
+                with open(backup_path, "w", newline="", encoding="utf-8") as f:
+                    writer = csv.writer(f)
+                    writer.writerow(col_names)
+                    writer.writerows(rows)
+                print(f"Backed up {len(rows)} row(s) to {backup_path}")
+            else:
+                print("No existing transport rows to back up.")
+
+        conn.execute("DELETE FROM transport")
+        conn.execute("DELETE FROM sqlite_sequence WHERE name = 'transport'")
+        conn.execute(
+            "INSERT INTO sqlite_sequence (name, seq) VALUES ('transport', ?)",
+            (start_at - 1,),
+        )
+        conn.commit()
+        print(f'"transport" table cleared. Next inserted order will get id {start_at}.')
+    finally:
+        conn.close()
 
 
 def reset_database(db_path: str = DB_PATH, backup: bool = True, confirm: bool = True) -> None:
