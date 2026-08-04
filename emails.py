@@ -2,6 +2,7 @@ import win32com.client as win32
 import FreeSimpleGUI as sg
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details, get_purchase_manager_df, get_tender_emails
 from pdf import get_forwarder_sender_delivery_data
+from config import convert_date
 
 def send_transport_offer(nr, data):
     outlook = win32.Dispatch('outlook.application')
@@ -12,10 +13,11 @@ def send_transport_offer(nr, data):
     loading_address = f"{df_sender_company_address['adr_street'].iloc[0]}, {df_sender_company_address['adr_city'].iloc[0]}, {df_sender_company_address['adr_post_code'].iloc[0]}, {df_sender_company_address['adr_country'].iloc[0]}"
     unloading_address = f"{df_delivery_company_address['adr_street'].iloc[0]}, {df_delivery_company_address['adr_city'].iloc[0]}, {df_delivery_company_address['adr_post_code'].iloc[0]}, {df_delivery_company_address['adr_country'].iloc[0]}"
     
-    subject = f"NEW CARGO | {data.get('sender')}, {df_sender_company_address['adr_post_code'].iloc[0]}, {df_sender_company_address['adr_country'].iloc[0]} → {data.get('delivery')}, {df_delivery_company_address['adr_country'].iloc[0]} | {data.get('pallets')} {'pallets' if int(data.get('pallets')) > 1 else 'pallet'} | from {data.get('loading')}"
+    subject = f"NEW CARGO | {data.get('sender')}, {df_sender_company_address['adr_post_code'].iloc[0]}, {df_sender_company_address['adr_country'].iloc[0]} -> {data.get('delivery')}, {df_delivery_company_address['adr_country'].iloc[0]} | {data.get('pallets')} {'pallets' if int(data.get('pallets')) > 1 else 'pallet'} | {convert_date(data.get('loading')) if data.get('loading') == data.get('loading_to') else 'from ' + convert_date(data.get('loading'))}"
     
     mail.To = 'kristaps.rezgalis@gemoss.lv'
-    bcc = get_tender_emails(str(df_sender_company_address['adr_country'].iloc[0]).strip().lower())
+    # calls function in db.py to get all forwawrder emails in one string for specific loading country
+    bcc = get_tender_emails(str(df_sender_company_address['adr_country'].iloc[0]).strip().lower()) 
     mail.Subject = subject
     
     print(repr(bcc))
@@ -71,17 +73,18 @@ def send_transport_offer(nr, data):
             
             <p>Lūdzu paskatīties iespējas paņemt šo:</p>
             
-            <p style="margin:0;">Loading date: from {data.get('loading')}</p>
-            <p style="margin:0;">Shipper (Consignor): {data.get('sender')}</p>
-            <p style="margin:0 0 8px 0;">Loading address: {loading_address}</p>
+            <p style="margin:0;">Loading date: <b>{convert_date(data.get('loading')) if data.get('loading') == data.get('loading_to') else 'from ' + convert_date(data.get('loading'))}</b></p>
+            <p style="margin:0;">Loading hours: <b>{df_sender_company_address['adr_hours'].iloc[0]}</b></p>
+            <p style="margin:0;">Shipper (Consignor): <b>{data.get('sender')}</b></p>
+            <p style="margin:0 0 8px 0;">Loading address: <b>{loading_address}</b></p>
             
-            <p style="margin:0;">Consignee: {data.get('delivery')}</p>
-            <p style="margin:0 0 8px 0;">Delivery address: {unloading_address}</p>
+            <p style="margin:0;">Consignee: <b>{data.get('delivery')}</b></p>
+            <p style="margin:0 0 8px 0;">Delivery address: <b>{unloading_address}</b></p>
             
-            <p style="margin:0;">Pallets total: {data.get('pallets')}</p>
+            <p style="margin:0;">Pallets total: <b>{data.get('pallets')}</b></p>
             {pallet_table}
-            <p style="margin:0;">Estimated LDM: {data.get('ldm')}</p>
-            <p style="margin:0 0 8px 0;">Gross weight: {data.get('weight')}0 kg</p>
+            <p style="margin:0;">Estimated LDM: <b>{data.get('ldm')}</b></p>
+            <p style="margin:0 0 8px 0;">Gross weight: <b>{data.get('weight')}0 kg</b></p>
             
             <p>Paldies.</p>
         </body>
@@ -137,7 +140,7 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
         </tr>
         <tr>
             <td style="padding-bottom:15px;"><b>Iekraušanas datums:</b></td>
-            <td style="padding-bottom:15px;">no {data.get('loading')}</td>
+            <td style="padding-bottom:15px;">no {convert_date(data.get('loading'))}</td>
         </tr>
         
         <tr>
@@ -150,7 +153,7 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
         </tr>
         <tr>
             <td style="padding-bottom:15px;"><b>Piegādes datums:</b></td>
-            <td style="padding-bottom:15px;">līdz {data.get('unloading')}</td>
+            <td style="padding-bottom:15px;">līdz {convert_date(data.get('unloading'))}</td>
         </tr>
         
         <tr>
@@ -175,6 +178,7 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
             <td>{display_val(data.get('customs'))}</td>
         </tr>
     </table>
+    <p>Lūdzu apstiprināt, ka saņēmāt.</p>
     {signature}
 
     </body>
@@ -187,8 +191,8 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
         for path in attachments:
             mail.Attachments.Add(path)
     
-    #mail.Display() # opens e-mail for editing - good for debugging
-    mail.Send()  # or mail.Display() to open it for review first
+    mail.Display() # opens e-mail for editing - good for debugging
+    #mail.Send()  # or mail.Display() to open it for review first
     
 def send_email_purchase_manager(to, data, nr, attachments=None):
     outlook = win32.Dispatch('outlook.application')
@@ -222,9 +226,14 @@ def send_email_purchase_manager(to, data, nr, attachments=None):
 
     <p>Sveiki,</p>
 
-    <p>Ir noorganizēts transport šādai kravai:</p>
+    <p>Ir noorganizēts transports šādai kravai:</p>
 
     <table style="border-collapse:collapse;">
+        <tr>
+            <td style="padding-bottom:15px;"><b>SAP PO:</b></td>
+            <td style="padding-bottom:15px;">{data.get('sap_po')}</td>
+        </tr>
+    
         <tr>
             <td style="padding-right:20px;"><b>Nosūtītājs:</b></td>
             <td>{data.get('sender')}</td>
@@ -235,7 +244,7 @@ def send_email_purchase_manager(to, data, nr, attachments=None):
         </tr>
         <tr>
             <td style="padding-bottom:15px;"><b>Iekraušanas datums:</b></td>
-            <td style="padding-bottom:15px;">no {data.get('loading')}</td>
+            <td style="padding-bottom:15px;">no {convert_date(data.get('loading'))}</td>
         </tr>
         
         <tr>
@@ -248,7 +257,7 @@ def send_email_purchase_manager(to, data, nr, attachments=None):
         </tr>
         <tr>
             <td style="padding-bottom:15px;"><b>Piegādes datums:</b></td>
-            <td style="padding-bottom:15px;">līdz {data.get('unloading')}</td>
+            <td style="padding-bottom:15px;">līdz {convert_date(data.get('unloading_to'))}</td>
         </tr>
         
         <tr>
@@ -285,8 +294,8 @@ def send_email_purchase_manager(to, data, nr, attachments=None):
         for path in attachments:
             mail.Attachments.Add(path)
     
-    #mail.Display() # opens e-mail for editing - good for debugging
-    mail.Send()  # or mail.Display() to open it for review first
+    mail.Display() # opens e-mail for editing - good for debugging
+    #mail.Send()  # or mail.Display() to open it for review first
 
 # Send e-mail function - send an e-mmail with a transport order to a forwarder
 def send_order_modal(data, nr, purchase_manager_name):
@@ -296,10 +305,11 @@ def send_order_modal(data, nr, purchase_manager_name):
     purchase_manager_df = get_purchase_manager_df(purchase_manager_name)
 
     layout = [
-        [sg.Checkbox('Send transport agreement to forwarder:', default="", key='-CB-SEND-FORWARDER-', size=35), sg.Input(df_fw_contact['fw_c_email'].iloc[0], key="-TXT-FORWARDER-EMAIL-", size=40)],
-        [sg.Checkbox('Send internal transport document:', default="", key='-CB-SEND-INNER-', size=35), sg.Input('transports@gemoss.lv', key="-TXT-INTERNAL-EMAIL-", size=40)],
-        [sg.Checkbox('Send confirmation e-mail to purchase manager:', default="", key='-CB-SEND-MANAGER-', size=35), sg.Input(purchase_manager_df['manager_email'].iloc[0], key="-TXT-PURCH-MAN-EMAIL-", size=40)],
-        [sg.Checkbox('Send confirmation e-mail to other contact:', default="", key='-CB-SEND-OTHER-', size=35), sg.Input("", key="-IN-EXTRA-EMAIL-", size=40)],
+        [sg.Text("File"), sg.VerticalSeparator(), sg.Text("E-mail")],
+        [sg.Checkbox('    ', default=True, key='-CB-SEND-ATT-FORWARDER-'), sg.Checkbox('       Send transport agreement to forwarder:', default=True, key='-CB-SEND-FORWARDER-', size=35), sg.Input(df_fw_contact['fw_c_email'].iloc[0], key="-TXT-FORWARDER-EMAIL-", size=50)],
+        [sg.Checkbox('    ', default="", key='-CB-SEND-ATT-INNER-'), sg.Checkbox('       Send internal transport document:', default="", key='-CB-SEND-INNER-', size=35), sg.Input('anastasija.sidorenkova@gemoss.lv; arturs.arbidans@gemoss.lv', key="-TXT-INTERNAL-EMAIL-", size=50)],
+        [sg.Checkbox('    ', default="", key='-CB-SEND-ATT-MANAGER-'), sg.Checkbox('       Send confirmation e-mail to purchase manager:', default=True, key='-CB-SEND-MANAGER-', size=35), sg.Input(purchase_manager_df['manager_email'].iloc[0], key="-TXT-PURCH-MAN-EMAIL-", size=50)],
+        [sg.Checkbox('    ', default="", key='-CB-SEND-ATT-OTHER-'), sg.Checkbox('       Send confirmation e-mail to other contact:', default="", key='-CB-SEND-OTHER-', size=35), sg.Input("", key="-IN-EXTRA-EMAIL-", size=50)],
         [sg.Push(), sg.Button("Send", key="-BTN-SEND-EMAIL-", size=15), sg.Button("Cancel", size=15), sg.Push()]
     ]
 

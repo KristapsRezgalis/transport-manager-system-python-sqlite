@@ -1,4 +1,5 @@
 import FreeSimpleGUI as sg
+from datetime import datetime
 
 sg.theme("DefaultNoMoreNagging")
 
@@ -17,3 +18,7 @@ countries = ["Albania", "Andorra", "Austria", "Belarus", "Belgium", "Bosnia and 
 temperature_customs_options = ['Yes', '']
 statistics_types = ['Cost per pallet', 'Cost per cargo', 'Total cost', 'Total cargos', 'Total pallets', 'Total weight', 'Pallets per cargo', 'Weight per pallet', 'Weight per cargo', 'Cargos per country', 'Cargos per forwarder', 'Cost per forwarder']
 statistic_period = ['Per day', 'Per month', 'Per year']
+
+# small function to change date from YYYY-MM-DD to DD-MM-YYYY
+def convert_date(date):
+    return datetime.strptime(date, '%Y-%m-%d').strftime('%d.%m.%Y')

@@ -476,7 +476,16 @@ def get_tender_emails(country):
     conn = sqlite3.connect(DB_FILE)
     if country:
         email_string = ''
-        emails_df = pd.read_sql(f"SELECT email FROM t_tender_contacts WHERE country LIKE ?", conn, params=(country,))
+        emails_df = pd.read_sql(f"""
+    SELECT tc.email FROM t_tender_contact_countries AS tcc
+    INNER JOIN t_tender_contacts AS tc
+    ON tcc.tender_contact_id = tc.tender_contact_id
+    WHERE LOWER(TRIM(tcc.country)) = ?
+    """,
+    conn, params=(country,))
 
     conn.close()
     return "; ".join(emails_df["email"].dropna())
+
+#print(get_tender_emails('italy'))
+#SELECT email FROM t_tender_contacts WHERE country LIKE ?

@@ -8,6 +8,7 @@ from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
+from config import convert_date
 import os
 
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details
@@ -59,7 +60,7 @@ def draw_cargo_data(pdf, data, y, df_sender_company_address, df_sender_company_c
     y -= 11
     pdf.setFont("LVCarlito-Bold", 10)
     pdf.drawString(83, y, "Iekraušanas datums un , ja tas")
-    pdf.drawString(273, y, f"No {data.get('loading')}")
+    pdf.drawString(273, y, f"No {convert_date(data.get('loading'))}")
     y -= 12
     pdf.drawString(83, y, "nepieciešams, uzkraušanas laiks :")
     pdf.drawString(273, y, f"{df_sender_company_address['adr_hours'].iloc[0]}")
@@ -93,7 +94,7 @@ def draw_cargo_data(pdf, data, y, df_sender_company_address, df_sender_company_c
     pdf.line(80, y, 540, y)
     y -= 13
     pdf.drawString(83, y, "Piegādes datums un laiks:")
-    pdf.drawString(273, y, f"Līdz {data.get('unloading_to')}")
+    pdf.drawString(273, y, f"Līdz {convert_date(data.get('unloading_to'))}")
     y -= 12
     pdf.drawString(273, y, f"{df_delivery_company_address['adr_hours'].iloc[0]}")
     y -= 5

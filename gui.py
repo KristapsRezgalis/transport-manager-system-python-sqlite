@@ -782,7 +782,7 @@ def main_menu(login_validation, theme_name):
                 headings=ORDER_COLUMNS,
                 key=table_key,
                 auto_size_columns=False,
-                col_widths=[4, 8, 18, 18, 10, 10, 5, 8, 18, 15, 10, 6, 5],
+                col_widths=[5, 9, 18, 18, 10, 10, 5, 8, 18, 15, 8, 5, 6],
                 justification="left",
                 num_rows=30,
                 enable_events=True,
@@ -1069,13 +1069,11 @@ def main_menu(login_validation, theme_name):
         
         if table_key == "-TABLE-":
             app_window["-TOTAL-ACTIVE-RECORDS-"].update(f'{len(df)}')
-            
-            print(f'Length: {len(df)}')
 
             if len(df) > 0:
                 total_cost = 0 
                 total_pallets = 0
-                total_cost = df['cost'].sum()
+                total_cost = pd.to_numeric(df["cost"], errors="coerce").sum()
                 total_pallets = df['pallets'].sum()
                 
                 app_window["-TOTAL-COST-"].update(f'{int(total_cost):_}'.replace('_', ' ') + ' EUR')
@@ -1457,7 +1455,7 @@ def main_menu(login_validation, theme_name):
                         "weight":          float(new_values["-WEIGHT-"]),
                         "forwarder":          new_values["-FORWARDER-"],
                         "forwarder_contact":          new_values["-FORWARDER-CONTACT-"],
-                        "cost":          float(new_values["-COST-"]),
+                        "cost":          (float(new_values["-COST-"]) if new_values["-COST-"].strip() else None),
                         "customs":          new_values["-CUSTOMS-"],
                         "ref":          new_values["-REF-"],
                         "info":          new_values["-IN-ORDER-DETAILS-"],

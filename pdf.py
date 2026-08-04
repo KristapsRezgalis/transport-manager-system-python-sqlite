@@ -8,6 +8,7 @@ from reportlab.lib.enums import TA_JUSTIFY
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
+from config import convert_date
 import os
 
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details
@@ -44,8 +45,12 @@ gemoss_letterhead = [
 ]
 
 def get_forwarder_sender_delivery_data(data):
-    df_fw = return_fw_data(data.get('forwarder')) # gets full forwarder company data from DB
-    df_fw_contact = return_fw_contact_df(data.get('forwarder_contact'), df_fw['forwarder_id'].iloc[0]) # gets forwarder contacts data from DB
+    if data.get('forwarder'):
+        df_fw = return_fw_data(data.get('forwarder')) # gets full forwarder company data from DB
+        df_fw_contact = return_fw_contact_df(data.get('forwarder_contact'), df_fw['forwarder_id'].iloc[0]) # gets forwarder contacts data from DB
+    else:
+        df_fw = ''
+        df_fw_contact = ''
     
     df_sender_company = return_company_data(data.get('sender'))
     df_sender_company_address = return_company_address(data.get('sender_adr'), df_sender_company['company_id'].iloc[0])
@@ -60,7 +65,7 @@ def get_forwarder_sender_delivery_data(data):
 def draw_header(pdf, data, nr, df_fw):
     pdf.drawImage("gemoss_logo.png", x=30, y=800, width=126, height=32) # c.drawImage("image.png", x=100, y=500, width=200, height=150)
     pdf.setFont("LVSerif-Bold", 15) # Sets the font style and size.
-    pdf.drawCentredString(425, 810, f"Transport agreement Nr: {10000 + nr}") # Draws text centered at the specified (x, y) position.
+    pdf.drawCentredString(425, 810, f"Transport agreement Nr: {nr}") # Draws text centered at the specified (x, y) position.
     pdf.line(30, 790, 565, 790) # line(x1, y1, x2, y2): Draws a horizontal line on the PDF.
     
     tx_field_1 = pdf.beginText(30, 770)
@@ -96,8 +101,8 @@ def draw_loading_unloading(pdf, data, y, df_sender_company_address, df_sender_co
     pdf.drawString(370, y, 'UNLOADING DETAILS')
     y -= 20
     pdf.setFont("LVSerif", 10)
-    pdf.drawString(30, y, f"Loading available from: {data.get('loading')}")
-    pdf.drawString(310, y, f"Unloading until: {data.get('unloading')}")
+    pdf.drawString(30, y, f"Loading available from: {convert_date(data.get('loading'))}")
+    pdf.drawString(310, y, f"Unloading until: {convert_date(data.get('unloading'))}")
     y -= 15
     pdf.drawString(30, y, f"Sender: {data.get('sender')}")
     pdf.drawString(310, y, f"Receiver: {data.get('delivery')}")
@@ -181,7 +186,7 @@ def draw_pallet_data(pdf, data, y, nr):
     pdf.setFont("LVSerif", 10)
     pdf.drawString(70, y, f"Total number of pallets: {data.get('pallets')}")
     pdf.drawString(257, y, f"Estimated LDM: {data.get('ldm')}")
-    pdf.drawString(400, y, f"Total gross weight: {data.get('weight')} kg")
+    pdf.drawString(400, y, f"Total gross weight: {data.get('weight')}0 kg")
     y -= 10
     
     table.drawOn(pdf, 170, y-table_height)
@@ -205,8 +210,10 @@ def draw_info_and_cost(pdf, data, y, df_fw):
         return val if val and val.upper() != "NONE" else "-"
 
     pdf.setFont("LVSerif", 10)
-    pdf.drawString(100, y, f"Temperature control: {display_val(data.get('ref'))}")
-    pdf.drawString(370, y, f"Customs clearance: {display_val(data.get('customs'))}")
+    pdf.drawString(30, y, f"Product type: {display_val(data.get('cargo_type'))}")
+    pdf.drawString(250, y, f"Temperature control: {display_val(data.get('ref'))}")
+    pdf.drawString(420, y, f"Customs clearance: {display_val(data.get('customs'))}")
+    
     y -= 20
 
     # Instructions — label on its own line, content indented below it
