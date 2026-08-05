@@ -45,7 +45,7 @@ def send_transport_offer(nr, data):
         <th style="border:1px solid #c0c0c0;padding:1px 5px;">Height</th>
     </tr>
     """
-
+    
     for _, row in pallet_df.iterrows():
         pallet_table += f"""
         <tr>
@@ -68,12 +68,12 @@ def send_transport_offer(nr, data):
     
     html_body = f"""
     <html>
-        <body>
+        <body style="font-family:Calibri; font-size:10pt;">\
             <p>Sveiki,</p>
             
             <p>Lūdzu paskatīties iespējas paņemt šo:</p>
             
-            <p style="margin:0;">Loading date: <b>{convert_date(data.get('loading')) if data.get('loading') == data.get('loading_to') else 'from ' + convert_date(data.get('loading'))}</b></p>
+            <p style="margin:0;">Loading date: <b>{'fix day ' + convert_date(data.get('loading')) if data.get('loading') == data.get('loading_to') else 'from ' + convert_date(data.get('loading'))}</b></p>
             <p style="margin:0;">Loading hours: <b>{df_sender_company_address['adr_hours'].iloc[0]}</b></p>
             <p style="margin:0;">Shipper (Consignor): <b>{data.get('sender')}</b></p>
             <p style="margin:0 0 8px 0;">Loading address: <b>{loading_address}</b></p>
@@ -87,11 +87,17 @@ def send_transport_offer(nr, data):
             <p style="margin:0 0 8px 0;">Gross weight: <b>{data.get('weight')}0 kg</b></p>
             
             <p>Paldies.</p>
+            <p style="margin:0;">------- </p>
+            <p style="margin:0;"><b>Kristaps Rezgalis</b></p>
+            <p style="margin:0;">Transport coordinator</p>
+            <p style="margin:0;">Mob. (+371) 27888014</p>
+            <p style="margin:0;">kristaps.rezgalis@gemoss.lv</p>
+            <p style="margin:0;">GEMOSS SIA, Mūkusalas iela 75A, Rīga, LV-1004</p>
         </body>
     </html>
     """
     
-    mail.HTMLBody = html_body + signature
+    mail.HTMLBody = html_body
 
     mail.Display()
 
@@ -140,7 +146,7 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
         </tr>
         <tr>
             <td style="padding-bottom:15px;"><b>Iekraušanas datums:</b></td>
-            <td style="padding-bottom:15px;">no {convert_date(data.get('loading'))}</td>
+            <td style="padding-bottom:15px;">{'fix diena ' + convert_date(data.get('loading')) if data.get('loading') == data.get('loading_to') else 'from ' + convert_date(data.get('loading'))}</td>
         </tr>
         
         <tr>
@@ -153,12 +159,12 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
         </tr>
         <tr>
             <td style="padding-bottom:15px;"><b>Piegādes datums:</b></td>
-            <td style="padding-bottom:15px;">līdz {convert_date(data.get('unloading'))}</td>
+            <td style="padding-bottom:15px;">līdz {convert_date(data.get('unloading_to'))}</td>
         </tr>
         
         <tr>
             <td><b>Krava:</b></td>
-            <td>{data.get('pallets')} pallets, {data.get('weight')} kg</td>
+            <td>{data.get('pallets')} pallets, {data.get('weight')}0 kg</td>
         </tr>
         <tr>
             <td><b>Pārvadātājs:</b></td>
@@ -179,7 +185,12 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
         </tr>
     </table>
     <p>Lūdzu apstiprināt, ka saņēmāt.</p>
-    {signature}
+    <p style="margin:0;">------- </p>
+    <p style="margin:0;"><b>Kristaps Rezgalis</b></p>
+    <p style="margin:0;">Transport coordinator</p>
+    <p style="margin:0;">Mob. (+371) 27888014</p>
+    <p style="margin:0;">kristaps.rezgalis@gemoss.lv</p>
+    <p style="margin:0;">GEMOSS SIA, Mūkusalas iela 75A, Rīga, LV-1004</p>
 
     </body>
     </html>
@@ -222,7 +233,7 @@ def send_email_purchase_manager(to, data, nr, attachments=None):
     # Create your email body
     html_body = f"""
     <html>
-    <body style="font-family:Calibri;font-size:11pt;">
+    <body style="font-family:Calibri; font-size:10pt;">
 
     <p>Sveiki,</p>
 
@@ -244,7 +255,7 @@ def send_email_purchase_manager(to, data, nr, attachments=None):
         </tr>
         <tr>
             <td style="padding-bottom:15px;"><b>Iekraušanas datums:</b></td>
-            <td style="padding-bottom:15px;">no {convert_date(data.get('loading'))}</td>
+            <td style="padding-bottom:15px;">{'fix diena ' + convert_date(data.get('loading')) if data.get('loading') == data.get('loading_to') else 'from ' + convert_date(data.get('loading'))}</td>
         </tr>
         
         <tr>
@@ -262,7 +273,7 @@ def send_email_purchase_manager(to, data, nr, attachments=None):
         
         <tr>
             <td><b>Krava:</b></td>
-            <td>{data.get('pallets')} pallets, {data.get('weight')} kg</td>
+            <td>{data.get('pallets')} pallets, {data.get('weight')}0 kg</td>
         </tr>
         <tr>
             <td><b>Pārvadātājs:</b></td>
@@ -282,11 +293,22 @@ def send_email_purchase_manager(to, data, nr, attachments=None):
             <td>{display_val(data.get('customs'))}</td>
         </tr>
     </table>
-    {signature}
+        <p>Šis ir automātisks paziņojums. Ja pamani kļūdas, lūdzu, informēt mani. Paldies.</p>
+        <p style="margin:0;">------- </p>
+        <p style="margin:0;"><b>Kristaps Rezgalis</b></p>
+        <p style="margin:0;">Transport coordinator</p>
+        <p style="margin:0;">Mob. (+371) 27888014</p>
+        <p style="margin:0;">kristaps.rezgalis@gemoss.lv</p>
+        <p style="margin:0;">GEMOSS SIA, Mūkusalas iela 75A, Rīga, LV-1004</p>
 
     </body>
     </html>
     """
+    #{signature}
+    #<img src="gemoss_signature.png" alt="Gemoss" height="80" style="margin:0;">
+    #<img src="linkedin_icon.png" alt="Gemoss linkedin" height="15" style="margin:0; padding-left:5px">
+    #<img src="facebook_icon.png" alt="Gemoss facebook" height="15" style="margin:0; padding-left:5px">
+    #<img src="instagram_icon.png" alt="Gemoss instagram" height="15" style="margin:0; padding-left:5px">
 
     mail.HTMLBody = html_body
 

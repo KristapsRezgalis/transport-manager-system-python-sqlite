@@ -101,8 +101,8 @@ def draw_loading_unloading(pdf, data, y, df_sender_company_address, df_sender_co
     pdf.drawString(370, y, 'UNLOADING DETAILS')
     y -= 20
     pdf.setFont("LVSerif", 10)
-    pdf.drawString(30, y, f"Loading available from: {convert_date(data.get('loading'))}")
-    pdf.drawString(310, y, f"Unloading until: {convert_date(data.get('unloading'))}")
+    pdf.drawString(30, y, f"Loading date: {'FIX day ' + convert_date(data.get('loading')) if data.get('loading') == data.get('loading_to') else 'from ' + convert_date(data.get('loading'))}")
+    pdf.drawString(310, y, f"Unloading date: {'until ' + convert_date(data.get('unloading_to'))}")
     y -= 15
     pdf.drawString(30, y, f"Sender: {data.get('sender')}")
     pdf.drawString(310, y, f"Receiver: {data.get('delivery')}")
