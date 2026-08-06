@@ -455,7 +455,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
         # Pallet count + weight on one line, then the pallet detail table below
         [sg.Text("Total pallet count:", size=15), sg.Text(total_pallets, key="-PALLETS-", size=23, font=("Segoe UI", 10, "bold")),
          sg.Text("LDM:", size=7),                sg.Text(ldm, key="-LDM-", size=22, font=("Segoe UI", 10, "bold")),
-         sg.Text("Gross weight:", size=9),       sg.Input(e.get("weight", ""), key="-WEIGHT-", size=23, font=("Segoe UI", 10, "bold"))],
+         sg.Text("Gross weight:", size=11),       sg.Input(e.get("weight", ""), key="-WEIGHT-", size=21, font=("Segoe UI", 10, "bold"))],
         pallet_table,
         [sg.Push(), sg.Button("Add pallets", key="-BTN-ADD-PLL-", size=15), sg.Button("Edit pallets", key="-BTN-EDIT-PLL-", size=15), sg.Button("Delete pallets", key="-BTN-DELETE-PLL-", size=15), sg.Push()],
         [sg.HSeparator()],
@@ -463,10 +463,12 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
         [sg.Text("Forwarder:", size=15),           sg.Combo(forwarders_list, key="-FORWARDER-", default_value=e.get("forwarder", ""), readonly=True, size=33, enable_events=True),
          sg.Text("Forwarder contact:", size=15),   sg.Combo(forwarder_contact_list, key="-FORWARDER-CONTACT-", default_value=e.get("forwarder_contact", ""), readonly=True, size=33)],
 
-        [sg.Text("Cost:", size=15),                sg.Input(e.get("cost", ""), key="-COST-", size=35)],
+        [sg.Text("Cost:", size=15),                sg.Input(e.get("cost", ""), key="-COST-", size=35),
+         sg.Text("Customs:", size=15),             sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33)],
 
-        [sg.Text("Customs:", size=15),             sg.Combo(temperature_customs_options, key="-CUSTOMS-", default_value=e.get("customs", ""), readonly=True, size=33),
-         sg.Text("Temperature control:", size=15), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33)],
+        [sg.Text("Temperature control:", size=15), sg.Combo(temperature_customs_options, key="-REF-", default_value=e.get("ref", ""), readonly=True, size=33),
+         sg.Text("Min t°C:", size=6), sg.Input(e.get("temp_min", ""), key="-IN-TEMP-MIN-", size=5), 
+         sg.Text("Max t°C:", size=6), sg.Input(e.get("temp_max", ""), key="-IN-TEMP-MAX-", size=5)],
 
         [sg.Text("Notes:", size=15),               sg.Multiline(e.get("info", ""), key="-IN-ORDER-DETAILS-", size=(60, 3)), sg.Checkbox('Add notes to transport order', default=e.get("add_info_to_order", ""), key='-CB-ADD_TO_ORDER-')],
         [sg.HSeparator()],
@@ -1276,7 +1278,7 @@ def main_menu(login_validation, theme_name):
                 new_record = add_db(
                     new_values["-SAP_PO-"], new_values["-SENDER-"], new_values["-SENDER-ADDRESS-"], new_values["-SENDER-CONTACT-"], new_values["-DELIVERY-"], new_values["-DELIVERY-ADDRESS-"], new_values["-DELIVERY-CONTACT-"], new_values["-LOADING-"], new_values["-LOADING-TO-"],
                     new_values["-UNLOADING-"], new_values["-UNLOADING-TO-"], total_pallets, ldm, new_values["-WEIGHT-"], new_values["-FORWARDER-"], new_values["-FORWARDER-CONTACT-"],
-                    new_values["-COST-"], new_values["-CUSTOMS-"], new_values["-REF-"], new_values["-IN-ORDER-DETAILS-"], new_values["-CB-ADD_TO_ORDER-"], new_values["-CMB-PURCHASE_MANAGER-"], new_values["-CMB-CARGO_TYPE-"], new_values["-IN-TRANSPORT-INVOICE-"]
+                    new_values["-COST-"], new_values["-CUSTOMS-"], new_values["-REF-"], new_values["-IN-TEMP-MIN-"], new_values["-IN-TEMP-MAX-"], new_values["-IN-ORDER-DETAILS-"], new_values["-CB-ADD_TO_ORDER-"], new_values["-CMB-PURCHASE_MANAGER-"], new_values["-CMB-CARGO_TYPE-"], new_values["-IN-TRANSPORT-INVOICE-"]
                 )
                 for row in pallet_df.itertuples(): # loops through pallet_df and inserts new order's pallet data in db
                     insert_pallet(
@@ -1435,12 +1437,14 @@ def main_menu(login_validation, theme_name):
                     "unloading_to":      str(row["unloading_to"]) if pd.notna(row["unloading_to"]) else "",
                     "pallets":           str(row["pallets"]) if pd.notna(row["pallets"]) else "",
                     "ldm":               str(row["ldm"]) if pd.notna(row["ldm"]) else "",
-                    "weight":            str(row["weight"]) if pd.notna(row["weight"]) else "",
+                    "weight":            f"{row["weight"]:.2f}" if pd.notna(row["weight"]) else "",
                     "forwarder":         str(row["forwarder"]) if pd.notna(row["forwarder"]) else "",
                     "forwarder_contact": str(row["forwarder_contact"]) if pd.notna(row["forwarder_contact"]) else "",
-                    "cost":              str(row["cost"]) if pd.notna(row["cost"]) else "",
+                    "cost":              f"{row["cost"]:.2f}" if pd.notna(row["cost"]) else "",
                     "customs":           str(row["customs"]) if pd.notna(row["customs"]) else "",
                     "ref":               str(row["ref"]) if pd.notna(row["ref"]) else "",
+                    "temp_min":          int(row["temp_min"]) if pd.notna(row["temp_min"]) else "",
+                    "temp_max":          int(row["temp_max"]) if pd.notna(row["temp_max"]) else "",
                     "info":              str(row["info"]) if pd.notna(row["info"]) else "",
                     "add_info_to_order": bool(int(row["add_info_to_order"])) if pd.notna(row["add_info_to_order"]) else False,
                     "purch_manager":     str(row["purch_manager"]) if pd.notna(row["purch_manager"]) else "",
@@ -1471,6 +1475,8 @@ def main_menu(login_validation, theme_name):
                         "cost":          (float(new_values["-COST-"]) if new_values["-COST-"].strip() else None),
                         "customs":          new_values["-CUSTOMS-"],
                         "ref":          new_values["-REF-"],
+                        "temp_min":          (int(new_values["-IN-TEMP-MIN-"]) if new_values["-IN-TEMP-MIN-"].strip() else None),
+                        "temp_max":          (int(new_values["-IN-TEMP-MAX-"]) if new_values["-IN-TEMP-MAX-"].strip() else None),
                         "info":          new_values["-IN-ORDER-DETAILS-"],
                         "add_info_to_order":          new_values["-CB-ADD_TO_ORDER-"],
                         "purch_manager":          new_values["-CMB-PURCHASE_MANAGER-"],

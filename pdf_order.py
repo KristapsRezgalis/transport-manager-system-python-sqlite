@@ -125,7 +125,7 @@ def draw_cargo_data(pdf, data, y, df_sender_company_address, df_sender_company_c
     pdf.drawString(273, y, f"{data.get('pallets')} {'palete' if int(data.get('pallets')) == 1 else 'paletes'}")
     y -= 12
     pdf.drawString(83, y, " (apjoms, svars,")
-    pdf.drawString(273, y, f"{data.get('weight')}0 kg")
+    pdf.drawString(273, y, f"{data.get('weight')} kg")
     y -= 12
     pdf.drawString(83, y, "iepakojumu skaits)")
     y -= 5
@@ -133,7 +133,7 @@ def draw_cargo_data(pdf, data, y, df_sender_company_address, df_sender_company_c
     y -= 12
     pdf.drawString(83, y, "Pārvadājuma temperatūras režīms:")
     pdf.setFont("LVCarlito-Bold", 10)
-    pdf.drawString(273, y, f"     {data.get('ref') if data.get('ref') else 'NAV NEPIECIEŠAMS'}")
+    pdf.drawString(273, y, f"     {f'{data.get('temp_min'):+d} °C līdz {data.get('temp_max'):+d} °C' if data.get('ref') else 'NAV NEPIECIEŠAMS'}")
     y -= 5
     pdf.line(80, y, 540, y)
     y -= 12
@@ -141,7 +141,7 @@ def draw_cargo_data(pdf, data, y, df_sender_company_address, df_sender_company_c
     pdf.drawString(83, y, "Transporta")
     y -= 12
     pdf.drawString(83, y, "pakalpojuma cena,")
-    pdf.drawString(273, y, f"{data.get('cost')}0 EUR")
+    pdf.drawString(273, y, f"{data.get('cost')} EUR")
     y -= 12
     pdf.drawString(83, y, "EUR bez PVN")
     y -= 5

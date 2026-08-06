@@ -84,7 +84,7 @@ def send_transport_offer(nr, data):
             <p style="margin:0;">Pallets total: <b>{data.get('pallets')}</b></p>
             {pallet_table}
             <p style="margin:0;">Estimated LDM: <b>{data.get('ldm')}</b></p>
-            <p style="margin:0 0 8px 0;">Gross weight: <b>{data.get('weight')}0 kg</b></p>
+            <p style="margin:0 0 8px 0;">Gross weight: <b>{data.get('weight')} kg</b></p>
             
             <p>Paldies.</p>
             <p style="margin:0;">------- </p>
@@ -164,7 +164,7 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
         
         <tr>
             <td><b>Krava:</b></td>
-            <td>{data.get('pallets')} pallets, {data.get('weight')}0 kg</td>
+            <td>{data.get('pallets')} pallets, {data.get('weight')} kg</td>
         </tr>
         <tr>
             <td><b>Pārvadātājs:</b></td>
@@ -172,7 +172,7 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
         </tr>
         <tr>
             <td style="padding-bottom:15px;"><b>Transporta izmaksas:</b></td>
-            <td style="padding-bottom:15px;">{data.get('cost')}0 EUR excl. VAT</td>
+            <td style="padding-bottom:15px;">{data.get('cost')} EUR excl. VAT</td>
         </tr>
 
         <tr>
@@ -273,7 +273,7 @@ def send_email_purchase_manager(to, data, nr, attachments=None):
         
         <tr>
             <td><b>Krava:</b></td>
-            <td>{data.get('pallets')} pallets, {data.get('weight')}0 kg</td>
+            <td>{data.get('pallets')} pallets, {data.get('weight')} kg</td>
         </tr>
         <tr>
             <td><b>Pārvadātājs:</b></td>
@@ -281,7 +281,7 @@ def send_email_purchase_manager(to, data, nr, attachments=None):
         </tr>
         <tr>
             <td style="padding-bottom:15px;"><b>Transporta izmaksas:</b></td>
-            <td style="padding-bottom:15px;">{data.get('cost')}0 EUR excl. VAT</td>
+            <td style="padding-bottom:15px;">{data.get('cost')} EUR excl. VAT</td>
         </tr>
 
         <tr>

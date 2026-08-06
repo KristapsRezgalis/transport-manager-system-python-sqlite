@@ -49,7 +49,7 @@ def read_all(table_name, id_header):
     conn.close()
     return df
 
-def add_db(sap_po, sender, sender_adr, sender_cont, delivery, delivery_adr, delivery_cont, loading, loading_to, unloading, unloading_to, pallets, ldm, weight, forwarder, forwarder_contact, cost, customs, ref, info, add_info_to_order, purch_manager, cargo_type, transport_invoice):
+def add_db(sap_po, sender, sender_adr, sender_cont, delivery, delivery_adr, delivery_cont, loading, loading_to, unloading, unloading_to, pallets, ldm, weight, forwarder, forwarder_contact, cost, customs, ref, temp_min, temp_max, info, add_info_to_order, purch_manager, cargo_type, transport_invoice):
     """Adds new transport order record into database"""
     new_row = pd.DataFrame([{
         "sap_po":	sap_po,
@@ -71,6 +71,8 @@ def add_db(sap_po, sender, sender_adr, sender_cont, delivery, delivery_adr, deli
         "cost":		cost,
         "customs":	customs,
         "ref":		ref,
+        "temp_min":		temp_min,
+        "temp_max":		temp_max,
         "info": info,
         "add_info_to_order": add_info_to_order,
         "purch_manager": purch_manager,

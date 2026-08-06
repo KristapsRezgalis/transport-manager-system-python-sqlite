@@ -186,7 +186,7 @@ def draw_pallet_data(pdf, data, y, nr):
     pdf.setFont("LVSerif", 10)
     pdf.drawString(70, y, f"Total number of pallets: {data.get('pallets')}")
     pdf.drawString(257, y, f"Estimated LDM: {data.get('ldm')}")
-    pdf.drawString(400, y, f"Total gross weight: {data.get('weight')}0 kg")
+    pdf.drawString(400, y, f"Total gross weight: {data.get('weight')} kg")
     y -= 10
     
     table.drawOn(pdf, 170, y-table_height)
@@ -205,13 +205,16 @@ def draw_info_and_cost(pdf, data, y, df_fw):
     y -= 15
 
     # Temperature control / Customs clearance — show a dash instead of blank
-    def display_val(val):
+    def display_val(val, temp_min=None, temp_max=None):
+        if temp_min is not None and temp_max is not None:
+            return f"{temp_min:+d} °C to {temp_max:+d} °C"
+    
         val = str(val).strip() if val is not None else ""
         return val if val and val.upper() != "NONE" else "-"
 
     pdf.setFont("LVSerif", 10)
     pdf.drawString(30, y, f"Product type: {display_val(data.get('cargo_type'))}")
-    pdf.drawString(250, y, f"Temperature control: {display_val(data.get('ref'))}")
+    pdf.drawString(240, y, f"Temperature control: {display_val(data.get('ref'), data.get('temp_min'), data.get('temp_max'))}")
     pdf.drawString(420, y, f"Customs clearance: {display_val(data.get('customs'))}")
     
     y -= 20
@@ -244,7 +247,7 @@ def draw_info_and_cost(pdf, data, y, df_fw):
     y -= 15
 
     pdf.setFont("LVSerif", 10)
-    pdf.drawCentredString(300, y, f"Agreed sum: {data.get('cost')}0 EUR excl. VAT")
+    pdf.drawCentredString(300, y, f"Agreed sum: {data.get('cost')} EUR excl. VAT")
     y -= 15
     pdf.drawCentredString(300, y, f"Payment terms: {df_fw['fw_payment_terms'].iloc[0]} days after receiving invoice and CMR")
     y -= 15
