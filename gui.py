@@ -1423,6 +1423,10 @@ def main_menu(login_validation, theme_name):
                 row = current_df.iloc[selected_row]
                 nr = int(row["nr"])
                 
+                print("Selected nr:", nr)
+                print("Cost value:", repr(row["cost"]))
+                print(current_df.loc[selected_row, ["nr", "cost"]])
+                                
                 existing = {
                     "sap_po":            str(row["sap_po"]) if pd.notna(row["sap_po"]) else "",
                     "sender":            str(row["sender"]) if pd.notna(row["sender"]) else "",
@@ -1437,14 +1441,14 @@ def main_menu(login_validation, theme_name):
                     "unloading_to":      str(row["unloading_to"]) if pd.notna(row["unloading_to"]) else "",
                     "pallets":           str(row["pallets"]) if pd.notna(row["pallets"]) else "",
                     "ldm":               str(row["ldm"]) if pd.notna(row["ldm"]) else "",
-                    "weight":            f"{row["weight"]:.2f}" if pd.notna(row["weight"]) else "",
+                    "weight":            optional_float_str(row["weight"]),
                     "forwarder":         str(row["forwarder"]) if pd.notna(row["forwarder"]) else "",
                     "forwarder_contact": str(row["forwarder_contact"]) if pd.notna(row["forwarder_contact"]) else "",
-                    "cost":              f"{row["cost"]:.2f}" if pd.notna(row["cost"]) else "",
+                    "cost":              optional_float_str(row["cost"]),
                     "customs":           str(row["customs"]) if pd.notna(row["customs"]) else "",
                     "ref":               str(row["ref"]) if pd.notna(row["ref"]) else "",
-                    "temp_min":          int(row["temp_min"]) if pd.notna(row["temp_min"]) else "",
-                    "temp_max":          int(row["temp_max"]) if pd.notna(row["temp_max"]) else "",
+                    "temp_min":          optional_int(row["temp_min"]),
+                    "temp_max":          optional_int(row["temp_max"]),
                     "info":              str(row["info"]) if pd.notna(row["info"]) else "",
                     "add_info_to_order": bool(int(row["add_info_to_order"])) if pd.notna(row["add_info_to_order"]) else False,
                     "purch_manager":     str(row["purch_manager"]) if pd.notna(row["purch_manager"]) else "",
@@ -1693,6 +1697,38 @@ def main_menu(login_validation, theme_name):
         elif action == "-BTN-CREATE-DIAGRAM-":
             print('-BTN-CREATE-DIAGRAM- was pressed!!!')
             generate_diagram(current_df, values['-STATISTICS-TYPE-'], values['-PERIOD-TYPE-'])
+
+# Helper function that safely formats a value as a float string, or returns "" if blank/NaN/invalid
+def optional_float_str(value, decimals=2):
+    if value is None:
+        return ""
+    if pd.isna(value):
+        return ""
+    text = str(value).strip()
+    if text == "" or text.lower() in ("none", "nan"):
+        return ""
+    try:
+        return f"{float(text):.{decimals}f}"
+    except (TypeError, ValueError):
+        return ""
+
+# Helper function used when opening, creating transport orders
+def optional_int(value):
+    if value is None:
+        return ""
+
+    if pd.isna(value):
+        return ""
+
+    text = str(value).strip()
+
+    if text == "":
+        return ""
+
+    try:
+        return int(float(text))
+    except (TypeError, ValueError):
+        return ""
 
 if __name__ == "__main__":
     #main_menu()

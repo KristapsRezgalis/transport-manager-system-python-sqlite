@@ -16,17 +16,18 @@ def send_transport_offer(nr, data):
     subject = f"NEW CARGO | {data.get('sender')}, {df_sender_company_address['adr_post_code'].iloc[0]}, {df_sender_company_address['adr_country'].iloc[0]} -> {data.get('delivery')}, {df_delivery_company_address['adr_country'].iloc[0]} | {data.get('pallets')} {'pallets' if int(data.get('pallets')) > 1 else 'pallet'} | {convert_date(data.get('loading')) if data.get('loading') == data.get('loading_to') else 'from ' + convert_date(data.get('loading'))}"
     
     mail.To = 'kristaps.rezgalis@gemoss.lv'
+    if data.get('ref'):
+        # calls function in db.py to get e-mails of forwarder which have reefer trucks
+        bcc = get_tender_emails('ref')
+    else:
     # calls function in db.py to get all forwawrder emails in one string for specific loading country
-    bcc = get_tender_emails(str(df_sender_company_address['adr_country'].iloc[0]).strip().lower()) 
+        bcc = get_tender_emails(str(df_sender_company_address['adr_country'].iloc[0]).strip().lower()) 
     mail.Subject = subject
-    
-    print(repr(bcc))
-    print(type(bcc))
     
     mail.BCC = bcc
     
     mail.Display()
-    signature = mail.HTMLBody
+    #signature = mail.HTMLBody
     
     #Gets pallet dimensions data from database and sorts it in a pallet_table variable which is used in html text afterwards.
     pallet_df = get_pallet_details(nr)

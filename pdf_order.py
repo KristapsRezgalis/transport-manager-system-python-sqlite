@@ -10,6 +10,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
 from config import convert_date
 import os
+from datetime import datetime
 
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details
 from pdf import get_forwarder_sender_delivery_data
@@ -341,12 +342,14 @@ def draw_conditions(pdf, y):
 def create_gemoss_specification_PDF(data, nr, login_validation):
     y = 805
     
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_dir = os.path.join(script_dir, "internal orders")
-    os.makedirs(output_dir, exist_ok=True)  # create "orders" folder if it doesn't exist yet
+    base_dir = r"\\hippo.gemoss.lv\PUBLIC\LOGISTIKA\TMS"
+    year = str(datetime.now().year)
+    folder_name = f"{nr}"
+    order_dir = os.path.join(base_dir, year, str(nr))
+    os.makedirs(order_dir, exist_ok=True)  # create "orders" folder if it doesn't exist yet
     
-    filename = f"Gemoss pārvadājums Nr {nr}.pdf"
-    pdf_path = os.path.join(output_dir, filename)
+    filename = f"Gemoss transporta pieteikums Nr {nr}.pdf"
+    pdf_path = os.path.join(order_dir, filename)
     pdf = canvas.Canvas(pdf_path)
     pdf.setTitle(documentTitle)
     

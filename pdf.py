@@ -10,6 +10,7 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
 from config import convert_date
 import os
+from datetime import datetime
 
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details
 
@@ -206,7 +207,7 @@ def draw_info_and_cost(pdf, data, y, df_fw):
 
     # Temperature control / Customs clearance — show a dash instead of blank
     def display_val(val, temp_min=None, temp_max=None):
-        if temp_min is not None and temp_max is not None:
+        if temp_min is not None and temp_max is not None and str(temp_min).strip() != "" and str(temp_max).strip() != "":
             return f"{temp_min:+d} °C to {temp_max:+d} °C"
     
         val = str(val).strip() if val is not None else ""
@@ -285,18 +286,21 @@ def create_order_pdf (data, nr, login_validation):
     
     y = 700
     
-    script_dir = os.path.dirname(os.path.abspath(__file__))
-    output_dir = os.path.join(script_dir, "orders")
-    os.makedirs(output_dir, exist_ok=True)  # create "orders" folder if it doesn't exist yet
+    df_fw, df_fw_contact, df_sender_company, df_sender_company_address, df_sender_company_contact, df_delivery_company, df_delivery_company_address, df_delivery_company_contact = get_forwarder_sender_delivery_data(data)
+    
+    base_dir = r"\\hippo.gemoss.lv\PUBLIC\LOGISTIKA\TMS"
+    year = str(datetime.now().year)
+    folder_name = f"{nr}"
+    order_dir = os.path.join(base_dir, year, str(nr))
+    
+    os.makedirs(order_dir, exist_ok=True)  # create "orders" folder if it doesn't exist yet
     
         ### CREATES THE ACTUAL PDF FILE ###
-    filename = f"Gemoss order Nr {nr}.pdf"
-    pdf_path = os.path.join(output_dir, filename)
+    filename = f"Gemoss agreement Nr {nr}.pdf"
+    pdf_path = os.path.join(order_dir, filename)
     pdf = canvas.Canvas(pdf_path)
     #pdf = canvas.Canvas(filename)
     pdf.setTitle(documentTitle)
-    
-    df_fw, df_fw_contact, df_sender_company, df_sender_company_address, df_sender_company_contact, df_delivery_company, df_delivery_company_address, df_delivery_company_contact = get_forwarder_sender_delivery_data(data)
     
     ### CALLING ALL PDF CREATION FUNCTION ###
     draw_header(pdf, data, nr, df_fw) # function to draw a header part in PDF - has static place in PDF
