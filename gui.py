@@ -879,8 +879,9 @@ def main_menu(login_validation, theme_name):
         sg.Button("Create",  key="-BTN-CREATE-", size=10),
         sg.Button("Open/Edit", key="-BTN-EDIT-", size=10),
         sg.Button("Delete", key="-BTN-DELETE-", size=10),
-        sg.Button("Show All", key="-BTN-ALLDATA-", size=10),
+        sg.Button("Copy", key="-BTN-COPY-", size=10),
         sg.VerticalSeparator(),
+        sg.Button("Show All", key="-BTN-ALLDATA-", size=10),
         sg.Button("Filter", key="-BTN-FILTER-", size=10),
         sg.Text("Search:", pad=(5, 5)),
         sg.Input(key="-SEARCH-", size=20),
@@ -1270,8 +1271,43 @@ def main_menu(login_validation, theme_name):
                 statuss(f"🔎 Found: {len(current_df)} records")
         
         # ── Action triggered when CREATE button is pressed - opens Entry modal for creating new record
-        elif action == "-BTN-CREATE-":
-            result = entry_modal("NEW TRANSPORT RECORD", login_validation=login_validation)
+        elif action == "-BTN-CREATE-" or action == "-BTN-COPY-":
+            if action == "-BTN-COPY-":
+                print('"-BTN-COPY-" was pressed')
+                if selected_row is None:
+                    statuss("Select a record in the table to copy!", "red")
+                    continue
+                else:
+                    row = current_df.iloc[selected_row]
+                    nr = int(row["nr"])
+                                    
+                    existing = {
+                        "sender":            str(row["sender"]) if pd.notna(row["sender"]) else "",
+                        "sender_adr":        str(row["sender_adr"]) if pd.notna(row["sender_adr"]) else "",
+                        "sender_cont":       str(row["sender_cont"]) if pd.notna(row["sender_cont"]) else "",
+                        "delivery":          str(row["delivery"]) if pd.notna(row["delivery"]) else "",
+                        "delivery_adr":      str(row["delivery_adr"]) if pd.notna(row["delivery_adr"]) else "",
+                        "delivery_cont":     str(row["delivery_cont"]) if pd.notna(row["delivery_cont"]) else "",
+                        "pallets":           str(row["pallets"]) if pd.notna(row["pallets"]) else "",
+                        "ldm":               str(row["ldm"]) if pd.notna(row["ldm"]) else "",
+                        "weight":            optional_float_str(row["weight"]),
+                        "forwarder":         str(row["forwarder"]) if pd.notna(row["forwarder"]) else "",
+                        "forwarder_contact": str(row["forwarder_contact"]) if pd.notna(row["forwarder_contact"]) else "",
+                        "cost":              optional_float_str(row["cost"]),
+                        "customs":           str(row["customs"]) if pd.notna(row["customs"]) else "",
+                        "ref":               str(row["ref"]) if pd.notna(row["ref"]) else "",
+                        "temp_min":          optional_int(row["temp_min"]),
+                        "temp_max":          optional_int(row["temp_max"]),
+                        "info":              str(row["info"]) if pd.notna(row["info"]) else "",
+                        "add_info_to_order": bool(int(row["add_info_to_order"])) if pd.notna(row["add_info_to_order"]) else False,
+                        "purch_manager":     str(row["purch_manager"]) if pd.notna(row["purch_manager"]) else "",
+                        "cargo_type":        str(row["cargo_type"]) if pd.notna(row["cargo_type"]) else "",
+                    }
+                
+            if action == "-BTN-CREATE-":
+                result = entry_modal("NEW TRANSPORT RECORD", login_validation=login_validation)
+            else:  # -BTN-COPY-
+                result = entry_modal("NEW TRANSPORT RECORD", existing, login_validation=login_validation)
             
             if result:
                 new_values, total_pallets, ldm, pallet_df = result
@@ -1422,10 +1458,6 @@ def main_menu(login_validation, theme_name):
             else:
                 row = current_df.iloc[selected_row]
                 nr = int(row["nr"])
-                
-                print("Selected nr:", nr)
-                print("Cost value:", repr(row["cost"]))
-                print(current_df.loc[selected_row, ["nr", "cost"]])
                                 
                 existing = {
                     "sap_po":            str(row["sap_po"]) if pd.notna(row["sap_po"]) else "",
