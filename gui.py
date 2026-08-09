@@ -454,7 +454,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
 
         # Pallet count + weight on one line, then the pallet detail table below
         [sg.Text("Total pallet count:", size=15), sg.Text(total_pallets, key="-PALLETS-", size=23, font=("Segoe UI", 10, "bold")),
-         sg.Text("LDM:", size=7),                sg.Text(ldm, key="-LDM-", size=22, font=("Segoe UI", 10, "bold")),
+         sg.Text("LDM:", size=7),                 sg.Text(ldm, key="-LDM-", size=22, font=("Segoe UI", 10, "bold")),
          sg.Text("Gross weight:", size=11),       sg.Input(e.get("weight", ""), key="-WEIGHT-", size=21, font=("Segoe UI", 10, "bold"))],
         pallet_table,
         [sg.Push(), sg.Button("Add pallets", key="-BTN-ADD-PLL-", size=15), sg.Button("Edit pallets", key="-BTN-EDIT-PLL-", size=15), sg.Button("Delete pallets", key="-BTN-DELETE-PLL-", size=15), sg.Push()],
@@ -506,8 +506,60 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
             app_window.close()
             return None
         if action == "-SAVE-":
-            app_window.close()
-            return values, total_pallets, ldm, pallet_df
+            #app_window.close()
+            #return values, total_pallets, ldm, pallet_df
+            if nr:
+                print('EXISTING ORDER EDITED')
+                updated_values = {
+                        "sap_po":          values["-SAP_PO-"],
+                        "sender":          values["-SENDER-"],
+                        "sender_adr":          values["-SENDER-ADDRESS-"],
+                        "sender_cont":          values["-SENDER-CONTACT-"],
+                        "delivery":          values["-DELIVERY-"],
+                        "delivery_adr":          values["-DELIVERY-ADDRESS-"],
+                        "delivery_cont":          values["-DELIVERY-CONTACT-"],
+                        "loading":          values["-LOADING-"],
+                        "loading_to":          values["-LOADING-TO-"],
+                        "unloading":          values["-UNLOADING-"],
+                        "unloading_to":          values["-UNLOADING-TO-"],
+                        "pallets":          total_pallets,
+                        "ldm":          ldm,
+                        "weight":          float(values["-WEIGHT-"]),
+                        "forwarder":          values["-FORWARDER-"],
+                        "forwarder_contact":          values["-FORWARDER-CONTACT-"],
+                        "cost":          (float(values["-COST-"]) if values["-COST-"].strip() else None),
+                        "customs":          values["-CUSTOMS-"],
+                        "ref":          values["-REF-"],
+                        "temp_min":          (int(values["-IN-TEMP-MIN-"]) if values["-IN-TEMP-MIN-"].strip() else None),
+                        "temp_max":          (int(values["-IN-TEMP-MAX-"]) if values["-IN-TEMP-MAX-"].strip() else None),
+                        "info":          values["-IN-ORDER-DETAILS-"],
+                        "add_info_to_order":          values["-CB-ADD_TO_ORDER-"],
+                        "purch_manager":          values["-CMB-PURCHASE_MANAGER-"],
+                        "cargo_type":          values["-CMB-CARGO_TYPE-"],
+                        "transport_invoice":          values["-IN-TRANSPORT-INVOICE-"]
+                    }
+                
+                edit_db(nr, updated_values, 'transport')
+            else:
+                print('NEW ORDER CREATED')
+                new_record = add_db(
+                    values["-SAP_PO-"], values["-SENDER-"], values["-SENDER-ADDRESS-"], values["-SENDER-CONTACT-"], values["-DELIVERY-"], values["-DELIVERY-ADDRESS-"], values["-DELIVERY-CONTACT-"], values["-LOADING-"], values["-LOADING-TO-"],
+                    values["-UNLOADING-"], values["-UNLOADING-TO-"], total_pallets, ldm, values["-WEIGHT-"], values["-FORWARDER-"], values["-FORWARDER-CONTACT-"],
+                    values["-COST-"], values["-CUSTOMS-"], values["-REF-"], values["-IN-TEMP-MIN-"], values["-IN-TEMP-MAX-"], values["-IN-ORDER-DETAILS-"], values["-CB-ADD_TO_ORDER-"], values["-CMB-PURCHASE_MANAGER-"], values["-CMB-CARGO_TYPE-"], values["-IN-TRANSPORT-INVOICE-"]
+                )
+                for row in pallet_df.itertuples(): # loops through pallet_df and inserts new order's pallet data in db
+                    insert_pallet(
+                        new_record, 
+                        row.quantity, 
+                        row.length, 
+                        row.width, 
+                        row.height
+                    )
+            
+            
+            #current_df = read_all('transport', 'nr')
+            #refresh_table(current_df, "-TABLE-")
+            #statuss(f"✅ Record Nr.{new_record} added!")
         
         # action triggered when "Create transport order in PDF" button is pressed in record Edit modal - it creates a PDF file/transport order
         if action == "-CREATE-PDF-":
@@ -1280,7 +1332,7 @@ def main_menu(login_validation, theme_name):
                 else:
                     row = current_df.iloc[selected_row]
                     nr = int(row["nr"])
-                                    
+                    print(f'row["ldm"] = {row["ldm"]}')           
                     existing = {
                         "sender":            str(row["sender"]) if pd.notna(row["sender"]) else "",
                         "sender_adr":        str(row["sender_adr"]) if pd.notna(row["sender_adr"]) else "",
@@ -1307,8 +1359,13 @@ def main_menu(login_validation, theme_name):
             if action == "-BTN-CREATE-":
                 result = entry_modal("NEW TRANSPORT RECORD", login_validation=login_validation)
             else:  # -BTN-COPY-
-                result = entry_modal("NEW TRANSPORT RECORD", existing, login_validation=login_validation)
-            
+                #result = entry_modal("NEW TRANSPORT RECORD", existing, login_validation=login_validation)
+                entry_modal("NEW TRANSPORT RECORD", existing, login_validation=login_validation)
+                
+                current_df = read_all('transport', 'nr')
+                refresh_table(current_df, "-TABLE-")
+                statuss(f"✅ Record Nr.{new_record} added!")
+            """
             if result:
                 new_values, total_pallets, ldm, pallet_df = result
                 new_record = add_db(
@@ -1325,10 +1382,8 @@ def main_menu(login_validation, theme_name):
                         row.height
                     )
                 
-                current_df = read_all('transport', 'nr')
-                refresh_table(current_df, "-TABLE-")
-                statuss(f"✅ Record Nr.{new_record} added!")
                 
+            """
         # ── Action triggered when CREATE USER button is pressed - opens Entry modal for creating new record
         elif action == "-BTN-CREATE-USER-":
             print(
@@ -1487,7 +1542,14 @@ def main_menu(login_validation, theme_name):
                     "cargo_type":        str(row["cargo_type"]) if pd.notna(row["cargo_type"]) else "",
                     "transport_invoice": str(row["transport_invoice"]) if pd.notna(row["transport_invoice"]) else ""
                 }
-                result = entry_modal(f"Editing record Nr.{nr}", existing, nr, login_validation=login_validation)
+                #result = entry_modal(f"Editing record Nr.{nr}", existing, nr, login_validation=login_validation)
+                entry_modal(f"Editing record Nr.{nr}", existing, nr, login_validation=login_validation)
+                
+                current_df = read_all('transport', 'nr')
+                refresh_table(current_df, "-TABLE-")
+                statuss(f"✅ Nr.{nr} updated!")
+                app_window["-SEARCH-"].update("")
+                '''
                 if result is not None:
                     new_values, total_pallets, ldm, pallet_df = result
                     
@@ -1520,13 +1582,8 @@ def main_menu(login_validation, theme_name):
                         "transport_invoice":          new_values["-IN-TRANSPORT-INVOICE-"]
                     }
 
-                    edit_db(nr, updated_values, 'transport')
-                    
-                    current_df = read_all('transport', 'nr')
-                    refresh_table(current_df, "-TABLE-")
-                    statuss(f"✅ Nr.{nr} updated!")
-                    app_window["-SEARCH-"].update("")
-                                 
+                    #edit_db(nr, updated_values, 'transport')
+                '''           
         # ── Action triggered when Edit User button is pressed - opens Entry modal for editing an existing record
         elif action == "-BTN-EDIT-USER-":
             if selected_row is None:
