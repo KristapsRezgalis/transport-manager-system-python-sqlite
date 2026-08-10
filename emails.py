@@ -4,6 +4,7 @@ from db import return_fw_data, return_fw_contact_df, return_company_data, return
 from pdf import get_forwarder_sender_delivery_data
 from config import convert_date
 
+# Function to generate an e-mail for a new transport offer. It searches for contacts of a company that works in the particular country and enters data from transport order.
 def send_transport_offer(nr, data):
     outlook = win32.Dispatch('outlook.application')
     mail = outlook.CreateItem(0)

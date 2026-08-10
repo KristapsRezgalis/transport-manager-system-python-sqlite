@@ -481,11 +481,11 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
     if existing: # if editing existin order
         layout = common_rows + [
             [sg.Push(), sg.Button("Send orders", key="-BTN-SEND-ORDERS-", size=20), sg.Button("Forwarder order PDF", key="-CREATE-PDF-", size=20), sg.Button("Internal order PDF", key="-CREATE-COMPANY-PDF-", size=20), sg.Button("Send cargo offer", key="-BTN-SEND-OFFER-", size=20), sg.Push()],
-            [sg.Push(), sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()],
+            [sg.Push(), sg.Button("Save", key="-SAVE-", size=15), sg.Button("Close", size=15), sg.Push()],
         ]
     else: # if creating a new order
         layout = common_rows + [
-            [sg.Push(), sg.Button("Save", key="-SAVE-", size=15), sg.Button("Cancel", size=15), sg.Push()],
+            [sg.Push(), sg.Button("Save", key="-SAVE-", size=15), sg.Button("Close", size=15), sg.Push()],
         ]
         
     app_window = sg.Window(title, layout, modal=True, finalize=True)
@@ -502,7 +502,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
     while True:
         action, values = app_window.read()
         
-        if action in (sg.WIN_CLOSED, "Cancel"):
+        if action in (sg.WIN_CLOSED, "Close"):
             app_window.close()
             return None
         if action == "-SAVE-":
