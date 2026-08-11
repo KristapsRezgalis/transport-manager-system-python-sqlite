@@ -434,7 +434,8 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
     ### [sg.Text("Total pallet count:", size=16),  sg.Input(e.get("pallets", ""), key="-PALLETS-", size=35),
     # fills order modal fields with existing data
     common_rows = [
-        [sg.Text("SAP PO Nr:", size=15),           sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35)],
+        [sg.Text("SAP PO Nr:", size=15),           sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35),
+        sg.Push(), sg.Combo(['Import', 'Gemoss', 'Container', 'Other'], default_value='Import', key='-CMB-ORDER-TYPE-', enable_events=True, readonly=True)],
         [sg.HSeparator()],
         [sg.Text("Sender:", size=15),              sg.Combo(company_list, key="-SENDER-", default_value=e.get("sender", ""), readonly=True, size=33, enable_events=True),
          sg.Text("Delivery:", size=15),            sg.Combo(company_list, key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33, enable_events=True)],
@@ -939,18 +940,21 @@ def main_menu(login_validation, theme_name):
         sg.Input(key="-SEARCH-", size=20),
         sg.Button("Search", key="-BTN-SEARCH-", size=10),
         sg.Button("Exit", key="-BTN-EXIT-", size=10),
-        sg.Push(),sg.Combo(['Black', 'BlueMono', 'BluePurple', 'BrightColors', 'BrownBlue', 'Dark', 'Dark2', 'DarkAmber', 'DarkBlack', 'DarkBlack1', 'DarkBlue', 'DarkBlue1', 'DarkBlue10', 'DarkBlue11', 'DarkBlue12', 'DarkBlue13', 'DarkBlue14', 'DarkBlue15', 'DarkBlue16', 'DarkBlue17', 'DarkBlue2', 'DarkBlue3', 'DarkBlue4', 'DarkBlue5', 'DarkBlue6', 'DarkBlue7', 'DarkBlue8', 'DarkBlue9', 'DarkBrown', 'DarkBrown1', 'DarkBrown2', 'DarkBrown3', 'DarkBrown4', 'DarkBrown5', 'DarkBrown6', 'DarkGreen', 'DarkGreen1', 'DarkGreen2', 'DarkGreen3', 'DarkGreen4', 'DarkGreen5', 'DarkGreen6', 'DarkGrey', 'DarkGrey1', 'DarkGrey2', 'DarkGrey3', 'DarkGrey4', 'DarkGrey5', 'DarkGrey6', 'DarkGrey7', 'DarkPurple', 'DarkPurple1', 'DarkPurple2', 'DarkPurple3', 'DarkPurple4', 'DarkPurple5', 'DarkPurple6', 'DarkRed', 'DarkRed1', 'DarkRed2', 'DarkTanBlue', 'DarkTeal', 'DarkTeal1', 'DarkTeal10', 'DarkTeal11', 'DarkTeal12', 'DarkTeal2', 'DarkTeal3', 'DarkTeal4', 'DarkTeal5', 'DarkTeal6', 'DarkTeal7', 'DarkTeal8', 'DarkTeal9', 'Default', 'Default1', 'DefaultNoMoreNagging', 'Green', 'GreenMono', 'GreenTan', 'HotDogStand', 'Kayak', 'LightBlue', 'LightBlue1', 'LightBlue2', 'LightBlue3', 'LightBlue4', 'LightBlue5', 'LightBlue6', 'LightBlue7', 'LightBrown', 'LightBrown1', 'LightBrown10', 'LightBrown11', 'LightBrown12', 'LightBrown13', 'LightBrown2', 'LightBrown3', 'LightBrown4', 'LightBrown5', 'LightBrown6', 'LightBrown7', 'LightBrown8', 'LightBrown9', 'LightGray1', 'LightGreen', 'LightGreen1', 'LightGreen10', 'LightGreen2', 'LightGreen3', 'LightGreen4', 'LightGreen5', 'LightGreen6', 'LightGreen7', 'LightGreen8', 'LightGreen9', 'LightGrey', 'LightGrey1', 'LightGrey2', 'LightGrey3', 'LightGrey4', 'LightGrey5', 'LightGrey6', 'LightPurple', 'LightTeal', 'LightYellow', 'Material1', 'Material2', 'NeutralBlue', 'Purple', 'Reddit', 'Reds', 'SandyBeach', 'SystemDefault', 'SystemDefault1', 'SystemDefaultForReal', 'Tan', 'TanBlue', 'TealMono', 'Topanga'], default_value=theme_name, key='-DEFAULT-COLOR-', enable_events=True, readonly=True)
+        sg.Push(), sg.Combo(['All', 'Import', 'Gemoss', 'Container', 'Other'], default_value='Import', key='-CMB-CARGO-TYPE-', enable_events=True, readonly=True)
         ],
         [sg.Text("", key="-STATUS-", size=60, text_color="green")],
         #table_columns,
         [create_orders_table("-TABLE-")],
-        [sg.Frame(title="Total cargos", layout=total_records, 
+        [
+        sg.Frame(title="Total cargos", layout=total_records, 
         border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Total cost", layout=total_cost, 
         border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Total pallets", layout=total_pallets, 
         border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Cost per cargo", layout=cost_per_cargo, 
         border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Cost per pallet", layout=cost_per_pallet, 
-        border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Pallets per cargo", layout=pallets_per_cargo, 
-        border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50))],
+        border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)), sg.Frame(title="Pallets per cargo", layout=pallets_per_cargo,
+        border_width=2, relief=sg.RELIEF_SOLID, size=(120, 50)),
+        sg.Push(),sg.Combo(['Black', 'BlueMono', 'BluePurple', 'BrightColors', 'BrownBlue', 'Dark', 'Dark2', 'DarkAmber', 'DarkBlack', 'DarkBlack1', 'DarkBlue', 'DarkBlue1', 'DarkBlue10', 'DarkBlue11', 'DarkBlue12', 'DarkBlue13', 'DarkBlue14', 'DarkBlue15', 'DarkBlue16', 'DarkBlue17', 'DarkBlue2', 'DarkBlue3', 'DarkBlue4', 'DarkBlue5', 'DarkBlue6', 'DarkBlue7', 'DarkBlue8', 'DarkBlue9', 'DarkBrown', 'DarkBrown1', 'DarkBrown2', 'DarkBrown3', 'DarkBrown4', 'DarkBrown5', 'DarkBrown6', 'DarkGreen', 'DarkGreen1', 'DarkGreen2', 'DarkGreen3', 'DarkGreen4', 'DarkGreen5', 'DarkGreen6', 'DarkGrey', 'DarkGrey1', 'DarkGrey2', 'DarkGrey3', 'DarkGrey4', 'DarkGrey5', 'DarkGrey6', 'DarkGrey7', 'DarkPurple', 'DarkPurple1', 'DarkPurple2', 'DarkPurple3', 'DarkPurple4', 'DarkPurple5', 'DarkPurple6', 'DarkRed', 'DarkRed1', 'DarkRed2', 'DarkTanBlue', 'DarkTeal', 'DarkTeal1', 'DarkTeal10', 'DarkTeal11', 'DarkTeal12', 'DarkTeal2', 'DarkTeal3', 'DarkTeal4', 'DarkTeal5', 'DarkTeal6', 'DarkTeal7', 'DarkTeal8', 'DarkTeal9', 'Default', 'Default1', 'DefaultNoMoreNagging', 'Green', 'GreenMono', 'GreenTan', 'HotDogStand', 'Kayak', 'LightBlue', 'LightBlue1', 'LightBlue2', 'LightBlue3', 'LightBlue4', 'LightBlue5', 'LightBlue6', 'LightBlue7', 'LightBrown', 'LightBrown1', 'LightBrown10', 'LightBrown11', 'LightBrown12', 'LightBrown13', 'LightBrown2', 'LightBrown3', 'LightBrown4', 'LightBrown5', 'LightBrown6', 'LightBrown7', 'LightBrown8', 'LightBrown9', 'LightGray1', 'LightGreen', 'LightGreen1', 'LightGreen10', 'LightGreen2', 'LightGreen3', 'LightGreen4', 'LightGreen5', 'LightGreen6', 'LightGreen7', 'LightGreen8', 'LightGreen9', 'LightGrey', 'LightGrey1', 'LightGrey2', 'LightGrey3', 'LightGrey4', 'LightGrey5', 'LightGrey6', 'LightPurple', 'LightTeal', 'LightYellow', 'Material1', 'Material2', 'NeutralBlue', 'Purple', 'Reddit', 'Reds', 'SandyBeach', 'SystemDefault', 'SystemDefault1', 'SystemDefaultForReal', 'Tan', 'TanBlue', 'TealMono', 'Topanga'], default_value=theme_name, key='-DEFAULT-COLOR-', enable_events=True, readonly=True)
+        ],
         #[sg.Text(key="-TOTAL-ACTIVE-RECORDS-"), sg.Text(key="-AVERAGE-CARGO-COST-"), sg.Text(key="-AVERAGE-PALLET-COST-"), sg.Text(key="-AVERAGE-PALLET-AMOUNT-")]
     ]
     
@@ -1129,6 +1133,10 @@ def main_menu(login_validation, theme_name):
     app_window.maximize() 
     
     def refresh_table(df, table_key):
+        # Pārbaudām, vai DataFrame nav tukšs un vai tajā eksistē kolonna 'nr'
+        #if not df.empty and 'nr' in df.columns:
+            # Sakārtojam pēc 'nr' kolonnas lejucošā secībā (lielākais numurs augšā)
+         #   df = df.iloc[pd.to_numeric(df['nr'], errors='coerce').argsort()[::-1]]
         
         if table_key in ("-TABLE-", "-STATISTICS-TABLE-"): # Order and Statistic table do not us all db columns, therefore they use selected columns from TRANSPORT_ORDER_DB_COLUMNS
             app_window[table_key].update(values=df_to_table(df, TRANSPORT_ORDER_DB_COLUMNS))
