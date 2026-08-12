@@ -537,7 +537,8 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                         "add_info_to_order":          values["-CB-ADD_TO_ORDER-"],
                         "purch_manager":          values["-CMB-PURCHASE_MANAGER-"],
                         "cargo_type":          values["-CMB-CARGO_TYPE-"],
-                        "transport_invoice":          values["-IN-TRANSPORT-INVOICE-"]
+                        "transport_invoice":          values["-IN-TRANSPORT-INVOICE-"],
+                        "order_type":             values["-CMB-ORDER-TYPE-"]
                     }
                 
                 edit_db(nr, updated_values, 'transport')
@@ -546,7 +547,8 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                 new_record = add_db(
                     values["-SAP_PO-"], values["-SENDER-"], values["-SENDER-ADDRESS-"], values["-SENDER-CONTACT-"], values["-DELIVERY-"], values["-DELIVERY-ADDRESS-"], values["-DELIVERY-CONTACT-"], values["-LOADING-"], values["-LOADING-TO-"],
                     values["-UNLOADING-"], values["-UNLOADING-TO-"], total_pallets, ldm, values["-WEIGHT-"], values["-FORWARDER-"], values["-FORWARDER-CONTACT-"],
-                    values["-COST-"], values["-CUSTOMS-"], values["-REF-"], values["-IN-TEMP-MIN-"], values["-IN-TEMP-MAX-"], values["-IN-ORDER-DETAILS-"], values["-CB-ADD_TO_ORDER-"], values["-CMB-PURCHASE_MANAGER-"], values["-CMB-CARGO_TYPE-"], values["-IN-TRANSPORT-INVOICE-"]
+                    values["-COST-"], values["-CUSTOMS-"], values["-REF-"], values["-IN-TEMP-MIN-"], values["-IN-TEMP-MAX-"], values["-IN-ORDER-DETAILS-"],
+                    values["-CB-ADD_TO_ORDER-"], values["-CMB-PURCHASE_MANAGER-"], values["-CMB-CARGO_TYPE-"], values["-IN-TRANSPORT-INVOICE-"], values["-CMB-ORDER-TYPE-"]
                 )
                 for row in pallet_df.itertuples(): # loops through pallet_df and inserts new order's pallet data in db
                     insert_pallet(
@@ -556,6 +558,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                         row.width, 
                         row.height
                     )
+                app_window.close()
             
             
             #current_df = read_all('transport', 'nr')
@@ -1362,6 +1365,7 @@ def main_menu(login_validation, theme_name):
                         "add_info_to_order": bool(int(row["add_info_to_order"])) if pd.notna(row["add_info_to_order"]) else False,
                         "purch_manager":     str(row["purch_manager"]) if pd.notna(row["purch_manager"]) else "",
                         "cargo_type":        str(row["cargo_type"]) if pd.notna(row["cargo_type"]) else "",
+                        "order_type":             values["-CMB-ORDER-TYPE-"]
                     }
                 
             if action == "-BTN-CREATE-":
@@ -1548,7 +1552,8 @@ def main_menu(login_validation, theme_name):
                     "add_info_to_order": bool(int(row["add_info_to_order"])) if pd.notna(row["add_info_to_order"]) else False,
                     "purch_manager":     str(row["purch_manager"]) if pd.notna(row["purch_manager"]) else "",
                     "cargo_type":        str(row["cargo_type"]) if pd.notna(row["cargo_type"]) else "",
-                    "transport_invoice": str(row["transport_invoice"]) if pd.notna(row["transport_invoice"]) else ""
+                    "transport_invoice": str(row["transport_invoice"]) if pd.notna(row["transport_invoice"]) else "",
+                    "order_type":        str(row["order_type"]) if pd.notna(row["order_type"]) else ""
                 }
                 #result = entry_modal(f"Editing record Nr.{nr}", existing, nr, login_validation=login_validation)
                 entry_modal(f"Editing record Nr.{nr}", existing, nr, login_validation=login_validation)
