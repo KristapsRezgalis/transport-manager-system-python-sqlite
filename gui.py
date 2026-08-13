@@ -1365,7 +1365,7 @@ def main_menu(login_validation, theme_name):
                         "add_info_to_order": bool(int(row["add_info_to_order"])) if pd.notna(row["add_info_to_order"]) else False,
                         "purch_manager":     str(row["purch_manager"]) if pd.notna(row["purch_manager"]) else "",
                         "cargo_type":        str(row["cargo_type"]) if pd.notna(row["cargo_type"]) else "",
-                        "order_type":             values["-CMB-ORDER-TYPE-"]
+                        "order_type":        str(row["order_type"]) if pd.notna(row["order_type"]) else ""
                     }
                 
             if action == "-BTN-CREATE-":
@@ -1376,7 +1376,7 @@ def main_menu(login_validation, theme_name):
                 
                 current_df = read_all('transport', 'nr')
                 refresh_table(current_df, "-TABLE-")
-                statuss(f"✅ Record Nr.{new_record} added!")
+                #statuss(f"✅ Record Nr.{new_record} added!")
             """
             if result:
                 new_values, total_pallets, ldm, pallet_df = result
