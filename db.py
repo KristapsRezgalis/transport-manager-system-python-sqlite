@@ -87,6 +87,20 @@ def add_db(sap_po, sender, sender_adr, sender_cont, delivery, delivery_adr, deli
 
     return new_record
 
+# function to update specific data into a database
+def add_spec_data(table_name, column_name, id_col, col_nr, entered_value):
+    conn = sqlite3.connect(DB_FILE)
+    cur = conn.cursor()
+    
+    query = f"UPDATE {table_name} SET {column_name} = ? WHERE {id_col} = ?"
+    cur.execute(query, (entered_value, col_nr))
+    
+    cur.execute("PRAGMA table_info(transport)")
+    print(cur.fetchall())
+    
+    conn.commit()
+    conn.close()
+
 def add_user(name, surname, role, email, phone, login, password):
     """Adds new user record into database"""
     new_row=pd.DataFrame([{

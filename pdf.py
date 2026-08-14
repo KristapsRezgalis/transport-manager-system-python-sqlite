@@ -290,7 +290,7 @@ def create_order_pdf (data, nr, login_validation):
     
     base_dir = r"\\hippo.gemoss.lv\PUBLIC\LOGISTIKA\TMS"
     year = str(datetime.now().year)
-    folder_name = f"{nr}"
+    ##folder_name = f"{nr}"
     order_dir = os.path.join(base_dir, year, str(nr))
     
     os.makedirs(order_dir, exist_ok=True)  # create "orders" folder if it doesn't exist yet

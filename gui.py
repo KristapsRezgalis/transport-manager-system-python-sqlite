@@ -1,8 +1,9 @@
 import FreeSimpleGUI as sg
 import pandas as pd
+import os
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts, get_purchase_managers, get_pallet_details, insert_pallet
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts, get_purchase_managers, get_pallet_details, insert_pallet, add_spec_data
 from pdf import create_order_pdf
 from pdf_order import create_gemoss_specification_PDF
 from stats import generate_diagram
@@ -10,6 +11,7 @@ from company import company_entry_modal, company_contacts_modal, create_company_
 from forwarder import forwarder_entry_modal
 from config import *
 from emails import send_order_modal, send_email, send_email_purchase_manager, send_transport_offer
+from excel import add_row_to_table
 
 login_validation = ''
 
@@ -481,12 +483,12 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
 
     if existing: # if editing existin order
         layout = common_rows + [
-            [sg.Push(), sg.Button("Send orders", key="-BTN-SEND-ORDERS-", size=20), sg.Button("Forwarder order PDF", key="-CREATE-PDF-", size=20), sg.Button("Internal order PDF", key="-CREATE-COMPANY-PDF-", size=20), sg.Button("Send cargo offer", key="-BTN-SEND-OFFER-", size=20), sg.Push()],
+            [sg.Push(), sg.Button("Send orders", key="-BTN-SEND-ORDERS-", size=19), sg.Button("Forwarder order PDF", key="-CREATE-PDF-", size=19), sg.Button("Internal order PDF", key="-CREATE-COMPANY-PDF-", size=19), sg.Button("Send cargo offer", key="-BTN-SEND-OFFER-", size=19), sg.Button("Add to Excel", key="-BTN-ADD-EXCEL-", size=19), sg.Push()],
             [sg.Push(), sg.Button("Save", key="-SAVE-", size=15), sg.Button("Close", size=15), sg.Push()],
         ]
     else: # if creating a new order
         layout = common_rows + [
-            [sg.Push(), sg.Button("Save", key="-SAVE-", size=15), sg.Button("Close", size=15), sg.Push()],
+            [sg.Push(), sg.Button("Save and close", key="-SAVE-", size=20), sg.Button("Cancel", size=20), sg.Push()],
         ]
         
     app_window = sg.Window(title, layout, modal=True, finalize=True)
@@ -503,7 +505,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
     while True:
         action, values = app_window.read()
         
-        if action in (sg.WIN_CLOSED, "Close"):
+        if action in (sg.WIN_CLOSED, "Close", "Cancel"):
             app_window.close()
             return None
         if action == "-SAVE-":
@@ -544,12 +546,25 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                 edit_db(nr, updated_values, 'transport')
             else:
                 print('NEW ORDER CREATED')
+
                 new_record = add_db(
                     values["-SAP_PO-"], values["-SENDER-"], values["-SENDER-ADDRESS-"], values["-SENDER-CONTACT-"], values["-DELIVERY-"], values["-DELIVERY-ADDRESS-"], values["-DELIVERY-CONTACT-"], values["-LOADING-"], values["-LOADING-TO-"],
                     values["-UNLOADING-"], values["-UNLOADING-TO-"], total_pallets, ldm, values["-WEIGHT-"], values["-FORWARDER-"], values["-FORWARDER-CONTACT-"],
                     values["-COST-"], values["-CUSTOMS-"], values["-REF-"], values["-IN-TEMP-MIN-"], values["-IN-TEMP-MAX-"], values["-IN-ORDER-DETAILS-"],
                     values["-CB-ADD_TO_ORDER-"], values["-CMB-PURCHASE_MANAGER-"], values["-CMB-CARGO_TYPE-"], values["-IN-TRANSPORT-INVOICE-"], values["-CMB-ORDER-TYPE-"]
                 )
+                
+                # creates an order's folder where to save all file srelated to the particular shipment
+                base_dir = r"\\hippo.gemoss.lv\PUBLIC\LOGISTIKA\TMS"
+                year = str(datetime.now().year)
+                order_dir = os.path.join(base_dir, year, str(new_record)) # order_dir has full directory name that is stored in databe later
+                try:
+                    os.makedirs(order_dir, exist_ok=True)
+                    add_spec_data('transport', 'doc_loc', 'nr', int(new_record), order_dir) # adds into DB the file location directory
+                except OSError as e:
+                    sg.popup_error(f"Could not create folder:\n{e}", title="Folder Error")
+                
+                
                 for row in pallet_df.itertuples(): # loops through pallet_df and inserts new order's pallet data in db
                     insert_pallet(
                         new_record, 
@@ -558,6 +573,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                         row.width, 
                         row.height
                     )
+                
                 app_window.close()
             
             
@@ -601,6 +617,9 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                         send_email_purchase_manager(f"{emails_list['-IN-EXTRA-EMAIL-']}", existing, nr)
         elif action == "-BTN-SEND-OFFER-":
             send_transport_offer(nr, existing)
+        
+        elif action == "-BTN-ADD-EXCEL-":
+            add_row_to_table(nr, existing)
             
         elif action == "-FORWARDER-":
             selected_forwarder_name = values['-FORWARDER-']
@@ -1366,6 +1385,7 @@ def main_menu(login_validation, theme_name):
                         "purch_manager":     str(row["purch_manager"]) if pd.notna(row["purch_manager"]) else "",
                         "cargo_type":        str(row["cargo_type"]) if pd.notna(row["cargo_type"]) else "",
                         "order_type":        str(row["order_type"]) if pd.notna(row["order_type"]) else ""
+                        #"doc_loc":        str(row["doc_loc"]) if pd.notna(row["doc_loc"]) else ""
                     }
                 
             if action == "-BTN-CREATE-":
@@ -1553,7 +1573,8 @@ def main_menu(login_validation, theme_name):
                     "purch_manager":     str(row["purch_manager"]) if pd.notna(row["purch_manager"]) else "",
                     "cargo_type":        str(row["cargo_type"]) if pd.notna(row["cargo_type"]) else "",
                     "transport_invoice": str(row["transport_invoice"]) if pd.notna(row["transport_invoice"]) else "",
-                    "order_type":        str(row["order_type"]) if pd.notna(row["order_type"]) else ""
+                    "order_type":        str(row["order_type"]) if pd.notna(row["order_type"]) else "",
+                    "doc_loc":           str(row["doc_loc"]) if pd.notna(row["doc_loc"]) else ""
                 }
                 #result = entry_modal(f"Editing record Nr.{nr}", existing, nr, login_validation=login_validation)
                 entry_modal(f"Editing record Nr.{nr}", existing, nr, login_validation=login_validation)
