@@ -10,7 +10,9 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
 from config import convert_date
 import os
+import textwrap
 from datetime import datetime
+from env import *
 
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details
 from pdf import get_forwarder_sender_delivery_data
@@ -70,8 +72,19 @@ def draw_cargo_data(pdf, data, y, df_sender_company_address, df_sender_company_c
     y -= 10
     pdf.setFont("LVCarlito", 10)
     pdf.drawString(83, y, "Iekraušanas adrese:")
-    pdf.drawString(273, y, f"{data.get('sender')}")
-    y -= 12
+    
+    if len(data.get('sender')) > 45:
+        sender_dict = textwrap.wrap(data.get('sender'), width=45)
+        
+        sender_field = pdf.beginText(273, y)
+        for line in sender_dict:
+            sender_field.textLine(line)
+        pdf.drawText(sender_field)
+        y -= len(sender_dict) * 12
+    else:
+        pdf.drawString(273, y, f"{data.get('sender')}")
+        y -= 12
+
     pdf.drawString(273, y, f"{df_sender_company_address['adr_street'].iloc[0]}")
     y -= 12
     pdf.drawString(273, y, f"{df_sender_company_address['adr_city'].iloc[0]}, ")
@@ -102,8 +115,19 @@ def draw_cargo_data(pdf, data, y, df_sender_company_address, df_sender_company_c
     pdf.line(80, y, 540, y)
     y -= 12
     pdf.drawString(83, y, "Piegādes adrese:")
-    pdf.drawString(273, y, f"{data.get('delivery')}")
-    y -= 12
+      
+    if len(data.get('delivery')) > 45:
+        delivery_dict = textwrap.wrap(data.get('delivery'), width=45)
+        
+        delivery_field = pdf.beginText(273, y)
+        for line in delivery_dict:
+            delivery_field.textLine(line)
+        pdf.drawText(delivery_field)
+        y -= len(delivery_dict) * 12
+    else:
+        pdf.drawString(273, y, f"{data.get('delivery')}")
+        y -= 12
+        
     pdf.drawString(273, y, f"{df_delivery_company_address['adr_street'].iloc[0]}")
     y -= 12
     pdf.drawString(273, y, f"{df_delivery_company_address['adr_city'].iloc[0]}")
@@ -342,7 +366,8 @@ def draw_conditions(pdf, y):
 def create_gemoss_specification_PDF(data, nr, login_validation):
     y = 805
     
-    base_dir = r"\\hippo.gemoss.lv\PUBLIC\LOGISTIKA\TMS"
+    base_dir = base_dir_work
+    
     year = str(datetime.now().year)
     folder_name = f"{nr}"
     order_dir = os.path.join(base_dir, year, str(nr))

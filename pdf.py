@@ -10,7 +10,9 @@ from reportlab.pdfbase.ttfonts import TTFont
 from reportlab.pdfbase.pdfmetrics import registerFontFamily
 from config import convert_date
 import os
+import textwrap
 from datetime import datetime
+from env import *
 
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details
 
@@ -105,9 +107,35 @@ def draw_loading_unloading(pdf, data, y, df_sender_company_address, df_sender_co
     pdf.drawString(30, y, f"Loading date: {'FIX day ' + convert_date(data.get('loading')) if data.get('loading') == data.get('loading_to') else 'from ' + convert_date(data.get('loading'))}")
     pdf.drawString(310, y, f"Unloading date: {'until ' + convert_date(data.get('unloading_to'))}")
     y -= 15
-    pdf.drawString(30, y, f"Sender: {data.get('sender')}")
-    pdf.drawString(310, y, f"Receiver: {data.get('delivery')}")
-    y -= 15
+    y1 = y
+    y2 = y
+    
+    if len(data.get('sender')) > 35:
+        sender_dict = textwrap.wrap(data.get('sender'), width=35)
+        
+        pdf.drawString(30, y1, f"Sender: ")
+        sender_field = pdf.beginText(63, y1)
+        for line in sender_dict:
+            sender_field.textLine(line)
+        pdf.drawText(sender_field)
+        y -= len(sender_dict) * 13
+    else:
+        pdf.drawString(30, y1, f"Sender: {data.get('sender')}")
+        
+    if len(data.get('delivery')) > 35:
+        delivery_dict = textwrap.wrap(data.get('delivery'), width=35)
+        
+        pdf.drawString(310, y2, f"Receiver: ")
+        delivery_field = pdf.beginText(350, y2)
+        for line in delivery_dict:
+            delivery_field.textLine(line)
+        pdf.drawText(delivery_field)
+        y2 -= len(delivery_dict) * 13
+    else:
+        pdf.drawString(310, y2, f"Receiver: {data.get('delivery')}")
+        
+    y == y1 if (y1 > y2) else y == y2
+    
     pdf.drawString(30, y, f"Loading address: {data.get('sender_adr')}")
     pdf.drawString(310, y, f"Unloading address: {data.get('delivery_adr')}")
     y -= 12
@@ -115,12 +143,12 @@ def draw_loading_unloading(pdf, data, y, df_sender_company_address, df_sender_co
     loading_address = [f"{df_sender_company_address['adr_street'].iloc[0]}", f"{df_sender_company_address['adr_city'].iloc[0]}, {df_sender_company_address['adr_post_code'].iloc[0]}", f"{df_sender_company_address['adr_country'].iloc[0]}"]
     unloading_address = [f"{df_delivery_company_address['adr_street'].iloc[0]}", f"{df_delivery_company_address['adr_city'].iloc[0]}, {df_delivery_company_address['adr_post_code'].iloc[0]}", f"{df_delivery_company_address['adr_country'].iloc[0]}"]
 
-    tx_field_address_1 = pdf.beginText(101, 608)
+    tx_field_address_1 = pdf.beginText(101, y)
     for line in loading_address:
         tx_field_address_1.textLine(line)
     pdf.drawText(tx_field_address_1)
     
-    tx_field_address_2 = pdf.beginText(390, 608)
+    tx_field_address_2 = pdf.beginText(390, y)
     for line in unloading_address:
         tx_field_address_2.textLine(line)
     pdf.drawText(tx_field_address_2)
@@ -288,7 +316,7 @@ def create_order_pdf (data, nr, login_validation):
     
     df_fw, df_fw_contact, df_sender_company, df_sender_company_address, df_sender_company_contact, df_delivery_company, df_delivery_company_address, df_delivery_company_contact = get_forwarder_sender_delivery_data(data)
     
-    base_dir = r"\\hippo.gemoss.lv\PUBLIC\LOGISTIKA\TMS"
+    base_dir = base_dir_work
     year = str(datetime.now().year)
     ##folder_name = f"{nr}"
     order_dir = os.path.join(base_dir, year, str(nr))
