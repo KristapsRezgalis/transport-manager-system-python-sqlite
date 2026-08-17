@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts, get_purchase_managers, get_pallet_details, insert_pallet, add_spec_data
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts, get_purchase_managers, get_pallet_details, insert_pallet, add_spec_data, check_doc_loc
 from pdf import create_order_pdf
 from pdf_order import create_gemoss_specification_PDF
 from stats import generate_diagram
@@ -544,6 +544,18 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                     }
                 
                 edit_db(nr, updated_values, 'transport')
+                
+                if check_doc_loc(nr) is None:
+                    # creates an order's folder where to save all file srelated to the particular shipment
+                    base_dir = r"\\hippo.gemoss.lv\PUBLIC\LOGISTIKA\TMS"
+                    year = str(datetime.now().year)
+                    order_dir = os.path.join(base_dir, year, str(nr)) # order_dir has full directory name that is stored in databe later
+                    try:
+                        os.makedirs(order_dir, exist_ok=True)
+                        add_spec_data('transport', 'doc_loc', 'nr', int(nr), order_dir) # adds into DB the file location directory
+                    except OSError as e:
+                        sg.popup_error(f"Could not create folder:\n{e}", title="Folder Error")
+                    
             else:
                 print('NEW ORDER CREATED')
 
@@ -956,7 +968,7 @@ def main_menu(login_validation, theme_name):
         sg.Button("Delete", key="-BTN-DELETE-", size=10),
         sg.Button("Copy", key="-BTN-COPY-", size=10),
         sg.VerticalSeparator(),
-        sg.Button("Show All", key="-BTN-ALLDATA-", size=10),
+        sg.Button("Refresh", key="-BTN-ALLDATA-", size=10),
         sg.Button("Filter", key="-BTN-FILTER-", size=10),
         sg.Text("Search:", pad=(5, 5)),
         sg.Input(key="-SEARCH-", size=20),

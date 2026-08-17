@@ -118,12 +118,14 @@ def draw_loading_unloading(pdf, data, y, df_sender_company_address, df_sender_co
         for line in sender_dict:
             sender_field.textLine(line)
         pdf.drawText(sender_field)
-        y -= len(sender_dict) * 13
+        y1 -= len(sender_dict) * 13
     else:
         pdf.drawString(30, y1, f"Sender: {data.get('sender')}")
+        y1 -= 15
         
     if len(data.get('delivery')) > 35:
         delivery_dict = textwrap.wrap(data.get('delivery'), width=35)
+        
         
         pdf.drawString(310, y2, f"Receiver: ")
         delivery_field = pdf.beginText(350, y2)
@@ -133,8 +135,12 @@ def draw_loading_unloading(pdf, data, y, df_sender_company_address, df_sender_co
         y2 -= len(delivery_dict) * 13
     else:
         pdf.drawString(310, y2, f"Receiver: {data.get('delivery')}")
+        y2 -= 15
         
-    y == y1 if (y1 > y2) else y == y2
+    if y1 < y2:
+        y = y1
+    else:
+        y = y2
     
     pdf.drawString(30, y, f"Loading address: {data.get('sender_adr')}")
     pdf.drawString(310, y, f"Unloading address: {data.get('delivery_adr')}")

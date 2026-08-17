@@ -101,6 +101,17 @@ def add_spec_data(table_name, column_name, id_col, col_nr, entered_value):
     conn.commit()
     conn.close()
 
+# function to return value from specific doc_loc
+def check_doc_loc(number):
+    with sqlite3.connect(DB_FILE) as conn:
+        cursor = conn.cursor()
+        cursor.execute(
+            "SELECT doc_loc FROM transport WHERE nr = ?",
+            (number,)
+        )
+        row = cursor.fetchone()
+    return row[0] if row else None
+
 def add_user(name, surname, role, email, phone, login, password):
     """Adds new user record into database"""
     new_row=pd.DataFrame([{
