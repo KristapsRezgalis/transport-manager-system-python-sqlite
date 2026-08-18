@@ -437,7 +437,8 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
     # fills order modal fields with existing data
     common_rows = [
         [sg.Text("SAP PO Nr:", size=15),           sg.Input(e.get("sap_po", ""),          key="-SAP_PO-",   size=35),
-        sg.Push(), sg.Combo(['Import', 'Gemoss', 'Container', 'Other'], default_value='Import', key='-CMB-ORDER-TYPE-', enable_events=True, readonly=True)],
+        sg.Push(), sg.Combo(['Import', 'Gemoss', 'Container', 'Other'], default_value='Import', key='-CMB-ORDER-TYPE-', enable_events=True, readonly=True),
+            sg.Button('Files', key="-BTN-OPEN-FILES-", size=10)],
         [sg.HSeparator()],
         [sg.Text("Sender:", size=15),              sg.Combo(company_list, key="-SENDER-", default_value=e.get("sender", ""), readonly=True, size=33, enable_events=True),
          sg.Text("Delivery:", size=15),            sg.Combo(company_list, key="-DELIVERY-", default_value=e.get("delivery", ""), readonly=True, size=33, enable_events=True)],
@@ -630,9 +631,17 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
         elif action == "-BTN-SEND-OFFER-":
             send_transport_offer(nr, existing)
         
-        elif action == "-BTN-ADD-EXCEL-":
+        elif action == "-BTN-ADD-EXCEL-":  # adds current order's data to Excel file that is monitored by colleagues
             add_row_to_table(nr, existing)
-            
+        
+        elif action == "-BTN-OPEN-FILES-":  # opens current order's file location
+            if nr:
+                path = check_doc_loc(nr)
+                if not path or not os.path.exists(path):
+                    sg.popup_error(f"Error: Folder does not exist!\nPath: {path}")
+                    continue
+                os.startfile(path)
+
         elif action == "-FORWARDER-":
             selected_forwarder_name = values['-FORWARDER-']
             fw_id = return_forwarders(selected_forwarder_name)
