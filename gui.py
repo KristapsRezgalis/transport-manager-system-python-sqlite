@@ -641,7 +641,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                     sg.popup_error(f"Error: Folder does not exist!\nPath: {path}")
                     continue
                 os.startfile(path)
-
+                
         elif action == "-FORWARDER-":
             selected_forwarder_name = values['-FORWARDER-']
             fw_id = return_forwarders(selected_forwarder_name)
@@ -1231,6 +1231,9 @@ def main_menu(login_validation, theme_name):
     
     refresh_table(current_df, "-TABLE-")
     
+    app_window.bind("<Control-f>", "-FOCUS_SEARCH-") # used when Ctrl + F is pressed on keyboard to focus search field
+    app_window["-SEARCH-"].bind("<Return>", "_RETURN")
+    
     while True:
         action, values = app_window.read()
         
@@ -1305,6 +1308,10 @@ def main_menu(login_validation, theme_name):
             # Row click → SELECT
             else:
                 selected_row = row
+                
+        elif action == "-FOCUS_SEARCH-":
+            app_window["-SEARCH-"].set_focus()
+
         # ── Action triggered when Show All button is pressed - shows all data in database
         elif action == "-BTN-ALLDATA-":
             table_key = action[0]
@@ -1328,7 +1335,7 @@ def main_menu(login_validation, theme_name):
             statuss("Showing all records!")
             
         # ── Action triggered when Search button is pressed - seasrches in Transport orders database for values that match from the searchbox
-        elif action == "-BTN-SEARCH-":
+        elif action in ("-SEARCH-" + "_RETURN", "-BTN-SEARCH-"):  #action == "-BTN-SEARCH-" :
             search_value = values["-SEARCH-"].strip()
             if not search_value:
                 statuss("Ievadi meklēšanas tekstu!", "red")
