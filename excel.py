@@ -38,7 +38,8 @@ def add_row_to_table(nr, data):   # , row_dict):
         "Iepircējs": data.get('purch_manager'),
         "Agreement": nr,
         "Documents": data.get('doc_loc'),
-        "km": get_km(address_load, address_deliver)
+        "km": get_km(address_load, address_deliver),
+        "REFS": f"{data.get('temp_min')}...{data.get('temp_max')}°C" if data.get('temp_min') else ""
         # CO2 kg is auto-filled too
     }
 
@@ -85,7 +86,7 @@ def add_row_to_table(nr, data):   # , row_dict):
     print(f"Added row {new_row_number}")
 
 
-
+"""
 new_row = {
     "Nosūtītājs": "Test Sender Ltd",
     "Adrese": "Some Street 1, Country",
@@ -103,5 +104,5 @@ new_row = {
     "Iepircējs": "Arnis K.",
     # CO2 kg is auto-filled too
 }
-
+"""
 #add_row_to_table(filepath, "Aug 2026 ", "TabulaAug2026", new_row)

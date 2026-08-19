@@ -1219,8 +1219,9 @@ def main_menu(login_validation, theme_name):
     
     # --- initial data + sorting state ---
     current_df = read_all('transport', 'nr')
-    sort_column = None
-    sort_ascending = True
+    current_df = current_df.sort_values(by="nr", ascending=False, ignore_index=True)
+    sort_column = "nr"
+    sort_ascending = False
     selected_row = None
     
     def reset_sort_select():
@@ -1245,6 +1246,9 @@ def main_menu(login_validation, theme_name):
             show_view('-VIEW-TRANSPORT-')
             reset_sort_select()
             current_df = read_all('transport', 'nr')
+            current_df = current_df.sort_values(by="nr", ascending=False, ignore_index=True)
+            sort_column = "nr"
+            sort_ascending = False
             refresh_table(current_df, "-TABLE-")
             print('Transport Orders menu selected')
         elif action == '-STATISTICS-':
@@ -1316,6 +1320,9 @@ def main_menu(login_validation, theme_name):
         elif action == "-BTN-ALLDATA-":
             table_key = action[0]
             current_df = read_all('transport', 'nr')
+            current_df = current_df.sort_values(by="nr", ascending=False, ignore_index=True)
+            sort_column = "nr"
+            sort_ascending = False
             refresh_table(current_df, "-TABLE-")
             app_window["-SEARCH-"].update("")
             statuss("Showing all records!")
