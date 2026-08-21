@@ -893,7 +893,7 @@ def main_menu(login_validation, theme_name):
                 headings=ORDER_COLUMNS,
                 key=table_key,
                 auto_size_columns=False,
-                col_widths=[5, 9, 18, 18, 10, 10, 5, 8, 18, 15, 8, 5, 6],
+                col_widths=[5,9,23,18,10, 10,5,8,18,10, 8,5,10],
                 justification="left",
                 num_rows=30,
                 enable_events=True,

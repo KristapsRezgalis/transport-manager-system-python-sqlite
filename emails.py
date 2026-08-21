@@ -1,7 +1,7 @@
 import win32com.client as win32
 import FreeSimpleGUI as sg
 from db import return_fw_data, return_fw_contact_df, return_company_data, return_company_address, return_company_contact, get_pallet_details, get_purchase_manager_df, get_tender_emails
-from pdf import get_forwarder_sender_delivery_data
+from pdf import get_forwarder_sender_delivery_data, display_val
 from config import convert_date
 
 # Function to generate an e-mail for a new transport offer. It searches for contacts of a company that works in the particular country and enters data from transport order.
@@ -78,7 +78,8 @@ def send_transport_offer(nr, data):
             <p style="margin:0;">Loading date: <b>{'fix day ' + convert_date(data.get('loading')) if data.get('loading') == data.get('loading_to') else 'from ' + convert_date(data.get('loading'))}</b></p>
             <p style="margin:0;">Loading hours: <b>{df_sender_company_address['adr_hours'].iloc[0]}</b></p>
             <p style="margin:0;">Shipper (Consignor): <b>{data.get('sender')}</b></p>
-            <p style="margin:0 0 8px 0;">Loading address: <b>{loading_address}</b></p>
+            <p style="margin:0;">Loading address: <b>{loading_address}</b></p>
+            <p style="margin:0 0 8px 0;">Slot booking: <b>{df_sender_company_address['adr_book_slot']}</b></p>
             
             <p style="margin:0;">Consignee: <b>{data.get('delivery')}</b></p>
             <p style="margin:0 0 8px 0;">Delivery address: <b>{unloading_address}</b></p>
@@ -86,7 +87,8 @@ def send_transport_offer(nr, data):
             <p style="margin:0;">Pallets total: <b>{data.get('pallets')}</b></p>
             {pallet_table}
             <p style="margin:0;">Estimated LDM: <b>{data.get('ldm')}</b></p>
-            <p style="margin:0 0 8px 0;">Gross weight: <b>{data.get('weight')} kg</b></p>
+            <p style="margin:0;">Gross weight: <b>{data.get('weight')} kg</b></p>
+            <p style="margin:0 0 8px 0;">Temperature control: <b>{display_val(data.get('ref'), data.get('temp_min'), data.get('temp_max'))}</b></p>
             
             <p>Paldies.</p>
             <p style="margin:0;">------- </p>

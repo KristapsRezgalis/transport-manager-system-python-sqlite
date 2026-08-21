@@ -47,6 +47,14 @@ gemoss_letterhead = [
     'Address: Mûkusalas street 73, Riga, LV-1004',
 ]
 
+# Temperature control / Customs clearance — show a dash instead of blank
+def display_val(val, temp_min=None, temp_max=None):
+    if temp_min is not None and temp_max is not None and str(temp_min).strip() != "" and str(temp_max).strip() != "":
+        return f"{temp_min:+d} °C to {temp_max:+d} °C"
+
+    val = str(val).strip() if val is not None else ""
+    return val if val and val.upper() != "NONE" else "-"
+
 def get_forwarder_sender_delivery_data(data):
     if data.get('forwarder'):
         df_fw = return_fw_data(data.get('forwarder')) # gets full forwarder company data from DB
@@ -238,14 +246,6 @@ def draw_info_and_cost(pdf, data, y, df_fw):
     y -= 3
     pdf.line(30, y, 565, y)
     y -= 15
-
-    # Temperature control / Customs clearance — show a dash instead of blank
-    def display_val(val, temp_min=None, temp_max=None):
-        if temp_min is not None and temp_max is not None and str(temp_min).strip() != "" and str(temp_max).strip() != "":
-            return f"{temp_min:+d} °C to {temp_max:+d} °C"
-    
-        val = str(val).strip() if val is not None else ""
-        return val if val and val.upper() != "NONE" else "-"
 
     pdf.setFont("LVSerif", 10)
     pdf.drawString(30, y, f"Product type: {display_val(data.get('cargo_type'))}")
