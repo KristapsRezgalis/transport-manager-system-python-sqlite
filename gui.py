@@ -274,6 +274,9 @@ def create_fw_contact_modal(title, existing=None):
         [sg.Text("Position:", size=16), sg.Input(e.get("fw_c_position", ""), key="-FWCONTACT-POS-", size=35)],
         [sg.Text("Phone Nr:", size=16), sg.Input(e.get("fw_c_phone", ""), key="-FWCONTACT-PHONE-", size=35)],
         [sg.Text("E-mail:", size=16), sg.Input(e.get("fw_c_email", ""), key="-FWCONTACT-EMAIL-", size=35)],
+        [sg.Text("Add country:"), sg.Combo(sorted(countries), key="-CMB-ADD-COUNTRY-", size=(20,1)), sg.Button("Add", key="-BTN-ADD-COUNTRY-")],
+        [sg.Listbox(values=assigned_countries, size=(25,10), key="-LIST-ASSIGNED-", select_mode=sg.LISTBOX_SELECT_MODE_EXTENDED)],
+        [sg.Button("Remove selected", key="-BTN-REMOVE-COUNTRY-")],
         [sg.Button("Save", key="-FWCONTACT-SAVE-"), sg.Button("Cancel")]
     ]
         
