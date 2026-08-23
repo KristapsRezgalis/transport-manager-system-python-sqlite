@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts, get_purchase_managers, get_pallet_details, insert_pallet, add_spec_data, check_doc_loc
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts, get_purchase_managers, get_pallet_details, insert_pallet, add_spec_data, check_doc_loc, get_contact_countries, save_contact_countries
 from pdf import create_order_pdf
 from pdf_order import create_gemoss_specification_PDF
 from stats import generate_diagram
@@ -230,6 +230,7 @@ def forwarder_contacts_modal(fw_id, fw_name):
                     "fw_c_position": str(row["fw_c_position"]),
                     "fw_c_phone": str(row["fw_c_phone"]),
                     "fw_c_email": str(row["fw_c_email"]),
+                    "fw_c_countries": get_contact_countries(contact_id),
                 }
                 new_values = create_fw_contact_modal(f"Editing contact Nr.{contact_id}", existing)
                 if new_values:
@@ -239,8 +240,11 @@ def forwarder_contacts_modal(fw_id, fw_name):
                         "fw_c_position": new_values["-FWCONTACT-POS-"],
                         "fw_c_phone": new_values["-FWCONTACT-PHONE-"],
                         "fw_c_email": new_values["-FWCONTACT-EMAIL-"],
+                        "fw_c_countries": str(row["fw_c_countries"])
+                        
                     }
                     edit_db(contact_id, updated_values, 't_fw_contact', 'fw_contact_id')
+                    save_contact_countries(contact_id, new_values["fw_c_countries"]) # saves contact's countries in t_tender_contact_countries table
                     
                     refresh_fw_contacts()
                     fw_cont_statuss(f"✅ Contact Nr.{contact_id} updated!")
@@ -268,14 +272,16 @@ def forwarder_contacts_modal(fw_id, fw_name):
             
 def create_fw_contact_modal(title, existing=None):
     e = existing or {}
+    current_countries = list(e.get("fw_c_countries") or [])
+    
     layout =[
         [sg.Text("Name:", size=16), sg.Input(e.get("fw_c_name", ""), key="-FWCONTACT-NAME-", size=35)],
         [sg.Text("Surname:", size=16), sg.Input(e.get("fw_c_surname", ""), key="-FWCONTACT-SURNAME-", size=35)],
         [sg.Text("Position:", size=16), sg.Input(e.get("fw_c_position", ""), key="-FWCONTACT-POS-", size=35)],
         [sg.Text("Phone Nr:", size=16), sg.Input(e.get("fw_c_phone", ""), key="-FWCONTACT-PHONE-", size=35)],
         [sg.Text("E-mail:", size=16), sg.Input(e.get("fw_c_email", ""), key="-FWCONTACT-EMAIL-", size=35)],
-        [sg.Text("Add country:"), sg.Combo(sorted(countries), key="-CMB-ADD-COUNTRY-", size=(20,1)), sg.Button("Add", key="-BTN-ADD-COUNTRY-")],
-        [sg.Listbox(values=assigned_countries, size=(25,10), key="-LIST-ASSIGNED-", select_mode=sg.LISTBOX_SELECT_MODE_EXTENDED)],
+        [sg.Text("Add country:", size=16), sg.Combo(sorted(countries), key="-CMB-ADD-COUNTRY-", size=(25,1)), sg.Button("Add", key="-BTN-ADD-COUNTRY-", size=5)],
+        [sg.Listbox(values=sorted(current_countries), size=(54,10), key="-LIST-ASSIGNED-", select_mode=sg.LISTBOX_SELECT_MODE_EXTENDED)],
         [sg.Button("Remove selected", key="-BTN-REMOVE-COUNTRY-")],
         [sg.Button("Save", key="-FWCONTACT-SAVE-"), sg.Button("Cancel")]
     ]
@@ -288,10 +294,23 @@ def create_fw_contact_modal(title, existing=None):
         if action in (sg.WIN_CLOSED, "Cancel"):
             app_window.close()
             return None
+
+        if action == "-BTN-ADD-COUNTRY-":
+            country = values["-CMB-ADD-COUNTRY-"]
+            if country and country not in current_countries:
+                current_countries.append(country)
+                app_window["-LIST-ASSIGNED-"].update(values=sorted(current_countries))
+
+        if action == "-BTN-REMOVE-COUNTRY-":
+            to_remove = values["-LIST-ASSIGNED-"]
+            current_countries = [c for c in current_countries if c not in to_remove]
+            app_window["-LIST-ASSIGNED-"].update(values=sorted(current_countries))
+
         if action == "-FWCONTACT-SAVE-":
+            values["fw_c_countries"] = current_countries
             app_window.close()
             return values
-    
+        
 
 def user_entry_modal(title, existing=None):
     e = existing or {}
@@ -1747,6 +1766,10 @@ def main_menu(login_validation, theme_name):
                         fw_id, new_values["-FWCONTACT-NAME-"], new_values["-FWCONTACT-SURNAME-"], new_values["-FWCONTACT-POS-"],
                         new_values["-FWCONTACT-PHONE-"],new_values["-FWCONTACT-EMAIL-"]
                     )
+                    
+                    # link the chosen countries to the newly created contact
+                    save_contact_countries(new_record, new_values["fw_c_countries"])
+                    
                     current_df = read_all('t_forwarder', 'forwarder_id')
                     #refresh_table(current_df, "-FORWARDER-TABLE-")
                     fw_statuss(f"✅ {fw_name} contact Nr.{new_record} added!")

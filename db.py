@@ -515,5 +515,32 @@ def get_tender_emails(country):
     conn.close()
     return "; ".join(emails_df["email"].dropna())
 
-#print(get_tender_emails('italy'))
-#SELECT email FROM t_tender_contacts WHERE country LIKE ?
+def get_contact_countries(contact_id):
+    """Reads the list of countries assigned to a forwarder contact."""
+    conn = sqlite3.connect(DB_FILE)
+    cur = conn.cursor()
+    cur.execute(
+        "SELECT country FROM t_tender_contact_countries WHERE tender_contact_id = ?",
+        (contact_id,)
+    )
+    rows = cur.fetchall()
+    conn.close()
+    return [r[0] for r in rows]  # e.g. ["Germany", "Poland"]
+
+def save_contact_countries(contact_id, countries_list):
+    """Replaces a forwarder contact's country list with the new one."""
+    conn = sqlite3.connect(DB_FILE)
+    cur = conn.cursor()
+
+    # simplest reliable approach: wipe old rows, insert current ones
+    cur.execute(
+        "DELETE FROM t_tender_contact_countries WHERE tender_contact_id = ?",
+        (contact_id,)
+    )
+    cur.executemany(
+        "INSERT INTO t_tender_contact_countries (tender_contact_id, country) VALUES (?, ?)",
+        [(contact_id, country) for country in countries_list]
+    )
+
+    conn.commit()
+    conn.close()
