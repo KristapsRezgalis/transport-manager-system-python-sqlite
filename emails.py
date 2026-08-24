@@ -19,9 +19,9 @@ def send_transport_offer(nr, data):
     mail.To = 'kristaps.rezgalis@gemoss.lv'
     if data.get('ref'):
         # calls function in db.py to get e-mails of forwarder which have reefer trucks
-        bcc = get_tender_emails('ref')
+        bcc = get_tender_emails('Temperature')
     else:
-    # calls function in db.py to get all forwawrder emails in one string for specific loading country
+        # calls function in db.py to get all forwawrder emails in one string for specific loading country
         bcc = get_tender_emails(str(df_sender_company_address['adr_country'].iloc[0]).strip().lower()) 
     mail.Subject = subject
     
@@ -79,7 +79,7 @@ def send_transport_offer(nr, data):
             <p style="margin:0;">Loading hours: <b>{df_sender_company_address['adr_hours'].iloc[0]}</b></p>
             <p style="margin:0;">Shipper (Consignor): <b>{data.get('sender')}</b></p>
             <p style="margin:0;">Loading address: <b>{loading_address}</b></p>
-            <p style="margin:0 0 8px 0;">Slot booking: <b>{df_sender_company_address['adr_book_slot']}</b></p>
+            <p style="margin:0 0 8px 0;">Slot booking: <b>{df_sender_company_address['adr_book_slot'].iloc[0]}</b></p>
             
             <p style="margin:0;">Consignee: <b>{data.get('delivery')}</b></p>
             <p style="margin:0 0 8px 0;">Delivery address: <b>{unloading_address}</b></p>
@@ -181,7 +181,7 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
 
         <tr>
             <td><b>Temperatūras režīms:</b></td>
-            <td>{display_val(data.get('ref'))}</td>
+            <td>{display_val(data.get('ref'), data.get('temp_min'), data.get('temp_max'))}</td>
         </tr>
         <tr>
             <td><b>Atmuitošana:</b></td>
@@ -290,7 +290,7 @@ def send_email_purchase_manager(to, data, nr, attachments=None):
 
         <tr>
             <td><b>Temperatūras režīms:</b></td>
-            <td>{display_val(data.get('ref'))}</td>
+            <td>{display_val(data.get('ref'), data.get('temp_min'), data.get('temp_max'))}</td>
         </tr>
         <tr>
             <td><b>Atmuitošana:</b></td>

@@ -505,15 +505,16 @@ def get_tender_emails(country):
     if country:
         email_string = ''
         emails_df = pd.read_sql(f"""
-    SELECT tc.email FROM t_tender_contact_countries AS tcc
-    INNER JOIN t_tender_contacts AS tc
-    ON tcc.tender_contact_id = tc.tender_contact_id
-    WHERE LOWER(TRIM(tcc.country)) = ?
+    SELECT fwc.fw_c_email
+            FROM t_tender_contact_countries AS tcc
+            INNER JOIN t_fw_contact AS fwc
+                ON tcc.tender_contact_id = fwc.fw_contact_id
+            WHERE LOWER(TRIM(tcc.country)) = LOWER(?)
     """,
     conn, params=(country,))
 
     conn.close()
-    return "; ".join(emails_df["email"].dropna())
+    return "; ".join(emails_df["fw_c_email"].dropna())
 
 def get_contact_countries(contact_id):
     """Reads the list of countries assigned to a forwarder contact."""

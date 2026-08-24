@@ -273,6 +273,10 @@ def forwarder_contacts_modal(fw_id, fw_name):
 def create_fw_contact_modal(title, existing=None):
     e = existing or {}
     current_countries = list(e.get("fw_c_countries") or [])
+    if 'Temperature' not in countries:
+        countries.append("Temperature")
+    if 'Container' not in countries:
+        countries.append("Container")
     
     layout =[
         [sg.Text("Name:", size=16), sg.Input(e.get("fw_c_name", ""), key="-FWCONTACT-NAME-", size=35)],

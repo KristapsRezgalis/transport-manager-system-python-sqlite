@@ -8,7 +8,7 @@ def get_km(address_1, address_2):
 
     geolocator = Nominatim(user_agent="latvia_distance_console_calc", timeout=10)
 
-    print("=== Latvian Address Distance Calculator ===")
+    print("=== Address Distance Calculator ===")
     print("Please enter the addresses below.\n")
 
     print(f"Address 1: {address_1}")
