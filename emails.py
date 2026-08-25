@@ -115,7 +115,7 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
     unloading_address = f"{df_delivery_company_address['adr_street'].iloc[0]}, {df_delivery_company_address['adr_city'].iloc[0]}, {df_delivery_company_address['adr_post_code'].iloc[0]}, {df_delivery_company_address['adr_country'].iloc[0]}"
     
     # Temperature control / Customs clearance — show a dash instead of blank
-    def display_val(val):
+    def display_customs_val(val):
         val = str(val).strip() if val is not None else ""
         return val if val and val.upper() != "NONE" else "-"
     
@@ -185,7 +185,7 @@ def send_email(to, data, nr, attachments=None):   #cc=None, attachments=None
         </tr>
         <tr>
             <td><b>Atmuitošana:</b></td>
-            <td>{display_val(data.get('customs'))}</td>
+            <td>{display_customs_val(data.get('customs'))}</td>
         </tr>
     </table>
     <p>Lūdzu apstiprināt, ka saņēmāt.</p>
@@ -219,7 +219,7 @@ def send_email_purchase_manager(to, data, nr, attachments=None):
     unloading_address = f"{df_delivery_company_address['adr_street'].iloc[0]}, {df_delivery_company_address['adr_city'].iloc[0]}, {df_delivery_company_address['adr_post_code'].iloc[0]}, {df_delivery_company_address['adr_country'].iloc[0]}"
     
     # Temperature control / Customs clearance — show a dash instead of blank
-    def display_val(val):
+    def display_customs_val(val):
         val = str(val).strip() if val is not None else ""
         return val if val and val.upper() != "NONE" else "-"
     
@@ -294,7 +294,7 @@ def send_email_purchase_manager(to, data, nr, attachments=None):
         </tr>
         <tr>
             <td><b>Atmuitošana:</b></td>
-            <td>{display_val(data.get('customs'))}</td>
+            <td>{display_customs_val(data.get('customs'))}</td>
         </tr>
     </table>
         <p>Šis ir automātisks paziņojums. Ja pamani kļūdas, lūdzu, informēt mani. Paldies.</p>

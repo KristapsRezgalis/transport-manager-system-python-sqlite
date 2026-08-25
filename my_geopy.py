@@ -47,5 +47,7 @@ def get_km(address_1, address_2):
     return f"{distance_km:.0f}"
 
 # Hardcoded addresses from your request for immediate testing
-#address_1 = "1582, Sofia, Bulgaria"
-#address_2 = "Rīga, LV-1058, Latvia"
+address_1 = "Hamburg, D-21129, Germany"
+address_2 = "Rīga, LV-1058, Latvia"
+
+get_km(address_1, address_2)
