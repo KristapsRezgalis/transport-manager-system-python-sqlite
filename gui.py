@@ -11,7 +11,7 @@ from company import company_entry_modal, company_contacts_modal, create_company_
 from forwarder import forwarder_entry_modal
 from config import *
 from emails import send_order_modal, send_email, send_email_purchase_manager, send_transport_offer
-from excel import add_row_to_table
+from excel import add_or_update_row_in_table
 
 login_validation = ''
 
@@ -658,7 +658,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
             send_transport_offer(nr, existing)
         
         elif action == "-BTN-ADD-EXCEL-":  # adds current order's data to Excel file that is monitored by colleagues
-            add_row_to_table(nr, existing)
+            add_or_update_row_in_table(nr, existing)
         
         elif action == "-BTN-OPEN-FILES-":  # opens current order's file location
             if nr:
