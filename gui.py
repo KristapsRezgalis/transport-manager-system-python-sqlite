@@ -628,32 +628,37 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
             create_gemoss_specification_PDF(existing, nr, login_validation)
             print('Create GEMOSS internal transport order in PDF button pressed!')
         elif action == "-BTN-SEND-ORDERS-":
-            emails_list = send_order_modal(existing, nr, values['-CMB-PURCHASE_MANAGER-'])
-            if emails_list:
-                pdf_path_forwarder_order  = create_order_pdf(existing, nr, login_validation)
-                pdf_path_internal_order  = create_gemoss_specification_PDF(existing, nr, login_validation)
-                
-                # checks if sending e-mails and adding attachments are were checked and send's/doesn't send e-mails and attachments
-                if emails_list['-CB-SEND-FORWARDER-']:
-                    if emails_list['-CB-SEND-ATT-FORWARDER-']:
-                        send_email(f"{emails_list['-TXT-FORWARDER-EMAIL-']}", existing, nr, attachments=[pdf_path_forwarder_order])
-                    else:
-                        send_email(f"{emails_list['-TXT-FORWARDER-EMAIL-']}", existing, nr)
-                if emails_list['-CB-SEND-INNER-']:
-                    if emails_list['-CB-SEND-ATT-INNER-']:
-                        send_email_purchase_manager(f"{emails_list['-TXT-INTERNAL-EMAIL-']}", existing, nr, attachments=[pdf_path_internal_order])
-                    else:
-                        send_email_purchase_manager(f"{emails_list['-TXT-INTERNAL-EMAIL-']}", existing, nr)
-                if emails_list['-CB-SEND-MANAGER-']:
-                    if emails_list['-CB-SEND-ATT-MANAGER-']:
-                        send_email_purchase_manager(f"{emails_list['-TXT-PURCH-MAN-EMAIL-']}", existing, nr, attachments=[pdf_path_internal_order])
-                    else:
-                        send_email_purchase_manager(f"{emails_list['-TXT-PURCH-MAN-EMAIL-']}", existing, nr)
-                if emails_list['-CB-SEND-OTHER-']:
-                    if emails_list['-CB-SEND-ATT-OTHER-']:
-                        send_email_purchase_manager(f"{emails_list['-IN-EXTRA-EMAIL-']}", existing, nr, attachments=[pdf_path_internal_order])
-                    else:
-                        send_email_purchase_manager(f"{emails_list['-IN-EXTRA-EMAIL-']}", existing, nr)
+            if values['-COST-']: # checks if COST has been entered before sending order.
+                emails_list = send_order_modal(existing, nr, values['-CMB-PURCHASE_MANAGER-'])
+                if emails_list:
+                    pdf_path_forwarder_order  = create_order_pdf(existing, nr, login_validation)
+                    pdf_path_internal_order  = create_gemoss_specification_PDF(existing, nr, login_validation)
+                    
+                    # checks if sending e-mails and adding attachments are were checked and send's/doesn't send e-mails and attachments
+                    if emails_list['-CB-SEND-FORWARDER-']:
+                        if emails_list['-CB-SEND-ATT-FORWARDER-']:
+                            send_email(f"{emails_list['-TXT-FORWARDER-EMAIL-']}", existing, nr, attachments=[pdf_path_forwarder_order])
+                        else:
+                            send_email(f"{emails_list['-TXT-FORWARDER-EMAIL-']}", existing, nr)
+                    if emails_list['-CB-SEND-INNER-']:
+                        if emails_list['-CB-SEND-ATT-INNER-']:
+                            send_email_purchase_manager(f"{emails_list['-TXT-INTERNAL-EMAIL-']}", existing, nr, attachments=[pdf_path_internal_order])
+                        else:
+                            send_email_purchase_manager(f"{emails_list['-TXT-INTERNAL-EMAIL-']}", existing, nr)
+                    if emails_list['-CB-SEND-MANAGER-']:
+                        if emails_list['-CB-SEND-ATT-MANAGER-']:
+                            send_email_purchase_manager(f"{emails_list['-TXT-PURCH-MAN-EMAIL-']}", existing, nr, attachments=[pdf_path_internal_order])
+                        else:
+                            send_email_purchase_manager(f"{emails_list['-TXT-PURCH-MAN-EMAIL-']}", existing, nr)
+                    if emails_list['-CB-SEND-OTHER-']:
+                        if emails_list['-CB-SEND-ATT-OTHER-']:
+                            send_email_purchase_manager(f"{emails_list['-IN-EXTRA-EMAIL-']}", existing, nr, attachments=[pdf_path_internal_order])
+                        else:
+                            send_email_purchase_manager(f"{emails_list['-IN-EXTRA-EMAIL-']}", existing, nr)
+            else:
+                print("ENTER ORDER SUM TO SEND ORDER")
+                sg.popup("Enter transport cost to send an order!")
+                continue
         elif action == "-BTN-SEND-OFFER-":
             send_transport_offer(nr, existing)
         
