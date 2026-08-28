@@ -187,9 +187,9 @@ def search_db(search_value, tableName):
     conn = sqlite3.connect(DB_FILE)
     if tableName == 'transport':
         df = pd.read_sql(f""" SELECT * FROM {tableName}
-        WHERE sap_po LIKE ? OR sender LIKE ? OR delivery LIKE ? OR loading LIKE ? OR unloading LIKE ? OR pallets LIKE ? OR weight LIKE ? OR forwarder LIKE ? OR forwarder_contact LIKE ? OR cost LIKE ?
+        WHERE sap_po LIKE ? OR sender LIKE ? OR sender_adr LIKE ? OR delivery LIKE ? OR delivery_adr LIKE ? OR loading LIKE ? OR unloading LIKE ? OR pallets LIKE ? OR weight LIKE ? OR forwarder LIKE ? OR forwarder_contact LIKE ? OR cost LIKE ? OR transport_invoice LIKE ?
         ORDER BY nr
-        """, conn, params=(f"%{search_value}%", f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%"))
+        """, conn, params=(f"%{search_value}%", f"%{search_value}%", f"%{search_value}%", f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%"))
     elif tableName == 't_forwarder':
         df = pd.read_sql(f""" SELECT * FROM {tableName}
         WHERE fw_name LIKE ? OR fw_reg_nr LIKE ? OR fw_vat_nr LIKE ? OR fw_street LIKE ? OR fw_city LIKE ? OR fw_post_code LIKE ? OR fw_country LIKE ? OR fw_payment_terms LIKE ? 
