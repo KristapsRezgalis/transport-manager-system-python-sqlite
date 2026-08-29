@@ -1372,6 +1372,13 @@ def main_menu(login_validation, theme_name):
             app_window["-SEARCH-FORWARDER-"].update("")
             statuss("Showing all records!")
             
+        elif action == "-BTN-ALLDATA-COMPANY-":
+            table_key = action[0]
+            current_df = read_all('t_company', 'company_id')
+            refresh_table(current_df, "-COMPANY-TABLE-")
+            app_window["-IN-SEARCH-COMPANY-"].update("")
+            company_statuss("Showing all records!")
+            
         # ── Action triggered when Search button is pressed - seasrches in Transport orders database for values that match from the searchbox
         elif action in ("-SEARCH-" + "_RETURN", "-BTN-SEARCH-"):  #action == "-BTN-SEARCH-" :
             search_value = values["-SEARCH-"].strip()
@@ -1385,7 +1392,7 @@ def main_menu(login_validation, theme_name):
         elif action == "-BTN-SEARCH-FORWARDER-":
             search_value = values["-SEARCH-FORWARDER-"].strip()
             if not search_value:
-                statuss("Ievadi meklēšanas tekstu!", "red")
+                fw_statuss("Ievadi meklēšanas tekstu!", "red")
             else:
                 current_df = search_db(search_value, 't_forwarder')
                 refresh_table(current_df, "-FORWARDER-TABLE-")
@@ -1399,7 +1406,16 @@ def main_menu(login_validation, theme_name):
                 current_df = search_db(search_value, 'transport')
                 refresh_table(current_df, "-STATISTICS-TABLE-")
                 statuss(f"Found: {len(current_df)} records")
-                
+        
+        # ── Action triggered when Search button is pressed - seasrches in Forwarder table database for values that match from the searchbox
+        elif action == "-BTN-SEARCH-COMPANY-":
+            search_value = values["-IN-SEARCH-COMPANY-"].strip()
+            if not search_value:
+                company_statuss("Ievadi meklēšanas tekstu!", "red")
+            else:
+                current_df = search_db(search_value, 't_company')
+                refresh_table(current_df, "-COMPANY-TABLE-")
+                company_statuss(f"Found: {len(current_df)} records")
         
         # ── Action triggered when Filtrs button is pressed - opens a Filter modal window with filtring options
         elif action == "-BTN-FILTER-":
@@ -1641,44 +1657,14 @@ def main_menu(login_validation, theme_name):
                 entry_modal(f"Editing record Nr.{nr}", existing, nr, login_validation=login_validation)
                 
                 current_df = read_all('transport', 'nr')
+                current_df = current_df.sort_values(by="nr", ascending=False, ignore_index=True)
+                sort_column = "nr"
+                sort_ascending = False
                 refresh_table(current_df, "-TABLE-")
+                
                 statuss(f"✅ Nr.{nr} updated!")
                 app_window["-SEARCH-"].update("")
-                '''
-                if result is not None:
-                    new_values, total_pallets, ldm, pallet_df = result
-                    
-                    updated_values = {
-                        "sap_po":          new_values["-SAP_PO-"],
-                        "sender":          new_values["-SENDER-"],
-                        "sender_adr":          new_values["-SENDER-ADDRESS-"],
-                        "sender_cont":          new_values["-SENDER-CONTACT-"],
-                        "delivery":          new_values["-DELIVERY-"],
-                        "delivery_adr":          new_values["-DELIVERY-ADDRESS-"],
-                        "delivery_cont":          new_values["-DELIVERY-CONTACT-"],
-                        "loading":          new_values["-LOADING-"],
-                        "loading_to":          new_values["-LOADING-TO-"],
-                        "unloading":          new_values["-UNLOADING-"],
-                        "unloading_to":          new_values["-UNLOADING-TO-"],
-                        "pallets":          total_pallets,
-                        "ldm":          ldm,
-                        "weight":          float(new_values["-WEIGHT-"]),
-                        "forwarder":          new_values["-FORWARDER-"],
-                        "forwarder_contact":          new_values["-FORWARDER-CONTACT-"],
-                        "cost":          (float(new_values["-COST-"]) if new_values["-COST-"].strip() else None),
-                        "customs":          new_values["-CUSTOMS-"],
-                        "ref":          new_values["-REF-"],
-                        "temp_min":          (int(new_values["-IN-TEMP-MIN-"]) if new_values["-IN-TEMP-MIN-"].strip() else None),
-                        "temp_max":          (int(new_values["-IN-TEMP-MAX-"]) if new_values["-IN-TEMP-MAX-"].strip() else None),
-                        "info":          new_values["-IN-ORDER-DETAILS-"],
-                        "add_info_to_order":          new_values["-CB-ADD_TO_ORDER-"],
-                        "purch_manager":          new_values["-CMB-PURCHASE_MANAGER-"],
-                        "cargo_type":          new_values["-CMB-CARGO_TYPE-"],
-                        "transport_invoice":          new_values["-IN-TRANSPORT-INVOICE-"]
-                    }
-
-                    #edit_db(nr, updated_values, 'transport')
-                '''           
+         
         # ── Action triggered when Edit User button is pressed - opens Entry modal for editing an existing record
         elif action == "-BTN-EDIT-USER-":
             if selected_row is None:

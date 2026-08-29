@@ -195,6 +195,11 @@ def search_db(search_value, tableName):
         WHERE fw_name LIKE ? OR fw_reg_nr LIKE ? OR fw_vat_nr LIKE ? OR fw_street LIKE ? OR fw_city LIKE ? OR fw_post_code LIKE ? OR fw_country LIKE ? OR fw_payment_terms LIKE ? 
         ORDER BY forwarder_id
         """, conn, params=(f"%{search_value}%", f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%"))
+    elif tableName == 't_company':
+        df = pd.read_sql(f""" SELECT * FROM {tableName}
+        WHERE c_name LIKE ? OR c_reg LIKE ? OR c_vat LIKE ? OR c_street LIKE ? OR c_city LIKE ? OR c_post_code LIKE ? OR c_country LIKE ? OR c_notes LIKE ? 
+        ORDER BY company_id
+        """, conn, params=(f"%{search_value}%", f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%",f"%{search_value}%"))
     
     conn.close()
     return df
