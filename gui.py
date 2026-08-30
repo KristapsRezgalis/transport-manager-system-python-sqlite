@@ -481,7 +481,9 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
         [sg.Text("Loading until:", size=15),       sg.Input(e.get("loading_to", ""), key="-LOADING-TO-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-LOADING-TO-", format="%Y-%m-%d"),         
          sg.Text("Unloading until:", size=15),     sg.Input(e.get("unloading_to", ""), key="-UNLOADING-TO-", size=28, readonly=True, disabled_readonly_background_color="white"), sg.CalendarButton("Pick", target="-UNLOADING-TO-", format="%Y-%m-%d")],
         [sg.HSeparator()],
-
+        [sg.Text("Loading reference:", size=15),   sg.Input(e.get("load_reference", ""), key="-IN-LOAD_REFERENCE-", size=35),
+         sg.Text("Unloading reference:", size=15), sg.Input(e.get("unload_reference", ""), key="-IN-UNLOAD_REFERENCE-", size=35)],
+        [sg.HSeparator()],
         # Pallet count + weight on one line, then the pallet detail table below
         [sg.Text("Total pallet count:", size=15), sg.Text(total_pallets, key="-PALLETS-", size=23, font=("Segoe UI", 10, "bold")),
          sg.Text("LDM:", size=7),                 sg.Text(ldm, key="-LDM-", size=22, font=("Segoe UI", 10, "bold")),
