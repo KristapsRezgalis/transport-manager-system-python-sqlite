@@ -1653,7 +1653,9 @@ def main_menu(login_validation, theme_name):
                     "cargo_type":        str(row["cargo_type"]) if pd.notna(row["cargo_type"]) else "",
                     "transport_invoice": str(row["transport_invoice"]) if pd.notna(row["transport_invoice"]) else "",
                     "order_type":        str(row["order_type"]) if pd.notna(row["order_type"]) else "",
-                    "doc_loc":           str(row["doc_loc"]) if pd.notna(row["doc_loc"]) else ""
+                    "doc_loc":           str(row["doc_loc"]) if pd.notna(row["doc_loc"]) else "",
+                    "load_reference":    str(row["load_reference"]) if pd.notna(row["load_reference"]) else "",
+                    "unload_reference":  str(row["unload_reference"]) if pd.notna(row["unload_reference"]) else "",
                 }
                 #result = entry_modal(f"Editing record Nr.{nr}", existing, nr, login_validation=login_validation)
                 entry_modal(f"Editing record Nr.{nr}", existing, nr, login_validation=login_validation)
