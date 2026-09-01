@@ -174,8 +174,8 @@ def draw_loading_unloading(pdf, data, y, df_sender_company_address, df_sender_co
     pdf.drawString(30, y, f"Slot booking: {df_sender_company_address['adr_book_slot'].iloc[0]}")
     pdf.drawString(310, y, f"Slot booking: {df_delivery_company_address['adr_book_slot'].iloc[0]}")
     y -= 15
-    pdf.drawString(30, y, f"Loading reference: {df_sender_company_address['adr_reference'].iloc[0]}")
-    pdf.drawString(310, y, f"Loading reference: {df_delivery_company_address['adr_reference'].iloc[0]}")
+    pdf.drawString(30, y, f"Loading reference: {data.get('load_reference')}")
+    pdf.drawString(310, y, f"Loading reference: {data.get('unload_reference')}")
     y -= 15
     pdf.drawString(30, y, f"Contact: {data.get('sender_cont')}")
     pdf.drawString(310, y, f"Contact: {data.get('delivery_cont')}")

@@ -569,7 +569,9 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                         "purch_manager":          values["-CMB-PURCHASE_MANAGER-"],
                         "cargo_type":          values["-CMB-CARGO_TYPE-"],
                         "transport_invoice":          values["-IN-TRANSPORT-INVOICE-"],
-                        "order_type":             values["-CMB-ORDER-TYPE-"]
+                        "order_type":             values["-CMB-ORDER-TYPE-"],
+                        "load_reference":          values["-IN-LOAD_REFERENCE-"],
+                        "unload_reference":             values["-IN-UNLOAD_REFERENCE-"]
                     }
                 
                 edit_db(nr, updated_values, 'transport')
