@@ -594,7 +594,7 @@ def entry_modal(title, existing=None, nr=None, login_validation=login_validation
                     values["-SAP_PO-"], values["-SENDER-"], values["-SENDER-ADDRESS-"], values["-SENDER-CONTACT-"], values["-DELIVERY-"], values["-DELIVERY-ADDRESS-"], values["-DELIVERY-CONTACT-"], values["-LOADING-"], values["-LOADING-TO-"],
                     values["-UNLOADING-"], values["-UNLOADING-TO-"], total_pallets, ldm, values["-WEIGHT-"], values["-FORWARDER-"], values["-FORWARDER-CONTACT-"],
                     values["-COST-"], values["-CUSTOMS-"], values["-REF-"], values["-IN-TEMP-MIN-"], values["-IN-TEMP-MAX-"], values["-IN-ORDER-DETAILS-"],
-                    values["-CB-ADD_TO_ORDER-"], values["-CMB-PURCHASE_MANAGER-"], values["-CMB-CARGO_TYPE-"], values["-IN-TRANSPORT-INVOICE-"], values["-CMB-ORDER-TYPE-"]
+                    values["-CB-ADD_TO_ORDER-"], values["-CMB-PURCHASE_MANAGER-"], values["-CMB-CARGO_TYPE-"], values["-IN-TRANSPORT-INVOICE-"], values["-CMB-ORDER-TYPE-"], values["-IN-LOAD_REFERENCE-"], values["-IN-UNLOAD_REFERENCE-"]
                 )
                 
                 # creates an order's folder where to save all file srelated to the particular shipment
