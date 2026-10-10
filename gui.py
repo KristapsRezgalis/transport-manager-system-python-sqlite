@@ -3,7 +3,7 @@ import pandas as pd
 import os
 
 from datetime import datetime
-from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts, get_purchase_managers, get_pallet_details, insert_pallet, add_spec_data, check_doc_loc, get_contact_countries, save_contact_countries
+from db import create_table, read_all, add_db, edit_db, search_db, delete_db, filter_db, check_login, add_user, return_forwarders, add_forwarder, return_fw_contacts, add_fw_contact, add_company, add_company_contact, add_company_address, return_company, return_company_addresses, return_company_contacts, get_purchase_managers, get_pallet_details, insert_pallet, add_spec_data, check_doc_loc, get_contact_countries, save_contact_countries, save_to_excel
 from pdf import create_order_pdf
 from pdf_order import create_gemoss_specification_PDF
 from stats import generate_diagram
@@ -1018,7 +1018,8 @@ def main_menu(login_validation, theme_name):
         sg.Input(key="-SEARCH-", size=20),
         sg.Button("Search", key="-BTN-SEARCH-", size=10),
         sg.Button("Exit", key="-BTN-EXIT-", size=10),
-        sg.Push(), sg.Combo(['All', 'Import', 'Gemoss', 'Container', 'Other'], default_value='Import', key='-CMB-CARGO-TYPE-', enable_events=True, readonly=True)
+        sg.Push(), sg.Button("To Excel", key="-BTN-TO-EXCEL-", size=10),
+        sg.Combo(['All', 'Import', 'Gemoss', 'Container', 'Other'], default_value='Import', key='-CMB-CARGO-TYPE-', enable_events=True, readonly=True)
         ],
         [sg.Text("", key="-STATUS-", size=60, text_color="green")],
         #table_columns,
@@ -1872,6 +1873,9 @@ def main_menu(login_validation, theme_name):
                     current_df = read_all('t_company', 'company_id')
                     #refresh_table(current_df, "-FORWARDER-TABLE-")
                     company_statuss(f"✅ {company_name} contact Nr.{new_record} added!")
+        # this buttons saves transport order table to Excel file
+        elif action == "-BTN-TO-EXCEL-":
+            save_to_excel()
         
         # Action to generate a diagram in Statistic section
         elif action == "-BTN-CREATE-DIAGRAM-":

@@ -55,10 +55,11 @@ def find_row_by_agreement(ws, table, nr):
 
 def add_or_update_row_in_table(nr, data):
     filepath = r"C:\Users\kristaps.rezgalis\Gemoss SIA\Transports - Dokumenti\Transports 2025.xlsx"
-    sheet_name = "Sep 2026 "
-    table_name = "TabulaSep2026"
+    sheet_name = "Okt 2026"
+    table_name = "TabulaOkt2026" #"TabulaAug2026"
 
     wb = load_workbook(filepath)
+    sheet_name = sheet_name.strip()
     ws = wb[sheet_name]
     table = ws.tables[table_name]
 

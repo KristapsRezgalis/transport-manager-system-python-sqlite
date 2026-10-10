@@ -1,6 +1,8 @@
 import sqlite3
 import pandas as pd
-from datetime import datetime    
+from datetime import datetime
+import tkinter as tk
+from tkinter import filedialog
 
 DB_FILE = "transport_db.sqlite"
 TABLE_NAME = "transport"
@@ -426,7 +428,11 @@ def return_company(selected_company_name = None):
     
     # used if only one company name needs to be returned
     if selected_company_name:
-        comp_id = pd.read_sql(f"SELECT company_id FROM t_company WHERE c_name = '{selected_company_name}'", conn)
+        comp_id = pd.read_sql(
+            "SELECT company_id FROM t_company WHERE c_name = ?",
+            conn,
+            params=(selected_company_name,)
+        )
         conn.close()
         print(f'comp_id = {comp_id}')
          # Pārbauda, vai rezultāts nav tukšs
@@ -552,3 +558,32 @@ def save_contact_countries(contact_id, countries_list):
 
     conn.commit()
     conn.close()
+    
+def save_to_excel():
+    # 1. Paslēpj galveno Tkinter logu (mums vajag tikai faila saglabāšanas logu)
+    root = tk.Tk()
+    root.withdraw()
+    
+    # 2. Atver failu menedžera logu mapes un nosaukuma izvēlei
+    selected_file_path = filedialog.asksaveasfilename(
+        defaultextension=".xlsx",
+        filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
+        title="Izvēlieties, kur saglabāt Excel failu"
+    )
+
+    # Pārbauda, vai lietotājs neizvēlējās "Atcelt" (Cancel)
+    if selected_file_path:
+        # 3. Savienojas ar SQLite datubāzi
+        conn = sqlite3.connect(DB_FILE)
+        query = "SELECT * FROM transport"
+        
+        # 4. Ielasa datus
+        df = pd.read_sql_query(query, conn)
+        
+        # 5. Saglabā failu lietotāja izvēlētajā vietā
+        df.to_excel(selected_file_path, index=False)
+        
+        conn.close()
+        print(f"Fails veiksmīgi saglabāts šeit: {selected_file_path}")
+    else:
+        print("Saglabāšana tika atcelta.")
