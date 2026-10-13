@@ -559,31 +559,47 @@ def save_contact_countries(contact_id, countries_list):
     conn.commit()
     conn.close()
     
+# saves 'transport' table data into an Excel file. It adds also countries of the loading addresses.
 def save_to_excel():
-    # 1. Paslēpj galveno Tkinter logu (mums vajag tikai faila saglabāšanas logu)
+    # 1. Paslēpj galveno Tkinter logu
     root = tk.Tk()
     root.withdraw()
-    
-    # 2. Atver failu menedžera logu mapes un nosaukuma izvēlei
+
+    # 2. Atver faila saglabāšanas logu
     selected_file_path = filedialog.asksaveasfilename(
         defaultextension=".xlsx",
         filetypes=[("Excel files", "*.xlsx"), ("All files", "*.*")],
         title="Izvēlieties, kur saglabāt Excel failu"
     )
 
-    # Pārbauda, vai lietotājs neizvēlējās "Atcelt" (Cancel)
+    root.destroy()
+
     if selected_file_path:
         # 3. Savienojas ar SQLite datubāzi
         conn = sqlite3.connect(DB_FILE)
-        query = "SELECT * FROM transport"
-        
-        # 4. Ielasa datus
+
+        # 4. Iegūst visus transport datus + nosūtītāja valsti
+        query = """
+            SELECT
+                t.*,
+                a.adr_country AS sender_country
+            FROM transport AS t
+            LEFT JOIN t_company_address AS a
+                ON TRIM(t.sender_adr) = TRIM(a.adr_name) COLLATE NOCASE
+            ORDER BY t.nr
+        """
+
+        # 5. Ielasa datus pandas DataFrame
         df = pd.read_sql_query(query, conn)
-        
-        # 5. Saglabā failu lietotāja izvēlētajā vietā
-        df.to_excel(selected_file_path, index=False)
-        
+
+        # 6. Aizver datubāzes savienojumu
         conn.close()
+
+        # 7. Saglabā Excel failu
+        df.to_excel(selected_file_path, index=False)
+
         print(f"Fails veiksmīgi saglabāts šeit: {selected_file_path}")
+
     else:
         print("Saglabāšana tika atcelta.")
+
